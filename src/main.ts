@@ -2,6 +2,8 @@ import './style.css'
 
 import { ConditionEvaluator } from './condition_evaluator'
 import { ConditionBuilder } from './condition_builder'
+import { ConditionsInput } from './conditions_input'
+import { serialize } from './serializer'
 
 const defaultRecord = {
   name: 'Alice',
@@ -58,7 +60,6 @@ function renderUI(
 ) {
   document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <div>
-      <h1>Condition Evaluator Demo</h1>
       <div class="card">
         <label>
           <b>Record:</b><br>
@@ -91,6 +92,9 @@ function renderUI(
   const conditionInput = document.getElementById('condition-input') as HTMLTextAreaElement;
   const builderInput = document.getElementById('builder-input') as HTMLTextAreaElement;
   const builderOutput = document.getElementById('builder-output') as HTMLTextAreaElement;
+
+  new ConditionsInput(conditionInput);
+  
   if (recordInput) autoGrow(recordInput);
   if (conditionInput) autoGrow(conditionInput);
   if (builderInput) autoGrow(builderInput);
@@ -155,7 +159,7 @@ function matchAndUpdate() {
 
       result = evaluator.match(record);
 
-      builderOutput = builder.serialize(builder.groups);
+      builderOutput = serialize(builder.groups);
 
       // Check if normalized condition input string matches normalized builder output
       const normalizedInput = normalizeJsonString(conditionInput.value);
@@ -212,7 +216,7 @@ function attachListeners() {
 const defaultRecordStr = JSON.stringify(defaultRecord, null, 2);
 const defaultConditionStr = JSON.stringify(defaultCondition, null, 2);
 const builder = new ConditionBuilder(defaultConditionStr);
-const builderOutputStr = builder.serialize(builder.groups);
+const builderOutputStr = serialize(builder.groups);
 
 // Calculate initial match between defaultCondition and builder output
 const builderOutputMatch =
