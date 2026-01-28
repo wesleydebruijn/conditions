@@ -86,6 +86,49 @@ export class ConditionBuilder {
   }
 
   serialize(groups: Group[]): string {
-    return ''
+    function buildGroup(group: Group): any {
+      const groupObj: any = {};
+
+      // If group.operator is 'and' or 'or', encode fields accordingly
+      if (group.operator === 'and' || group.operator === 'or') {
+        // Each field will be a property on the group object
+        for (const field of group.fields) {
+          const fieldObj: any = {};
+
+          // Encode the condition operators as properties (except nested)
+          for (const cond of field.conditions) {
+            // Try to parse as number or boolean if possible, else keep as string
+            let val = cond.value;
+            if (val === 'true') val = true;
+            else if (val === 'false') val = false;
+            else if (!isNaN(Number(val)) && val.trim() !== '') val = Number(val);
+
+            fieldObj[cond.operator] = val;
+          }
+
+          // If nested groups exist
+          if (field.nested && field.nested.length > 0) {
+            // Build the nested group(s)
+            const nestedGroups = field.nested.map(buildGroup);
+            // Save as 'where' property; array if many, object if one
+            fieldObj['where'] = nestedGroups.length === 1 ? nestedGroups[0] : nestedGroups;
+          }
+
+          groupObj[field.field] = fieldObj;
+        }
+      }
+      return groupObj;
+    }
+
+    // If there's only one group, return its object form directly;
+    // if multiple groups, return array of group objects.
+    let result: any;
+    if (groups.length === 1) {
+      result = buildGroup(groups[0]);
+    } else {
+      result = groups.map(buildGroup);
+    }
+
+    return JSON.stringify(result, null, 2);
   }
 }
