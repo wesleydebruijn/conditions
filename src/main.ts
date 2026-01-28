@@ -194,6 +194,10 @@ function attachListeners() {
       autoGrow(conditionInput);
       matchAndUpdate();
     });
+    conditionInput.addEventListener('change', () => {
+      autoGrow(conditionInput);
+      matchAndUpdate();
+    });
     builderInput.addEventListener('input', () => {
       autoGrow(builderInput);
       matchAndUpdate();
