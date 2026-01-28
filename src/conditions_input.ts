@@ -16,9 +16,10 @@ declare global {
 
 export class ConditionsInput {
   private settings: Settings = {};
-  private data: Group[] = [];
+  private groups: Group[] = [];
 
   private input: HTMLInputElement | HTMLTextAreaElement;
+  private containerElement: HTMLElement;
 
   constructor(
     input: HTMLInputElement | HTMLTextAreaElement | string, 
@@ -26,18 +27,33 @@ export class ConditionsInput {
   ) {
     this.settings = { ...this.settings, ...settings };
     this.input = getInputElement(input);
-    this.data = deserialize(this.input.value);
+    this.input.addEventListener('change', (event: Event) => {
+      const target = event.target as HTMLInputElement | HTMLTextAreaElement;
+      this.groups = deserialize(target.value);
+      this.rerender();
+    });
+    this.groups = deserialize(this.input.value);
+    this.containerElement = document.createElement('div');
 
     this.render();
   }
- 
+
+  private rerender() {
+    if (this.containerElement) this.containerElement.remove();
+    this.containerElement = document.createElement('div');
+
+    this.render();
+  }
+
   private render() {
     const addGroupBtn = document.createElement('button');
     addGroupBtn.textContent = '+ Add Group';
-    addGroupBtn.addEventListener('click', () => this.addGroup(this.input, this.data));
+    addGroupBtn.addEventListener('click', () => this.addGroup(this.containerElement, this.groups));
 
-    this.input.after(addGroupBtn);
-    this.data.forEach(group => this.renderGroup(this.input, this.data, group));
+    this.containerElement.appendChild(addGroupBtn);
+    this.groups.forEach(group => this.renderGroup(this.containerElement, this.groups, group));
+
+    this.input.after(this.containerElement);
   }
 
   private renderGroup(element: HTMLElement, data: Group[], group: Group) {
@@ -59,7 +75,7 @@ export class ConditionsInput {
 
     groupElement.appendChild(operatorSelect);
     groupElement.appendChild(removeGroupBtn);    
-    element.after(groupElement);
+    element.appendChild(groupElement);
   }
 
   private addGroup(element: HTMLElement, data: Group[]) {
@@ -74,9 +90,9 @@ export class ConditionsInput {
     this.renderGroup(element, data, newGroup);
   }
 
-  private removeGroup(element: HTMLElement, data: Group[], group: Group) {
-    const index = data.indexOf(group);
-    data.splice(index, 1);
+  private removeGroup(element: HTMLElement, groups: Group[], group: Group) {
+    const index = groups.indexOf(group);
+    groups.splice(index, 1);
     
     this.onChange();
 
@@ -84,8 +100,6 @@ export class ConditionsInput {
   }
 
   private onChange() {
-    this.input.value = serialize(this.data);
-
-    console.log(this.data);
+    this.input.value = serialize(this.groups);
   }
 }
