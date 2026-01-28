@@ -66,13 +66,14 @@ export class ConditionBuilder {
     }
 
     function parseGroup(record: Record<string, any>): Group {
-
       if ('and' in record || 'or' in record) {
         const operator: Operator = 'and' in record ? 'and' : 'or';
 
         return {
           operator,
-          fields: parseFields(record)
+          fields: Array.isArray(record[operator])
+            ? record[operator].map(parseFields).flat()
+            : parseFields(record[operator])
         }
       }
 
@@ -86,37 +87,39 @@ export class ConditionBuilder {
   }
 
   serialize(groups: Group[]): string {
+    function buildValue(value: string): string | number | boolean {
+      if (value === 'true') return true;
+      else if (value === 'false') return false;
+      else if (!isNaN(Number(value)) && value.trim() !== '') return Number(value);
+      else return value;
+    }
+
+    function buildField(field: Field): Record<string, any> {
+      const fieldObj: any = {};
+
+      for (const cond of field.conditions) {
+        fieldObj[cond.operator] = buildValue(cond.value);
+      }
+
+      if (field.nested && field.nested.length > 0) {
+        const nestedGroups = field.nested.map(buildGroup);
+        fieldObj['where'] = nestedGroups.length === 1 ? nestedGroups[0] : nestedGroups;
+      }
+
+      return fieldObj;
+    }
+
     function buildGroup(group: Group): any {
       const groupObj: any = {};
 
-      // If group.operator is 'and' or 'or', encode fields accordingly
-      if (group.operator === 'and' || group.operator === 'or') {
-        // Each field will be a property on the group object
+      if (group.operator === 'and') {
         for (const field of group.fields) {
-          const fieldObj: any = {};
-
-          // Encode the condition operators as properties (except nested)
-          for (const cond of field.conditions) {
-            // Try to parse as number or boolean if possible, else keep as string
-            let val = cond.value;
-            if (val === 'true') val = true;
-            else if (val === 'false') val = false;
-            else if (!isNaN(Number(val)) && val.trim() !== '') val = Number(val);
-
-            fieldObj[cond.operator] = val;
-          }
-
-          // If nested groups exist
-          if (field.nested && field.nested.length > 0) {
-            // Build the nested group(s)
-            const nestedGroups = field.nested.map(buildGroup);
-            // Save as 'where' property; array if many, object if one
-            fieldObj['where'] = nestedGroups.length === 1 ? nestedGroups[0] : nestedGroups;
-          }
-
-          groupObj[field.field] = fieldObj;
+          groupObj[field.field] = buildField(field);
         }
+      } else if (group.operator === 'or') {
+        groupObj[group.operator] = group.fields.map(field => ({ [field.field]: buildField(field) }))
       }
+
       return groupObj;
     }
 
