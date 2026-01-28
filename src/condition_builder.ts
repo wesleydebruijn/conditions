@@ -37,18 +37,52 @@ type Condition = {
 }
 
 export class ConditionBuilder {
-  private groups: Group[]
+  public groups: Group[]
 
   constructor(input: string) {
     this.groups = this.deserialize(input);
   }
 
   deserialize(string: string): Group[] {
-    const json = JSON.parse(string);
+    const json: JSON = JSON.parse(string);
 
-    const groups: Group[] = [];
+    function parseConditions(value: Record<string, any>): Condition[] {
+      return Object.entries(value).filter(([operator, _value]) => operator !== "where").map(([operator, value]) => {
+        return {
+          operator: operator as ConditionOperator,
+          value: String(value)
+        }
+      });
+    }
 
-    return groups;
+    function parseFields(record: Record<string, any>): Field[] {
+      return Object.entries(record).map(([field, value]) => {
+        return {
+          field,
+          conditions: parseConditions(value),
+          nested: value['where'] ? Array.isArray(value['where']) ? value['where'].map(parseGroup) : [parseGroup(value['where'])] : undefined
+        }
+      });
+    }
+
+    function parseGroup(record: Record<string, any>): Group {
+
+      if ('and' in record || 'or' in record) {
+        const operator: Operator = 'and' in record ? 'and' : 'or';
+
+        return {
+          operator,
+          fields: parseFields(record)
+        }
+      }
+
+      return {
+        operator: 'and',
+        fields: parseFields(record)
+      }
+    }
+
+    return Array.isArray(json) ? json.map(parseGroup) : [parseGroup(json)];
   }
 
   serialize(groups: Group[]): string {
