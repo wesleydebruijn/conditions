@@ -158,17 +158,29 @@ export default class Conditions {
     const conditionsElement = document.createElement('div');
     field.conditions.forEach(condition => this.renderCondition(conditionsElement, field.conditions, condition));
 
-    const addFieldBtn = document.createElement('button');
-    addFieldBtn.textContent = '+ condition';
-    addFieldBtn.addEventListener('click', event => {
+    const addConditionBtn = document.createElement('button');
+    addConditionBtn.textContent = '+ condition';
+    addConditionBtn.addEventListener('click', event => {
       event.preventDefault()
       this.addCondition(conditionsElement, field.conditions)
+    });
+
+    const nestedGroupsElement = document.createElement('div');
+    field.where?.forEach(group => this.renderGroup(nestedGroupsElement, field.where!, group, mapping));
+
+    const addNestedGroupBtn = document.createElement('button');
+    addNestedGroupBtn.textContent = '+ nested group';
+    addNestedGroupBtn.addEventListener('click', event => {
+      event.preventDefault()
+      this.addGroup(nestedGroupsElement, field.where)
     });
 
     fieldElement.appendChild(fieldInput);
     fieldElement.appendChild(removeFieldBtn);
     fieldElement.appendChild(conditionsElement);
-    fieldElement.appendChild(addFieldBtn);
+    fieldElement.appendChild(addConditionBtn);
+    fieldElement.appendChild(nestedGroupsElement);
+    fieldElement.appendChild(addNestedGroupBtn);
 
     element.appendChild(fieldElement);
   }
@@ -246,12 +258,13 @@ export default class Conditions {
     element.remove();
   }
 
-  private addGroup(element: HTMLElement, groups: Group[]) {
-    const newGroup: Group = {
-      operator: 'and',
-      fields: []
-    };
-    groups.push(newGroup);
+  private addGroup(element: HTMLElement, groups: Group[] | undefined) {
+    const newGroup: Group = { operator: 'and', fields: [] };
+    if(groups) {
+      groups.push(newGroup);
+    } else {
+      groups = [newGroup];
+    }
 
     this.onChange();
 
