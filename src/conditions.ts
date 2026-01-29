@@ -26,7 +26,6 @@ export default class Conditions {
       lt: 'less than',
       lte: 'less than or equal to',
       in: 'in',
-      nin: 'not in',
       not_in: 'not in',
       between: 'between',
       like: 'like',

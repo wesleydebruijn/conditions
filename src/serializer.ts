@@ -12,10 +12,16 @@ export function serialize(groups: Group[]): string {
   return JSON.stringify(result, null, 2);
 }
 
-function serializeValue(value: string): string | number | boolean {
+function isNumber(value: string): boolean {
+  return !isNaN(Number(value)) && value.trim() !== '';
+}
+
+function serializeValue(operator: ConditionOperator, value: string): string | number | boolean | number[] | string[] {
+  if (operator === 'between') return value.split(',').map(Number);
+  if (operator === 'in' || operator === 'not_in') return value.split(',').every(isNumber) ? value.split(',').map(Number) : value.split(',');
   if (value === 'true') return true;
   if (value === 'false') return false;
-  if (!isNaN(Number(value)) && value.trim() !== '') return Number(value);
+  if (isNumber(value)) return Number(value);
 
   return value;
 }
@@ -24,7 +30,7 @@ function serializeField(field: Field): Record<string, any> {
   const fieldObj: any = {};
 
   for (const cond of field.conditions) {
-    fieldObj[cond.operator] = serializeValue(cond.value);
+    fieldObj[cond.operator] = serializeValue(cond.operator, cond.value);
   }
 
   if (field.where && field.where.length > 0) {
