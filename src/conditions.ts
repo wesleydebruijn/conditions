@@ -51,6 +51,8 @@ export default class Conditions {
 
   private input: HTMLInputElement | HTMLTextAreaElement;
   private wrapperElement: HTMLElement;
+  private toggleElement: HTMLButtonElement;
+  private codeVisible: boolean = false;
 
   constructor(
     input: HTMLInputElement | HTMLTextAreaElement | string,
@@ -71,12 +73,24 @@ export default class Conditions {
     this.wrapperElement = create('div', 'conditions-wrapper');
     visible(this.input, false);
 
+    this.toggleElement = create('button', 'conditions-btn conditions-btn-outline');
+    this.toggleElement.textContent = 'Code View';
+    this.toggleElement.addEventListener('click', () => {
+      this.codeVisible = !this.codeVisible;
+      this.toggleElement.textContent = this.codeVisible ? 'Builder View' : 'Code View';
+
+      visible(this.input, this.codeVisible);
+      visible(this.wrapperElement, !this.codeVisible);
+    });
+    this.input.before(this.toggleElement);
+
     this.render();
   }
 
   public destroy() {
     this.input.conditions = null;
     this.wrapperElement.remove();
+    this.toggleElement.remove();
     
     visible(this.input, true);
   }
