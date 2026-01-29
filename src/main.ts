@@ -43,6 +43,7 @@ const defaultCondition = {
   is_active: { eq: true }
 }
 
+
 // Helper to auto-grow a textarea based on its contents
 function autoGrow(textarea: HTMLTextAreaElement) {
   textarea.style.height = 'auto';

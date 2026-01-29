@@ -169,6 +169,7 @@ export default class Conditions {
             addNestedGroupBtn.style.display = 'block';
           } else {
             addNestedGroupBtn.style.display = 'none';
+            field.where = undefined;
           }
         }
       });
@@ -180,13 +181,11 @@ export default class Conditions {
       this.onChange();
     });
 
-
     removeFieldBtn.textContent = '- field';
     removeFieldBtn.addEventListener('click', event => {
       event.preventDefault();
       this.removeField(fieldElement, fields, field);
     });
-
 
     field.conditions.forEach(condition => this.renderCondition(conditionsElement, field.conditions, condition));
 
@@ -208,6 +207,8 @@ export default class Conditions {
       event.preventDefault()
 
       const currentField = fieldKey(fieldInput.getAttribute('data-field'));
+
+      if(!field.where) field.where = [];
       this.addGroup(nestedGroupsElement, field.where, mapping && mapping[currentField] ? mapping[currentField].mapping : undefined)
     });
 
@@ -294,13 +295,9 @@ export default class Conditions {
     element.remove();
   }
 
-  private addGroup(element: HTMLElement, groups: Group[] | undefined, mapping?: Mapping) {
+  private addGroup(element: HTMLElement, groups: Group[], mapping?: Mapping) {
     const newGroup: Group = { operator: 'and', fields: [] };
-    if(groups) {
-      groups.push(newGroup);
-    } else {
-      groups = [newGroup];
-    }
+    groups.push(newGroup);
 
     this.onChange();
 
