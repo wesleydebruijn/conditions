@@ -85,7 +85,9 @@ export default class Conditions {
     addGroupBtn.textContent = '+ group';
     addGroupBtn.addEventListener('click', event => {
       event.preventDefault()
-      this.addGroup(this.containerElement, this.groups, this.settings.mapping)
+
+      const newGroup: Group = { operator: 'and', fields: [] };
+      this.addItem(this.containerElement, this.groups, newGroup, this.settings.mapping, this.renderGroup.bind(this));
     });
 
     this.containerElement.appendChild(addGroupBtn);
@@ -112,7 +114,7 @@ export default class Conditions {
     removeGroupBtn.textContent = '- group';
     removeGroupBtn.addEventListener('click', event => {
       event.preventDefault();
-      this.removeGroup(groupElement, groups, group);
+      this.removeItem(groupElement, groups, group);
     });
 
     const fieldsElement = document.createElement('div');
@@ -122,7 +124,9 @@ export default class Conditions {
     addFieldBtn.textContent = '+ field';
     addFieldBtn.addEventListener('click', event => {
       event.preventDefault()
-      this.addField(fieldsElement, group.fields, mapping);
+
+      const newField: Field = { key: '', conditions: [] };
+      this.addItem(fieldsElement, group.fields, newField, mapping, this.renderField.bind(this));
     });
 
     groupElement.appendChild(operatorSelect);
@@ -183,7 +187,7 @@ export default class Conditions {
     removeFieldBtn.textContent = '- field';
     removeFieldBtn.addEventListener('click', event => {
       event.preventDefault();
-      this.removeField(fieldElement, fields, field);
+      this.removeItem(fieldElement, fields, field);
     });
 
     field.conditions.forEach(condition => this.renderCondition(conditionsElement, field.conditions, condition));
@@ -191,7 +195,12 @@ export default class Conditions {
     addConditionBtn.textContent = '+ condition';
     addConditionBtn.addEventListener('click', event => {
       event.preventDefault()
-      this.addCondition(conditionsElement, field.conditions)
+
+      const currentField = fieldKey(fieldInput.getAttribute('data-field'));
+      const currentMapping = mapping && mapping[currentField] ? mapping[currentField].mapping : undefined;
+
+      const newCondition: Condition = { operator: 'eq', value: '' };
+      this.addItem(conditionsElement, field.conditions, newCondition, currentMapping, this.renderCondition.bind(this));
     });
 
     if(!mapping || mapping[fieldKey(field.key)] && mapping[fieldKey(field.key)].type === 'object') {
@@ -206,9 +215,12 @@ export default class Conditions {
       event.preventDefault()
 
       const currentField = fieldKey(fieldInput.getAttribute('data-field'));
+      const currentMapping = mapping && mapping[currentField] ? mapping[currentField].mapping : undefined;
 
       if(!field.where) field.where = [];
-      this.addGroup(nestedGroupsElement, field.where, mapping && mapping[currentField] ? mapping[currentField].mapping : undefined)
+
+      const newGroup: Group = { operator: 'and', fields: [] };
+      this.addItem(nestedGroupsElement, field.where, newGroup, currentMapping, this.renderGroup.bind(this));
     });
 
     fieldElement.appendChild(fieldInput);
@@ -221,7 +233,7 @@ export default class Conditions {
     element.appendChild(fieldElement);
   }
 
-  private renderCondition(element: HTMLElement, conditions: Condition[], condition: Condition) {
+  private renderCondition(element: HTMLElement, conditions: Condition[], condition: Condition, mapping?: Mapping) {
     const conditionElement = document.createElement('div');
 
     const operatorSelect = document.createElement('select');
@@ -248,7 +260,7 @@ export default class Conditions {
     removeConditionBtn.textContent = '-';
     removeConditionBtn.addEventListener('click', event => {
       event.preventDefault();
-      this.removeCondition(conditionElement, conditions, condition);
+      this.removeItem(conditionElement, conditions, condition);
     });
 
     conditionElement.appendChild(operatorSelect);
@@ -258,54 +270,17 @@ export default class Conditions {
     element.appendChild(conditionElement);
   }
 
-  private addCondition(element: HTMLElement, conditions: Condition[]) {
-    const newCondition: Condition = { operator: 'eq', value: '' };
-    conditions.push(newCondition);
+  private addItem<T>(element: HTMLElement, array: T[], item: T, mapping: Mapping | undefined, renderItem: (element: HTMLElement, array: T[], item: T, mapping?: Mapping) => void) {
+    array.push(item);
 
     this.onChange();
 
-    this.renderCondition(element, conditions, newCondition);
+    renderItem(element, array, item, mapping);
   }
 
-  private removeCondition(element: HTMLElement, conditions: Condition[], condition: Condition) {
-    const index = conditions.indexOf(condition);
-    conditions.splice(index, 1);
-
-    this.onChange();
-
-    element.remove();
-  }
-
-  private addField(element: HTMLElement, fields: Field[], mapping?: Mapping) {
-    const newField: Field = { key: '', conditions: [] };
-    fields.push(newField);
-
-    this.onChange();
-
-    this.renderField(element, fields, newField, mapping);
-  }
-
-  private removeField(element: HTMLElement, fields: Field[], field: Field) {
-    const index = fields.indexOf(field);
-    fields.splice(index, 1);
-
-    this.onChange();
-
-    element.remove();
-  }
-
-  private addGroup(element: HTMLElement, groups: Group[], mapping?: Mapping) {
-    const newGroup: Group = { operator: 'and', fields: [] };
-    groups.push(newGroup);
-
-    this.onChange();
-
-    this.renderGroup(element, groups, newGroup, mapping);
-  }
-
-  private removeGroup(element: HTMLElement, groups: Group[], group: Group) {
-    const index = groups.indexOf(group);
-    groups.splice(index, 1);
+  private removeItem<T>(element: HTMLElement, array: T[], item: T) {
+    const index = array.indexOf(item);
+    array.splice(index, 1);
 
     this.onChange();
 
