@@ -149,7 +149,6 @@ export default class Conditions {
       fieldInput.value = field.key;
     } else {
       fieldInput = document.createElement('select');
-      // add data attribute to identify type of field input
       fieldInput.setAttribute('data-field', fieldKey(field.key));
       fieldInput.innerHTML = fieldList(mapping)
         .map(({ key, label }) => `<option value="${key}"${field.key === key ? " selected" : ""}>${label}</option>`)
@@ -259,15 +258,6 @@ export default class Conditions {
     element.appendChild(conditionElement);
   }
 
-  private removeCondition(element: HTMLElement, conditions: Condition[], condition: Condition) {
-    const index = conditions.indexOf(condition);
-    conditions.splice(index, 1);
-
-    this.onChange();
-
-    element.remove();
-  }
-
   private addCondition(element: HTMLElement, conditions: Condition[]) {
     const newCondition: Condition = { operator: 'eq', value: '' };
     conditions.push(newCondition);
@@ -275,6 +265,15 @@ export default class Conditions {
     this.onChange();
 
     this.renderCondition(element, conditions, newCondition);
+  }
+
+  private removeCondition(element: HTMLElement, conditions: Condition[], condition: Condition) {
+    const index = conditions.indexOf(condition);
+    conditions.splice(index, 1);
+
+    this.onChange();
+
+    element.remove();
   }
 
   private addField(element: HTMLElement, fields: Field[], mapping?: Mapping) {
