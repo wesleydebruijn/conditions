@@ -92,31 +92,18 @@ function matchAndUpdate() {
   const recordInput = document.getElementById('record-input') as HTMLTextAreaElement;
   const conditionInput = document.getElementById('condition-input') as HTMLTextAreaElement;
 
-  let record, condition, parseError;
-  try {
-    record = JSON.parse(recordInput.value);
-  } catch {
-    record = defaultRecord;
-    parseError = "Invalid JSON in record input";
-  }
-  try {
-    condition = JSON.parse(conditionInput.value);
-  } catch {
-    condition = defaultCondition;
-    parseError = parseError ? parseError + "; Invalid JSON in conditions" : "Invalid JSON in conditions";
-  }
-
+  let parseError;
   let result = false;
-  if (!parseError) {
-    try {
-      const evaluator = new Evaluator(condition)
 
-      result = evaluator.match(record);
+  try {
+    const record = JSON.parse(recordInput.value);
+    const condition = JSON.parse(conditionInput.value);
 
-    } catch (err) {
-      parseError = (err as Error).message;
-    }
+    result = new Evaluator(condition).match(record);
+  } catch (err) {
+    parseError = "Invalid JSON";
   }
+
   updateResult(result, parseError);
 }
 
