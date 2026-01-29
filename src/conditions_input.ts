@@ -22,24 +22,12 @@ export class ConditionsInput {
   private containerElement: HTMLElement;
 
   constructor(
-    input: HTMLInputElement | HTMLTextAreaElement | string, 
+    input: HTMLInputElement | HTMLTextAreaElement | string,
     settings: Partial<Settings> = {}
   ) {
     this.settings = { ...this.settings, ...settings };
     this.input = getInputElement(input);
-    this.input.addEventListener('change', (event: Event) => {
-      const target = event.target as HTMLInputElement | HTMLTextAreaElement;
-      this.groups = deserialize(target.value);
-      this.rerender();
-    });
     this.groups = deserialize(this.input.value);
-    this.containerElement = document.createElement('div');
-
-    this.render();
-  }
-
-  private rerender() {
-    if (this.containerElement) this.containerElement.remove();
     this.containerElement = document.createElement('div');
 
     this.render();
@@ -48,12 +36,13 @@ export class ConditionsInput {
   private render() {
     const addGroupBtn = document.createElement('button');
     addGroupBtn.textContent = '+';
-    addGroupBtn.addEventListener('click', event => { 
+    addGroupBtn.addEventListener('click', event => {
       event.preventDefault()
       this.addGroup(this.containerElement, this.groups)
     });
 
     this.containerElement.appendChild(addGroupBtn);
+
     this.groups.forEach(group => this.renderGroup(this.containerElement, this.groups, group));
 
     this.input.after(this.containerElement);
@@ -85,7 +74,7 @@ export class ConditionsInput {
 
     const addFieldBtn = document.createElement('button');
     addFieldBtn.textContent = '+';
-    addFieldBtn.addEventListener('click', event => { 
+    addFieldBtn.addEventListener('click', event => {
       event.preventDefault()
       this.addField(fieldsElement, group.fields)
     });
@@ -100,7 +89,7 @@ export class ConditionsInput {
 
   private renderField(element: HTMLElement, fields: Field[], field: Field) {
     const fieldElement = document.createElement('div');
-    
+
     const fieldSelect = document.createElement('select');
     fieldSelect.innerHTML = `
       <option value="${field.field} selected">${field.field}</option>
@@ -124,7 +113,7 @@ export class ConditionsInput {
 
     const addFieldBtn = document.createElement('button');
     addFieldBtn.textContent = '+ condition';
-    addFieldBtn.addEventListener('click', event => { 
+    addFieldBtn.addEventListener('click', event => {
       event.preventDefault()
       this.addCondition(conditionsElement, field.conditions)
     });
@@ -133,7 +122,7 @@ export class ConditionsInput {
     fieldElement.appendChild(removeFieldBtn);
     fieldElement.appendChild(conditionsElement);
     fieldElement.appendChild(addFieldBtn);
-    
+
     element.appendChild(fieldElement);
   }
 
@@ -196,6 +185,8 @@ export class ConditionsInput {
     conditions.push(newCondition);
 
     this.onChange();
+
+    this.renderCondition(element, conditions, newCondition);
   }
 
   private addField(element: HTMLElement, fields: Field[]) {
@@ -225,7 +216,7 @@ export class ConditionsInput {
       fields: []
     };
     groups.push(newGroup);
-    
+
     this.onChange();
 
     this.renderGroup(element, groups, newGroup);
