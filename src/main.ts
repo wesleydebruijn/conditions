@@ -3,6 +3,7 @@ import './style.css'
 import Evaluator from './evaluator'
 import Conditions from './conditions'
 import { serialize, deserialize } from './serializer'
+import type { Mapping } from './types'
 
 const defaultRecord = {
   name: 'Alice',
@@ -92,7 +93,22 @@ function renderUI(
   const builderInput = document.getElementById('builder-input') as HTMLTextAreaElement;
   const builderOutput = document.getElementById('builder-output') as HTMLTextAreaElement;
 
-  new Conditions(conditionInput);
+  const mapping: Mapping = {
+    name: { label: 'Naam', type: 'text' },
+    is_active: { label: 'Actief', type: 'boolean' },
+    items: {
+      label: 'Items',
+      type: 'object',
+      multiple: true,
+      mapping: {
+        name: { label: 'Naam', type: 'text' },
+        type: { label: 'Type', type: 'text' },
+        price: { label: "Prijs", type: "number" },
+      }
+    }
+  }
+
+  new Conditions(conditionInput, { mapping });
 
   if (recordInput) autoGrow(recordInput);
   if (conditionInput) autoGrow(conditionInput);

@@ -1,10 +1,6 @@
 import { deserialize, serialize } from './serializer';
-import type { Group, Field, Condition, Operator, ConditionOperator } from './types';
-
-type Settings = {
-  operators: Record<Operator, string>
-  conditionOperators: Partial<Record<ConditionOperator, string>>
-}
+import { fieldList } from './mapping';
+import type { Group, Field, Condition, Operator, ConditionOperator, Settings, Mapping } from './types';
 
 declare global {
   interface HTMLInputElement {
@@ -88,12 +84,12 @@ export default class Conditions {
 
     this.containerElement.appendChild(addGroupBtn);
 
-    this.groups.forEach(group => this.renderGroup(this.containerElement, this.groups, group));
+    this.groups.forEach(group => this.renderGroup(this.containerElement, this.groups, group, this.settings.mapping));
 
     this.input.after(this.containerElement);
   }
 
-  private renderGroup(element: HTMLElement, groups: Group[], group: Group) {
+  private renderGroup(element: HTMLElement, groups: Group[], group: Group, mapping?: Mapping) {
     const groupElement = document.createElement('div');
 
     const operatorSelect = document.createElement('select');
@@ -114,7 +110,7 @@ export default class Conditions {
     });
 
     const fieldsElement = document.createElement('div');
-    group.fields.forEach(field => this.renderField(fieldsElement, group.fields, field));
+    group.fields.forEach(field => this.renderField(fieldsElement, group.fields, field, mapping));
 
     const addFieldBtn = document.createElement('button');
     addFieldBtn.textContent = '+';
@@ -131,17 +127,24 @@ export default class Conditions {
     element.appendChild(groupElement);
   }
 
-  private renderField(element: HTMLElement, fields: Field[], field: Field) {
+  private renderField(element: HTMLElement, fields: Field[], field: Field, mapping?: Mapping) {
     const fieldElement = document.createElement('div');
 
-    const fieldSelect = document.createElement('select');
-    fieldSelect.innerHTML = `
-      <option value="${field.key} selected">${field.key}</option>
-    `;
+    let fieldInput: HTMLInputElement | HTMLSelectElement;
 
-    fieldSelect.addEventListener('change', event => {
+    if(!mapping) {
+      fieldInput = document.createElement('input');
+      fieldInput.value = field.key;
+    } else {
+      fieldInput = document.createElement('select');
+      fieldInput.innerHTML = fieldList(mapping)
+        .map(({ key, label }) => `<option value="${key}"${field.key === key ? " selected" : ""}>${label}</option>`)
+        .join('');
+    }
+
+    fieldInput.addEventListener('change', event => {
       event.preventDefault();
-      field.key = fieldSelect.value;
+      field.key = fieldInput.value;
       this.onChange();
     });
 
@@ -162,7 +165,7 @@ export default class Conditions {
       this.addCondition(conditionsElement, field.conditions)
     });
 
-    fieldElement.appendChild(fieldSelect);
+    fieldElement.appendChild(fieldInput);
     fieldElement.appendChild(removeFieldBtn);
     fieldElement.appendChild(conditionsElement);
     fieldElement.appendChild(addFieldBtn);
@@ -217,10 +220,7 @@ export default class Conditions {
   }
 
   private addCondition(element: HTMLElement, conditions: Condition[]) {
-    const newCondition: Condition = {
-      operator: 'eq',
-      value: ''
-    };
+    const newCondition: Condition = { operator: 'eq', value: '' };
     conditions.push(newCondition);
 
     this.onChange();
@@ -229,10 +229,7 @@ export default class Conditions {
   }
 
   private addField(element: HTMLElement, fields: Field[]) {
-    const newField: Field = {
-      field: '',
-      conditions: []
-    };
+    const newField: Field = { key: '', conditions: [] };
     fields.push(newField);
 
     this.onChange();

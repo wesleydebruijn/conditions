@@ -37,3 +37,24 @@ export type Condition = {
   operator: ConditionOperator;
   value: string;
 }
+
+export type Mapping = Record<string, MappingSettings>;
+export type MappingSettings =
+  | {
+      label: string;
+      type: 'object';
+      multiple: true;
+      mapping: Mapping;
+    }
+  | {
+      label: string;
+      type: 'text' | 'number' | 'boolean' | 'date';
+      multiple?: boolean;
+      mapping?: Mapping;
+    };
+
+export type Settings = {
+  operators: Record<Operator, string>
+  conditionOperators: Partial<Record<ConditionOperator, string>>
+  mapping?: Mapping;
+}
