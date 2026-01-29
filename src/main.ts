@@ -2,7 +2,6 @@ import './style.css'
 
 import Evaluator from './evaluator'
 import Conditions from './conditions'
-import { serialize, deserialize } from './serializer'
 import type { Mapping } from './types'
 
 const defaultRecord = {
@@ -43,6 +42,20 @@ const defaultCondition = {
   is_active: { eq: true }
 }
 
+const mapping: Mapping = {
+  name: { label: 'Naam', type: 'text' },
+  is_active: { label: 'Actief', type: 'boolean' },
+  items: {
+    label: 'Items',
+    type: 'object',
+    multiple: true,
+    mapping: {
+      name: { label: 'Naam', type: 'text' },
+      type: { label: 'Type', type: 'text' },
+      price: { label: "Prijs", type: "number" },
+    }
+  }
+}
 
 // Helper to auto-grow a textarea based on its contents
 function autoGrow(textarea: HTMLTextAreaElement) {
@@ -54,150 +67,65 @@ function renderUI(
   recordStr: string,
   conditionStr: string,
   result: boolean,
-  parseError?: string,
-  builderStr?: string,
-  builderOutputStr?: string,
-  builderOutputMatch?: boolean
 ) {
   document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-    <div>
-      <div class="card">
-        <b>Record:</b><br>
-        <textarea id="record-input" style="width:100%;min-height:60px;overflow-y:hidden;resize:vertical;">${recordStr}</textarea>
-        <b>Conditions:</b><br>
-        <textarea id="condition-input" style="width:100%;min-height:60px;overflow-y:hidden;resize:vertical;">${conditionStr}</textarea>
-        <p id="result-row"><b>${parseError ? `<span style="color: red">${parseError}</span>` : (result ? 'Matched ✅' : 'Not Matched ❌')}</b></p>
-        <p id="builder-row"><b>Builder:</b><br>
-          <textarea id="builder-input" style="width:100%;min-height:60px;overflow-y:hidden;resize:vertical;">${builderStr}</textarea>
-        </p>
-        <p id="builder-output-row"><b>Builder Output:</b><br>
-          <textarea id="builder-output" style="width:100%;min-height:60px;overflow-y:hidden;resize:vertical;">${builderOutputStr}</textarea>
-        </p>
-        <p id="builder-output-match-row"><b>Conditions vs Builder Output:</b>
-          <span>${typeof builderOutputMatch === "undefined" ? "" : (
-            builderOutputMatch ? '✅' : '❌'
-          )}</span>
-        </p>
-      </div>
-      <p class="read-the-docs">
-        Try editing the record or conditions. This demonstrates live evaluation using <code>Evaluator</code>.
-      </p>
-    </div>
+    <p id="result-row"><b>${result ? 'Match ✅' : 'No Match ❌'}</b></p>
+    <textarea id="record-input" style="width:100%;min-height:60px;overflow-y:hidden;resize:vertical;">${recordStr}</textarea>
+    <textarea id="condition-input" style="width:100%;min-height:60px;overflow-y:hidden;resize:vertical;">${conditionStr}</textarea>
   `;
   // Auto-grow on render for initial values
   const recordInput = document.getElementById('record-input') as HTMLTextAreaElement;
   const conditionInput = document.getElementById('condition-input') as HTMLTextAreaElement;
-  const builderInput = document.getElementById('builder-input') as HTMLTextAreaElement;
-  const builderOutput = document.getElementById('builder-output') as HTMLTextAreaElement;
-
-  const mapping: Mapping = {
-    name: { label: 'Naam', type: 'text' },
-    is_active: { label: 'Actief', type: 'boolean' },
-    items: {
-      label: 'Items',
-      type: 'object',
-      multiple: true,
-      mapping: {
-        name: { label: 'Naam', type: 'text' },
-        type: { label: 'Type', type: 'text' },
-        price: { label: "Prijs", type: "number" },
-      }
-    }
-  }
 
   new Conditions(conditionInput, { mapping });
 
   if (recordInput) autoGrow(recordInput);
   if (conditionInput) autoGrow(conditionInput);
-  if (builderInput) autoGrow(builderInput);
-  if (builderOutput) autoGrow(builderOutput);
 }
 
-function updateResult(result: boolean, parseError?: string, builderInput?: string, builderOutputMatch?: boolean) {
+function updateResult(result: boolean, parseError?: string) {
   const resultRow = document.getElementById('result-row');
-
-  if (resultRow) {
-    resultRow.innerHTML = `<b>${parseError ? `<span style="color: red">${parseError}</span>` : (result ? 'Matched ✅' : 'Not Matched ❌')}</b>`;
-  }
-  const builderRow = document.getElementById('builder-row');
-  if (builderRow) {
-    builderRow.innerHTML = `<b>Builder:</b><br>
-      <textarea id="builder-input" style="width:100%;min-height:60px;overflow-y:hidden;resize:vertical;">${builderInput}</textarea>
-    `;
-  }
-  const builderOutputMatchRow = document.getElementById('builder-output-match-row');
-  if (builderOutputMatchRow) {
-    builderOutputMatchRow.innerHTML = `<b>Conditions vs Builder Output:</b>
-      <span>${typeof builderOutputMatch === "undefined" ? "" : (
-        builderOutputMatch
-        ? '<span style="color: green">EQUAL ✅</span>'
-        : '<span style="color: orange">NOT EQUAL ⚠️</span>'
-      )}</span>
-    `;
-  }
-}
-
-function normalizeJsonString(str: string): string {
-  try {
-    return JSON.stringify(JSON.parse(str));
-  } catch {
-    return str.trim();
-  }
+  resultRow!.innerHTML = `<b>${parseError ? `<span style="color: red">${parseError}</span>` : (result ? 'Match ✅' : 'No Match ❌')}</b>`;
 }
 
 function matchAndUpdate() {
   const recordInput = document.getElementById('record-input') as HTMLTextAreaElement;
   const conditionInput = document.getElementById('condition-input') as HTMLTextAreaElement;
 
-  let record, condition, builder, parseError, builderOutput, builderOutputMatch;
+  let record, condition, parseError;
   try {
     record = JSON.parse(recordInput.value);
   } catch {
     record = defaultRecord;
-    parseError = "Invalid JSON in record";
+    parseError = "Invalid JSON in record input";
   }
   try {
     condition = JSON.parse(conditionInput.value);
   } catch {
     condition = defaultCondition;
-    parseError = parseError ? parseError + "; Invalid JSON in condition" : "Invalid JSON in condition";
+    parseError = parseError ? parseError + "; Invalid JSON in conditions" : "Invalid JSON in conditions";
   }
 
   let result = false;
   if (!parseError) {
     try {
       const evaluator = new Evaluator(condition)
-      builder = deserialize(conditionInput.value);
 
       result = evaluator.match(record);
 
-      builderOutput = serialize(builderInput);
-
-      // Check if normalized condition input string matches normalized builder output
-      const normalizedInput = normalizeJsonString(conditionInput.value);
-      const normalizedOutput = normalizeJsonString(builderOutput);
-
-      builderOutputMatch = normalizedInput === normalizedOutput;
-      // Also update builder output textarea
-      const builderOutputElem = document.getElementById('builder-output') as HTMLTextAreaElement;
-      if (builderOutputElem) {
-        builderOutputElem.value = builderOutput;
-      }
     } catch (err) {
       parseError = (err as Error).message;
     }
   }
-  updateResult(result, parseError, JSON.stringify(builder, null, 2), builderOutputMatch);
+  updateResult(result, parseError);
 }
 
 // Ensure textareas auto-grow as the user types
 function attachListeners() {
   const recordInput = document.getElementById('record-input') as HTMLTextAreaElement;
   const conditionInput = document.getElementById('condition-input') as HTMLTextAreaElement;
-  const builderInput = document.getElementById('builder-input') as HTMLTextAreaElement;
-  const builderOutput = document.getElementById('builder-output') as HTMLTextAreaElement;
 
-  if (recordInput && conditionInput && builderInput && builderOutput) {
+  if (recordInput && conditionInput) {
     recordInput.addEventListener('input', () => {
       autoGrow(recordInput);
       matchAndUpdate();
@@ -206,24 +134,10 @@ function attachListeners() {
       autoGrow(conditionInput);
       matchAndUpdate();
     });
-    conditionInput.addEventListener('change', () => {
-      autoGrow(conditionInput);
-      matchAndUpdate();
-    });
-    builderInput.addEventListener('input', () => {
-      autoGrow(builderInput);
-      matchAndUpdate();
-    });
-    builderOutput.addEventListener('input', () => {
-      autoGrow(builderOutput);
-      matchAndUpdate();
-    });
     // Initial autogrow in case style was lost
     setTimeout(() => {
       autoGrow(recordInput);
       autoGrow(conditionInput);
-      autoGrow(builderInput);
-      autoGrow(builderOutput);
     }, 10)
   }
 }
@@ -231,20 +145,10 @@ function attachListeners() {
 // Initial render
 const defaultRecordStr = JSON.stringify(defaultRecord, null, 2);
 const defaultConditionStr = JSON.stringify(defaultCondition, null, 2);
-const builderInput = deserialize(defaultConditionStr);
-const builderOutputStr = serialize(builderInput);
-
-// Calculate initial match between defaultCondition and builder output
-const builderOutputMatch =
-  normalizeJsonString(defaultConditionStr) === normalizeJsonString(builderOutputStr);
 
 renderUI(
   defaultRecordStr,
   defaultConditionStr,
   new Evaluator(defaultCondition).match(defaultRecord),
-  undefined,
-  JSON.stringify(builderInput, null, 2),
-  builderOutputStr,
-  builderOutputMatch
 );
 setTimeout(attachListeners, 0);

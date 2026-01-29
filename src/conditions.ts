@@ -66,6 +66,8 @@ export default class Conditions {
       this.groups = deserialize(this.input.value);
       this.wrapperElement.remove();
       this.wrapperElement = create('div', 'conditions-wrapper');
+      visible(this.wrapperElement, !this.codeVisible);
+      
       this.render();
     });
     this.input.conditions = this;
