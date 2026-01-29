@@ -54,6 +54,11 @@ export type MappingSettings =
     };
 
 export type Settings = {
+  badges: {
+    group: string;
+    field: string;
+    condition: string;
+  },
   buttons: {
     addGroup: string;
     removeGroup: string;
@@ -61,6 +66,7 @@ export type Settings = {
     removeField: string;
     addCondition: string;
     removeCondition: string;
+    addNestedGroup: string;
   },
   operators: Record<Operator, string>
   conditionOperators: Partial<Record<ConditionOperator, string>>

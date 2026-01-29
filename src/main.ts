@@ -62,14 +62,10 @@ function renderUI(
   document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <div>
       <div class="card">
-        <label>
-          <b>Record:</b><br>
-          <textarea id="record-input" style="width:100%;min-height:60px;overflow-y:hidden;resize:vertical;">${recordStr}</textarea>
-        </label>
-        <label>
-          <b>Conditions:</b><br>
-          <textarea id="condition-input" style="width:100%;min-height:60px;overflow-y:hidden;resize:vertical;">${conditionStr}</textarea>
-        </label>
+        <b>Record:</b><br>
+        <textarea id="record-input" style="width:100%;min-height:60px;overflow-y:hidden;resize:vertical;">${recordStr}</textarea>
+        <b>Conditions:</b><br>
+        <textarea id="condition-input" style="width:100%;min-height:60px;overflow-y:hidden;resize:vertical;">${conditionStr}</textarea>
         <p id="result-row"><b>${parseError ? `<span style="color: red">${parseError}</span>` : (result ? 'Matched ✅' : 'Not Matched ❌')}</b></p>
         <p id="builder-row"><b>Builder:</b><br>
           <textarea id="builder-input" style="width:100%;min-height:60px;overflow-y:hidden;resize:vertical;">${builderStr}</textarea>

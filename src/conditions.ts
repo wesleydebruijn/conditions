@@ -16,13 +16,19 @@ declare global {
 
 export default class Conditions {
   private settings: Settings = {
+    badges: {
+      group: 'Group',
+      field: 'Field',
+      condition: 'Condition',
+    },
     buttons: {
-      addGroup: '+ group',
-      removeGroup: '- group',
-      addField: '+ field',
-      removeField: '- field',
-      addCondition: '+ condition',
-      removeCondition: '-',
+      addGroup: '+ Add Group',
+      removeGroup: 'x',
+      addField: '+ Add Field',
+      removeField: 'x',
+      addCondition: '+ Add Condition',
+      removeCondition: 'x',
+      addNestedGroup: '+ Add Nested Group',
     },
     operators: {
       and: 'and',
@@ -81,26 +87,41 @@ export default class Conditions {
   }
 
   private render() {
-    const addGroupBtn = create('button', 'conditions-button');
+    const buttonGroup = create('div', 'conditions-button-group');
+    const addGroupBtn = create('button', 'conditions-btn conditions-btn-primary');
+    const groupsContainer = create('div', 'conditions-groups-container');
+
     addGroupBtn.textContent = this.settings.buttons.addGroup;
     addGroupBtn.addEventListener('click', event => {
       event.preventDefault()
 
       const newGroup: Group = { operator: 'and', fields: [] };
-      this.addItem(this.wrapperElement, this.groups, newGroup, this.settings.mapping, this.renderGroup.bind(this));
+      this.addItem(groupsContainer, this.groups, newGroup, this.settings.mapping, this.renderGroup.bind(this));
     });
 
-    append(this.wrapperElement, addGroupBtn);
+    this.groups.forEach(group => this.renderGroup(groupsContainer, this.groups, group, this.settings.mapping));
 
-    this.groups.forEach(group => this.renderGroup(this.wrapperElement, this.groups, group, this.settings.mapping));
+    append(buttonGroup, addGroupBtn);
+    append(this.wrapperElement, groupsContainer, buttonGroup);
 
     this.input.after(this.wrapperElement);
   }
-
-  private renderGroup(element: HTMLElement, groups: Group[], group: Group, mapping?: Mapping) {
-    const groupElement = create('div', 'conditions-group');
-
+  
+  private renderGroup(element: HTMLElement, groups: Group[], group: Group, mapping?: Mapping, nested?: boolean) {
+    const groupElement = create('div', nested ? 'conditions-group nested' : 'conditions-group');
+    const groupContainer = create('div', 'conditions-group-container');
+    const groupHeader = create('div', 'conditions-group-header');
+    const groupBadge = create('span', 'conditions-group-badge');
     const operatorSelect = create('select', 'conditions-select');
+    const removeGroupBtn = create('button', 'conditions-btn conditions-btn-ghost conditions-btn-destructive conditions-remove-group-btn');
+    const fieldsContainer = create('div', 'conditions-fields-container');
+    const groupButtonGroup = create('div', 'conditions-button-group');
+    const addFieldBtn = create('button', 'conditions-btn conditions-btn-secondary');
+
+    // badge
+    groupBadge.textContent = this.settings.badges.group;
+
+    // operator select
     operatorSelect.innerHTML = Object.entries(this.settings.operators)
       .map(([key, label]) => `<option value="${key}"${group.operator === key ? " selected" : ""}>${label}</option>`)
       .join('');
@@ -110,45 +131,57 @@ export default class Conditions {
       this.onChange();
     });
 
-    const removeGroupBtn = create('button', 'conditions-button');
+    // remove group button
     removeGroupBtn.textContent = this.settings.buttons.removeGroup;
     removeGroupBtn.addEventListener('click', event => {
       event.preventDefault();
       this.removeItem(groupElement, groups, group);
     });
 
-    const fieldsElement = create('div', 'conditions-fields');
-    group.fields.forEach(field => this.renderField(fieldsElement, group.fields, field, mapping));
+    // fields
+    group.fields.forEach(field => this.renderField(fieldsContainer, group.fields, field, mapping));
 
-    const addFieldBtn = create('button', 'conditions-button');
+    // add field button
     addFieldBtn.textContent = this.settings.buttons.addField;
     addFieldBtn.addEventListener('click', event => {
       event.preventDefault()
 
       const newField: Field = { key: '', conditions: [] };
-      this.addItem(fieldsElement, group.fields, newField, mapping, this.renderField.bind(this));
+      this.addItem(fieldsContainer, group.fields, newField, mapping, this.renderField.bind(this));
     });
 
-    append(groupElement, operatorSelect, removeGroupBtn, fieldsElement, addFieldBtn);
+    append(groupHeader, groupBadge, operatorSelect, removeGroupBtn);
+    append(groupButtonGroup, addFieldBtn);
+    append(groupContainer, groupHeader, fieldsContainer, groupButtonGroup);
+    append(groupElement, groupContainer);
     append(element, groupElement);
   }
 
-  private renderField(element: HTMLElement, fields: Field[], field: Field, mapping?: Mapping) {
-    const fieldElement = create('div', 'conditions-field');
+  private renderNestedGroups(element: HTMLElement, groups: Group[], group: Group, mapping?: Mapping) {
+    this.renderGroup(element, groups, group, mapping, true);
+  }
 
+  private renderField(element: HTMLElement, fields: Field[], field: Field, mapping?: Mapping) {
     let fieldInput: HTMLInputElement | HTMLSelectElement;
 
-    const removeFieldBtn = create('button', 'conditions-button');
-    const conditionsElement = create('div', 'conditions-conditions');
-    const addConditionBtn = create('button', 'conditions-button');
+    const fieldElement = create('div', 'conditions-field-block');
+    const fieldHeader = create('div', 'conditions-field-header');
+    const fieldBadge = create('span', 'conditions-field-badge');
+    const removeFieldBtn = create('button', 'conditions-btn conditions-btn-ghost conditions-btn-destructive');
+    const conditionsElement = create('div', 'conditions-field-conditions');
+    const addConditionBtn = create('button', 'conditions-btn conditions-btn-outline');
     const nestedGroupsElement = create('div', 'conditions-nested-groups');
-    const addNestedGroupBtn = create('button', 'conditions-button');
+    const buttonGroup = create('div', 'conditions-button-group');
+    const addNestedGroupBtn = create('button', 'conditions-btn');
+
+    // badge
+    fieldBadge.textContent = this.settings.badges.field;
 
     if(!mapping) {
-      fieldInput = create('input', 'conditions-input');
+      fieldInput = create('input', 'conditions-field-input');
       fieldInput.value = field.key;
     } else {
-      fieldInput = create('select', 'conditions-select');
+      fieldInput = create('select', 'conditions-field-select');
       fieldInput.setAttribute('data-field', fieldKey(field.key));
       fieldInput.innerHTML = fieldList(mapping)
         .map(({ key, label }) => `<option value="${key}"${field.key === key ? " selected" : ""}>${label}</option>`)
@@ -201,13 +234,13 @@ export default class Conditions {
 
     const currentField = fieldKey(field.key)
     if(!mapping || mapping[currentField] && mapping[currentField].type === 'object') {
-      field.where?.forEach(group => this.renderGroup(nestedGroupsElement, field.where!, group, mapping && mapping[fieldKey(field.key)] ? mapping[fieldKey(field.key)].mapping : undefined));
+      field.where?.forEach(group => this.renderNestedGroups(nestedGroupsElement, field.where!, group, mapping && mapping[fieldKey(field.key)] ? mapping[fieldKey(field.key)].mapping : undefined));
       visible(addNestedGroupBtn, true);
     } else {
       visible(addNestedGroupBtn, false);
     }
 
-    addNestedGroupBtn.textContent = this.settings.buttons.addGroup;
+    addNestedGroupBtn.textContent = this.settings.buttons.addNestedGroup;
     addNestedGroupBtn.addEventListener('click', event => {
       event.preventDefault()
 
@@ -217,17 +250,27 @@ export default class Conditions {
       if(!field.where) field.where = [];
 
       const newGroup: Group = { operator: 'and', fields: [] };
-      this.addItem(nestedGroupsElement, field.where, newGroup, currentMapping, this.renderGroup.bind(this));
+      this.addItem(nestedGroupsElement, field.where, newGroup, currentMapping, this.renderNestedGroups.bind(this));
     });
 
-    append(fieldElement, fieldInput, removeFieldBtn, conditionsElement, addConditionBtn, nestedGroupsElement, addNestedGroupBtn);
+    append(fieldHeader, fieldBadge, fieldInput, removeFieldBtn);
+    append(buttonGroup, addConditionBtn, addNestedGroupBtn);
+    append(fieldElement, fieldHeader, nestedGroupsElement, conditionsElement, buttonGroup);
     append(element, fieldElement);
   }
 
   private renderCondition(element: HTMLElement, conditions: Condition[], condition: Condition, _mapping?: Mapping) {
-    const conditionElement = create('div', 'conditions-condition');
+    const conditionElement = create('div', 'conditions-condition-row');
+    const conditionBadge = create('span', 'conditions-condition-badge');
+    const conditionInputs = create('div', 'conditions-condition-inputs');
+    const operatorSelect = create('select', 'conditions-operator-select');
+    const valueInput = create('input', 'conditions-value-input');
+    const removeConditionBtn = create('button', 'conditions-btn conditions-btn-ghost conditions-btn-destructive');
 
-    const operatorSelect = create('select', 'conditions-select');
+    // badge
+    conditionBadge.textContent = this.settings.badges.condition;
+
+    // operator select
     operatorSelect.innerHTML = Object.entries(this.settings.conditionOperators)
       .map(([key, label]) => `<option value="${key}"${condition.operator === key ? " selected" : ""}>${label}</option>`)
       .join('');
@@ -238,7 +281,7 @@ export default class Conditions {
       this.onChange();
     });
 
-    const valueInput = create('input', 'conditions-input');
+    // value input
     valueInput.value = condition.value;
     valueInput.addEventListener('change', event => {
       event.preventDefault();
@@ -246,14 +289,15 @@ export default class Conditions {
       this.onChange();
     });
 
-    const removeConditionBtn = create('button', 'conditions-button');
+    // remove button
     removeConditionBtn.textContent = this.settings.buttons.removeCondition;
     removeConditionBtn.addEventListener('click', event => {
       event.preventDefault();
       this.removeItem(conditionElement, conditions, condition);
     });
 
-    append(conditionElement, operatorSelect, valueInput, removeConditionBtn);
+    append(conditionInputs, operatorSelect, valueInput);
+    append(conditionElement, conditionBadge, conditionInputs, removeConditionBtn);
     append(element, conditionElement);
   }
 
