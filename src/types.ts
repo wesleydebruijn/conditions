@@ -54,6 +54,14 @@ export type MappingSettings =
     };
 
 export type Settings = {
+  buttons: {
+    addGroup: string;
+    removeGroup: string;
+    addField: string;
+    removeField: string;
+    addCondition: string;
+    removeCondition: string;
+  },
   operators: Record<Operator, string>
   conditionOperators: Partial<Record<ConditionOperator, string>>
   mapping?: Mapping;
