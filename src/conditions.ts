@@ -16,19 +16,11 @@ declare global {
 
 export default class Conditions {
   private settings: Settings = {
-    badges: {
+    items: {
       group: 'Group',
       field: 'Field',
       condition: 'Condition',
-    },
-    buttons: {
-      addGroup: '+ Add Group',
-      removeGroup: 'x',
-      addField: '+ Add Field',
-      removeField: 'x',
-      addCondition: '+ Add Condition',
-      removeCondition: 'x',
-      addNestedGroup: '+ Add Nested Group',
+      nestedGroup: 'Nested Group',
     },
     operators: {
       and: 'and',
@@ -91,7 +83,7 @@ export default class Conditions {
     const addGroupBtn = create('button', 'conditions-btn conditions-btn-primary');
     const groupsContainer = create('div', 'conditions-groups-container');
 
-    addGroupBtn.textContent = this.settings.buttons.addGroup;
+    addGroupBtn.textContent = `+ ${this.settings.items.group}`;
     addGroupBtn.addEventListener('click', event => {
       event.preventDefault()
 
@@ -119,7 +111,7 @@ export default class Conditions {
     const addFieldBtn = create('button', 'conditions-btn conditions-btn-secondary');
 
     // badge
-    groupBadge.textContent = this.settings.badges.group;
+    groupBadge.textContent = this.settings.items.group;
 
     // operator select
     operatorSelect.innerHTML = Object.entries(this.settings.operators)
@@ -132,7 +124,7 @@ export default class Conditions {
     });
 
     // remove group button
-    removeGroupBtn.textContent = this.settings.buttons.removeGroup;
+    removeGroupBtn.textContent = 'x';
     removeGroupBtn.addEventListener('click', event => {
       event.preventDefault();
       this.removeItem(groupElement, groups, group);
@@ -142,7 +134,7 @@ export default class Conditions {
     group.fields.forEach(field => this.renderField(fieldsContainer, group.fields, field, mapping));
 
     // add field button
-    addFieldBtn.textContent = this.settings.buttons.addField;
+    addFieldBtn.textContent = `+ ${this.settings.items.field}`;
     addFieldBtn.addEventListener('click', event => {
       event.preventDefault()
 
@@ -175,7 +167,7 @@ export default class Conditions {
     const addNestedGroupBtn = create('button', 'conditions-btn');
 
     // badge
-    fieldBadge.textContent = this.settings.badges.field;
+    fieldBadge.textContent = this.settings.items.field;
 
     if(!mapping) {
       fieldInput = create('input', 'conditions-field-input');
@@ -213,7 +205,7 @@ export default class Conditions {
       this.onChange();
     });
 
-    removeFieldBtn.textContent = this.settings.buttons.removeField;
+    removeFieldBtn.textContent = 'x';
     removeFieldBtn.addEventListener('click', event => {
       event.preventDefault();
       this.removeItem(fieldElement, fields, field);
@@ -221,7 +213,7 @@ export default class Conditions {
 
     field.conditions.forEach(condition => this.renderCondition(conditionsElement, field.conditions, condition));
 
-    addConditionBtn.textContent = this.settings.buttons.addCondition;
+    addConditionBtn.textContent = `+ ${this.settings.items.condition}`;
     addConditionBtn.addEventListener('click', event => {
       event.preventDefault()
 
@@ -240,7 +232,7 @@ export default class Conditions {
       visible(addNestedGroupBtn, false);
     }
 
-    addNestedGroupBtn.textContent = this.settings.buttons.addNestedGroup;
+    addNestedGroupBtn.textContent = `+ ${this.settings.items.nestedGroup}`;
     addNestedGroupBtn.addEventListener('click', event => {
       event.preventDefault()
 
@@ -268,7 +260,7 @@ export default class Conditions {
     const removeConditionBtn = create('button', 'conditions-btn conditions-btn-ghost conditions-btn-destructive');
 
     // badge
-    conditionBadge.textContent = this.settings.badges.condition;
+    conditionBadge.textContent = this.settings.items.condition;
 
     // operator select
     operatorSelect.innerHTML = Object.entries(this.settings.conditionOperators)
@@ -290,7 +282,7 @@ export default class Conditions {
     });
 
     // remove button
-    removeConditionBtn.textContent = this.settings.buttons.removeCondition;
+    removeConditionBtn.textContent = 'x';
     removeConditionBtn.addEventListener('click', event => {
       event.preventDefault();
       this.removeItem(conditionElement, conditions, condition);
