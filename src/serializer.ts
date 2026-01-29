@@ -16,7 +16,7 @@ function serializeValue(value: string): string | number | boolean {
   if (value === 'true') return true;
   if (value === 'false') return false;
   if (!isNaN(Number(value)) && value.trim() !== '') return Number(value);
-  
+
   return value;
 }
 
@@ -27,9 +27,9 @@ function serializeField(field: Field): Record<string, any> {
     fieldObj[cond.operator] = serializeValue(cond.value);
   }
 
-  if (field.nested && field.nested.length > 0) {
-    const nestedGroups = field.nested.map(serializeGroup);
-    fieldObj['where'] = nestedGroups.length === 1 ? nestedGroups[0] : nestedGroups;
+  if (field.where && field.where.length > 0) {
+    const where = field.where.map(serializeGroup);
+    fieldObj['where'] = where.length === 1 ? where[0] : where;
   }
 
   return fieldObj;
@@ -40,10 +40,10 @@ function serializeGroup(group: Group): any {
 
   if (group.operator === 'and') {
     for (const field of group.fields) {
-      groupObj[field.field] = serializeField(field);
+      groupObj[field.key] = serializeField(field);
     }
   } else if (group.operator === 'or') {
-    groupObj[group.operator] = group.fields.map(field => ({ [field.field]: serializeField(field) }))
+    groupObj[group.operator] = group.fields.map(field => ({ [field.key]: serializeField(field) }))
   }
 
   return groupObj;
@@ -59,11 +59,11 @@ function deserializeConditions(value: Record<string, any>): Condition[] {
 }
 
 function deserializeFields(record: Record<string, any>): Field[] {
-  return Object.entries(record).map(([field, value]) => {
+  return Object.entries(record).map(([key, value]) => {
     const conditions = deserializeConditions(value);
-    const nested = value['where'] ? Array.isArray(value['where']) ? value['where'].map(deserializeGroup) : [deserializeGroup(value['where'])] : undefined;
- 
-    return { field, conditions, nested };
+    const where = value['where'] ? Array.isArray(value['where']) ? value['where'].map(deserializeGroup) : [deserializeGroup(value['where'])] : undefined;
+
+    return { key, conditions, where };
   });
 }
 

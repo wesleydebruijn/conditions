@@ -1,9 +1,8 @@
 import './style.css'
 
-import { ConditionEvaluator } from './condition_evaluator'
-import { ConditionBuilder } from './condition_builder'
-import { ConditionsInput } from './conditions_input'
-import { serialize } from './serializer'
+import Evaluator from './evaluator'
+import Conditions from './conditions'
+import { serialize, deserialize } from './serializer'
 
 const defaultRecord = {
   name: 'Alice',
@@ -83,7 +82,7 @@ function renderUI(
         </p>
       </div>
       <p class="read-the-docs">
-        Try editing the record or conditions. This demonstrates live evaluation using <code>ConditionEvaluator</code>.
+        Try editing the record or conditions. This demonstrates live evaluation using <code>Evaluator</code>.
       </p>
     </div>
   `;
@@ -93,15 +92,15 @@ function renderUI(
   const builderInput = document.getElementById('builder-input') as HTMLTextAreaElement;
   const builderOutput = document.getElementById('builder-output') as HTMLTextAreaElement;
 
-  new ConditionsInput(conditionInput);
-  
+  new Conditions(conditionInput);
+
   if (recordInput) autoGrow(recordInput);
   if (conditionInput) autoGrow(conditionInput);
   if (builderInput) autoGrow(builderInput);
   if (builderOutput) autoGrow(builderOutput);
 }
 
-function updateResult(result: boolean, parseError?: string, builder?: ConditionBuilder, builderOutputMatch?: boolean) {
+function updateResult(result: boolean, parseError?: string, builderInput?: string, builderOutputMatch?: boolean) {
   const resultRow = document.getElementById('result-row');
 
   if (resultRow) {
@@ -110,7 +109,7 @@ function updateResult(result: boolean, parseError?: string, builder?: ConditionB
   const builderRow = document.getElementById('builder-row');
   if (builderRow) {
     builderRow.innerHTML = `<b>Builder:</b><br>
-      <textarea id="builder-input" style="width:100%;min-height:60px;overflow-y:hidden;resize:vertical;">${JSON.stringify(builder?.groups, null, 2)}</textarea>
+      <textarea id="builder-input" style="width:100%;min-height:60px;overflow-y:hidden;resize:vertical;">${builderInput}</textarea>
     `;
   }
   const builderOutputMatchRow = document.getElementById('builder-output-match-row');
@@ -154,12 +153,12 @@ function matchAndUpdate() {
   let result = false;
   if (!parseError) {
     try {
-      const evaluator = new ConditionEvaluator(condition)
-      builder = new ConditionBuilder(conditionInput.value);
+      const evaluator = new Evaluator(condition)
+      builder = deserialize(conditionInput.value);
 
       result = evaluator.match(record);
 
-      builderOutput = serialize(builder.groups);
+      builderOutput = serialize(builderInput);
 
       // Check if normalized condition input string matches normalized builder output
       const normalizedInput = normalizeJsonString(conditionInput.value);
@@ -175,7 +174,7 @@ function matchAndUpdate() {
       parseError = (err as Error).message;
     }
   }
-  updateResult(result, parseError, builder, builderOutputMatch);
+  updateResult(result, parseError, JSON.stringify(builder, null, 2), builderOutputMatch);
 }
 
 // Ensure textareas auto-grow as the user types
@@ -219,8 +218,8 @@ function attachListeners() {
 // Initial render
 const defaultRecordStr = JSON.stringify(defaultRecord, null, 2);
 const defaultConditionStr = JSON.stringify(defaultCondition, null, 2);
-const builder = new ConditionBuilder(defaultConditionStr);
-const builderOutputStr = serialize(builder.groups);
+const builderInput = deserialize(defaultConditionStr);
+const builderOutputStr = serialize(builderInput);
 
 // Calculate initial match between defaultCondition and builder output
 const builderOutputMatch =
@@ -229,9 +228,9 @@ const builderOutputMatch =
 renderUI(
   defaultRecordStr,
   defaultConditionStr,
-  new ConditionEvaluator(defaultCondition).match(defaultRecord),
+  new Evaluator(defaultCondition).match(defaultRecord),
   undefined,
-  JSON.stringify(builder.groups, null, 2),
+  JSON.stringify(builderInput, null, 2),
   builderOutputStr,
   builderOutputMatch
 );

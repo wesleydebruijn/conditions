@@ -1,22 +1,24 @@
+export type Hash = Record<string, any>;
+export type ConditionHash = Hash | Array<Hash>;
+
 export type Operator = 'and' | 'or';
 export type ConditionOperator =
-  | 'eq'
-  | 'ne'
-  | 'gt'
-  | 'gte'
-  | 'lt'
-  | 'lte'
+  | 'eq' | '='
+  | 'ne' | '!='
+  | 'gt' | '>'
+  | 'gte' | '>='
+  | 'lt' | '<'
+  | 'lte' | '<='
   | 'in'
-  | 'nin'
-  | 'not_in'
+  | 'nin' | 'not_in'
   | 'between'
   | 'like'
   | 'exists'
-  | 'not_exists'
-  | 'starts_with'
-  | 'ends_with'
+  | 'not_exists' | 'null'
+  | 'startswith' | 'starts_with'
+  | 'endswith' | 'ends_with'
   | 'contains'
-  | 'match'
+  | 'match' | 'regex'
   | 'empty'
   | 'not_empty'
 
@@ -26,9 +28,9 @@ export type Group = {
 }
 
 export type Field = {
-  field: string;
+  key: string;
   conditions: Condition[];
-  nested?: Group[];
+  where?: Group[];
 }
 
 export type Condition = {

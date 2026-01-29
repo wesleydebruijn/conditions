@@ -1,21 +1,49 @@
-import { getInputElement } from './utils/input';
 import { deserialize, serialize } from './serializer';
 import type { Group, Field, Condition, Operator, ConditionOperator } from './types';
 
-type Settings = {}
+type Settings = {
+  operators: Record<Operator, string>
+  conditionOperators: Partial<Record<ConditionOperator, string>>
+}
 
 declare global {
   interface HTMLInputElement {
-    conditionsInput?: ConditionsInput | null;
+    conditions?: Conditions | null;
   }
 
   interface HTMLTextAreaElement {
-    conditionsInput?: ConditionsInput | null;
+    conditions?: Conditions | null;
   }
 }
 
-export class ConditionsInput {
-  private settings: Settings = {};
+export default class Conditions {
+  private settings: Settings = {
+    operators: {
+      and: 'and',
+      or: 'or',
+    },
+    conditionOperators: {
+      eq: 'equal to',
+      ne: 'not equal to',
+      gt: 'greater than',
+      gte: 'greater than or equal to',
+      lt: 'less than',
+      lte: 'less than or equal to',
+      in: 'in',
+      nin: 'not in',
+      not_in: 'not in',
+      between: 'between',
+      like: 'like',
+      exists: 'exists',
+      not_exists: 'not exists',
+      starts_with: 'starts with',
+      ends_with: 'ends with',
+      contains: 'contains',
+      match: 'match',
+      empty: 'empty',
+      not_empty: 'not empty',
+    }
+  };
   private groups: Group[] = [];
 
   private input: HTMLInputElement | HTMLTextAreaElement;
@@ -26,11 +54,28 @@ export class ConditionsInput {
     settings: Partial<Settings> = {}
   ) {
     this.settings = { ...this.settings, ...settings };
-    this.input = getInputElement(input);
+    this.input = this.getInput(input);
     this.groups = deserialize(this.input.value);
     this.containerElement = document.createElement('div');
 
     this.render();
+  }
+
+  private getInput(
+    input: HTMLInputElement | HTMLTextAreaElement | string,
+  ): HTMLInputElement | HTMLTextAreaElement {
+    let element: HTMLInputElement | HTMLTextAreaElement | null;
+
+    if (typeof input === "string") {
+      element = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(input);
+    } else {
+      element = input;
+    }
+
+    if (!element) throw new Error(`Element ${input} not found`);
+    if (element.conditions) throw new Error("Conditions already initialized on element");
+
+    return element;
   }
 
   private render() {
@@ -52,10 +97,9 @@ export class ConditionsInput {
     const groupElement = document.createElement('div');
 
     const operatorSelect = document.createElement('select');
-    operatorSelect.innerHTML = `
-      <option value="and"${group.operator === "and" ? " selected" : ""}>and</option>
-      <option value="or"${group.operator === "or" ? " selected" : ""}>or</option>
-    `;
+    operatorSelect.innerHTML = Object.entries(this.settings.operators)
+      .map(([key, label]) => `<option value="${key}"${group.operator === key ? " selected" : ""}>${label}</option>`)
+      .join('');
 
     operatorSelect.addEventListener('change', () => {
       group.operator = operatorSelect.value as Operator;
@@ -92,12 +136,12 @@ export class ConditionsInput {
 
     const fieldSelect = document.createElement('select');
     fieldSelect.innerHTML = `
-      <option value="${field.field} selected">${field.field}</option>
+      <option value="${field.key} selected">${field.key}</option>
     `;
 
     fieldSelect.addEventListener('change', event => {
       event.preventDefault();
-      field.field = fieldSelect.value;
+      field.key = fieldSelect.value;
       this.onChange();
     });
 
@@ -130,14 +174,9 @@ export class ConditionsInput {
     const conditionElement = document.createElement('div');
 
     const operatorSelect = document.createElement('select');
-    operatorSelect.innerHTML = `
-      <option value="eq"${condition.operator === "eq" ? " selected" : ""}>eq</option>
-      <option value="ne"${condition.operator === "ne" ? " selected" : ""}>ne</option>
-      <option value="gt"${condition.operator === "gt" ? " selected" : ""}>gt</option>
-      <option value="gte"${condition.operator === "gte" ? " selected" : ""}>gte</option>
-      <option value="lt"${condition.operator === "lt" ? " selected" : ""}>lt</option>
-      <option value="lte"${condition.operator === "lte" ? " selected" : ""}>lte</option>
-    `;
+    operatorSelect.innerHTML = Object.entries(this.settings.conditionOperators)
+      .map(([key, label]) => `<option value="${key}"${condition.operator === key ? " selected" : ""}>${label}</option>`)
+      .join('');
 
     operatorSelect.addEventListener('change', event => {
       event.preventDefault();
