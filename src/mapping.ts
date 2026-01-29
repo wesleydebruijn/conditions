@@ -18,3 +18,7 @@ export function fieldList(mapping: Mapping): { key: string, label: string }[] {
     ]
   });
 }
+
+export function fieldKey(key: string | null): string {
+  return key ? key.replace(/_.+_sum$/, '').replace(/_count$/, '') : '';
+}

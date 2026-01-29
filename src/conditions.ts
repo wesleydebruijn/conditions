@@ -1,5 +1,5 @@
 import { deserialize, serialize } from './serializer';
-import { fieldList } from './mapping';
+import { fieldList, fieldKey } from './mapping';
 import type { Group, Field, Condition, Operator, ConditionOperator, Settings, Mapping } from './types';
 
 declare global {
@@ -51,10 +51,16 @@ export default class Conditions {
   ) {
     this.settings = { ...this.settings, ...settings };
     this.input = this.getInput(input);
+    this.input.conditions = this;
     this.groups = deserialize(this.input.value);
     this.containerElement = document.createElement('div');
 
     this.render();
+  }
+
+  public destroy() {
+    this.input.conditions = null;
+    this.containerElement.remove();
   }
 
   private getInput(
@@ -76,10 +82,10 @@ export default class Conditions {
 
   private render() {
     const addGroupBtn = document.createElement('button');
-    addGroupBtn.textContent = '+';
+    addGroupBtn.textContent = '+ group';
     addGroupBtn.addEventListener('click', event => {
       event.preventDefault()
-      this.addGroup(this.containerElement, this.groups)
+      this.addGroup(this.containerElement, this.groups, this.settings.mapping)
     });
 
     this.containerElement.appendChild(addGroupBtn);
@@ -103,7 +109,7 @@ export default class Conditions {
     });
 
     const removeGroupBtn = document.createElement('button');
-    removeGroupBtn.textContent = '-';
+    removeGroupBtn.textContent = '- group';
     removeGroupBtn.addEventListener('click', event => {
       event.preventDefault();
       this.removeGroup(groupElement, groups, group);
@@ -113,10 +119,10 @@ export default class Conditions {
     group.fields.forEach(field => this.renderField(fieldsElement, group.fields, field, mapping));
 
     const addFieldBtn = document.createElement('button');
-    addFieldBtn.textContent = '+';
+    addFieldBtn.textContent = '+ field';
     addFieldBtn.addEventListener('click', event => {
       event.preventDefault()
-      this.addField(fieldsElement, group.fields)
+      this.addField(fieldsElement, group.fields, mapping);
     });
 
     groupElement.appendChild(operatorSelect);
@@ -132,14 +138,40 @@ export default class Conditions {
 
     let fieldInput: HTMLInputElement | HTMLSelectElement;
 
+    const removeFieldBtn = document.createElement('button');
+    const conditionsElement = document.createElement('div');
+    const addConditionBtn = document.createElement('button');
+    const nestedGroupsElement = document.createElement('div');
+    const addNestedGroupBtn = document.createElement('button');
+
     if(!mapping) {
       fieldInput = document.createElement('input');
       fieldInput.value = field.key;
     } else {
       fieldInput = document.createElement('select');
+      // add data attribute to identify type of field input
+      fieldInput.setAttribute('data-field', fieldKey(field.key));
       fieldInput.innerHTML = fieldList(mapping)
         .map(({ key, label }) => `<option value="${key}"${field.key === key ? " selected" : ""}>${label}</option>`)
         .join('');
+
+      fieldInput.addEventListener('change', event => {
+        event.preventDefault();
+
+        const prevField = fieldInput.getAttribute('data-field');
+        const nextField = fieldKey(fieldInput.value);
+
+        if(prevField !== nextField) {
+          fieldInput.setAttribute('data-field', nextField);
+
+          nestedGroupsElement.innerHTML = '';
+          if(mapping[nextField] && mapping[nextField].type === 'object') {
+            addNestedGroupBtn.style.display = 'block';
+          } else {
+            addNestedGroupBtn.style.display = 'none';
+          }
+        }
+      });
     }
 
     fieldInput.addEventListener('change', event => {
@@ -148,31 +180,35 @@ export default class Conditions {
       this.onChange();
     });
 
-    const removeFieldBtn = document.createElement('button');
-    removeFieldBtn.textContent = '-';
+
+    removeFieldBtn.textContent = '- field';
     removeFieldBtn.addEventListener('click', event => {
       event.preventDefault();
       this.removeField(fieldElement, fields, field);
     });
 
-    const conditionsElement = document.createElement('div');
+
     field.conditions.forEach(condition => this.renderCondition(conditionsElement, field.conditions, condition));
 
-    const addConditionBtn = document.createElement('button');
     addConditionBtn.textContent = '+ condition';
     addConditionBtn.addEventListener('click', event => {
       event.preventDefault()
       this.addCondition(conditionsElement, field.conditions)
     });
 
-    const nestedGroupsElement = document.createElement('div');
-    field.where?.forEach(group => this.renderGroup(nestedGroupsElement, field.where!, group, mapping));
+    if(!mapping || mapping[fieldKey(field.key)] && mapping[fieldKey(field.key)].type === 'object') {
+      field.where?.forEach(group => this.renderGroup(nestedGroupsElement, field.where!, group, mapping && mapping[fieldKey(field.key)] ? mapping[fieldKey(field.key)].mapping : undefined));
+      addNestedGroupBtn.style.display = 'block';
+    } else {
+      addNestedGroupBtn.style.display = 'none';
+    }
 
-    const addNestedGroupBtn = document.createElement('button');
     addNestedGroupBtn.textContent = '+ nested group';
     addNestedGroupBtn.addEventListener('click', event => {
       event.preventDefault()
-      this.addGroup(nestedGroupsElement, field.where)
+
+      const currentField = fieldKey(fieldInput.getAttribute('data-field'));
+      this.addGroup(nestedGroupsElement, field.where, mapping && mapping[currentField] ? mapping[currentField].mapping : undefined)
     });
 
     fieldElement.appendChild(fieldInput);
@@ -240,13 +276,13 @@ export default class Conditions {
     this.renderCondition(element, conditions, newCondition);
   }
 
-  private addField(element: HTMLElement, fields: Field[]) {
+  private addField(element: HTMLElement, fields: Field[], mapping?: Mapping) {
     const newField: Field = { key: '', conditions: [] };
     fields.push(newField);
 
     this.onChange();
 
-    this.renderField(element, fields, newField);
+    this.renderField(element, fields, newField, mapping);
   }
 
   private removeField(element: HTMLElement, fields: Field[], field: Field) {
@@ -258,7 +294,7 @@ export default class Conditions {
     element.remove();
   }
 
-  private addGroup(element: HTMLElement, groups: Group[] | undefined) {
+  private addGroup(element: HTMLElement, groups: Group[] | undefined, mapping?: Mapping) {
     const newGroup: Group = { operator: 'and', fields: [] };
     if(groups) {
       groups.push(newGroup);
@@ -268,7 +304,7 @@ export default class Conditions {
 
     this.onChange();
 
-    this.renderGroup(element, groups, newGroup);
+    this.renderGroup(element, groups, newGroup, mapping);
   }
 
   private removeGroup(element: HTMLElement, groups: Group[], group: Group) {
