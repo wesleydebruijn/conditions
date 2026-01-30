@@ -383,31 +383,16 @@ input {
 }
 
 @media (max-width: 768px) {
-  .conditions-group.nested {
-    margin-left: 16px;
-    padding-left: 12px;
-  }
-
-  .conditions-condition-row {
-    flex-direction: column;
-    align-items: stretch;
+  .conditions-field-badge {
+    display: none;
   }
 
   .conditions-condition-inputs {
     flex-direction: column;
   }
 
-  .conditions-field-header {
-    flex-wrap: wrap;
-  }
-
   .conditions-button-group {
     flex-direction: column;
-  }
-
-  .conditions-btn {
-    width: 100%;
-    justify-content: center;
   }
 }
 
@@ -560,6 +545,10 @@ body {
 }
 
 @media (max-width: 600px) {
+  .panel.record {
+    position: relative;
+  }
+
   .panel textarea {
     font-size: 12px;
     min-height: 200px;
