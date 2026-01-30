@@ -1,11 +1,51 @@
 <!doctype html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>conditions</title>
+  <title>Conditions</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: hsl(var(--background));
+      color: hsl(var(--foreground));
+      min-height: 100vh;
+      padding: 40px 20px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .filter-builder {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .builder-header {
+      margin-bottom: 32px;
+    }
+
+    .builder-header h2 {
+      font-size: 24px;
+      font-weight: 600;
+      color: hsl(var(--foreground));
+      margin-bottom: 4px;
+    }
+
+    .builder-header p {
+      color: hsl(var(--muted-foreground));
+      font-size: 14px;
+    }
+
+    textarea {
+      field-sizing: content;
+    }
+  </style>
 </head>
 
 <body>
@@ -14,9 +54,101 @@
       <h2>Conditions</h2>
       <p>Create complex queries in JSON format that can be evaluated in front- and backend</p>
     </div>
-    <div id="app"></div>
+    <p id="result-row"><b>evaluating...</b></p>
+    <textarea id="record-input">
+{
+  "coupons": ["GRATIS_AIRPODS"],
+  "items": [
+    {
+      "name": "Apple iPhone 16",
+      "type": "phone",
+      "slug": "iphone-16",
+      "price": 100
+    },
+    {
+      "name": "Apple AirPods Pro",
+      "type": "accessory",
+      "slug": "airpods-pro",
+      "price": 20
+    },
+    {
+      "name": "Apple Watch Series 10",
+      "type": "accessory",
+      "slug": "watch-series-10",
+      "price": 200
+    }
+  ]
+}
+    </textarea>
+    <textarea id="condition-input">
+{
+  "items_count": {
+    "gte": 2,
+    "where": {
+      "type": { "eq": "accessory" }
+    }
+  },
+  "items_price_sum": {
+    "gte": 100,
+    "where": {
+      "type": { "eq": "phone" }
+    }
+  },
+  "coupons": {
+    "contains": ["GRATIS_AIRPODS"]
+  }
+}
+    </textarea>
   </div>
-  <script type="module" src="/src/main.ts"></script>
-</body>
+  <script type="module">
+    import '/src/style.css';
+    import Conditions from '/src/conditions.ts';
+    import Evaluator from '/src/evaluator.ts';
 
+    const recordInput = document.getElementById('record-input');
+    const conditionInput = document.getElementById('condition-input');
+    const resultRow = document.getElementById('result-row');
+
+    if(!recordInput || !conditionInput || !resultRow) throw new Error('Missing HTML Elements');
+
+    const mapping = {
+      coupons: { label: 'Coupons', type: 'text' },
+      items: {
+        label: 'Items',
+        type: 'object',
+        mapping: {
+          name: { label: 'Naam', type: 'text' },
+          type: { label: 'Type', type: 'text' },
+          slug: { label: 'Slug', type: 'text' },
+          price: { label: "Prijs", type: "number" },
+        }
+      }
+    }
+
+    new Conditions(conditionInput, { mapping });
+
+    setTimeout(init, 0);
+
+    function evaluate() {
+      try {
+        const condition = JSON.parse(conditionInput.value);
+        const record = JSON.parse(recordInput.value);
+
+        const match = new Evaluator(condition).match(record);
+
+        resultRow.innerHTML = `<b>${match ? 'Match ✅' : 'No Match ❌'}</b>`;
+      } catch (err) {
+        resultRow.innerHTML = `<b><span style="color: red">Invalid JSON</span></b>`;
+      }
+    }
+
+    function init() {
+      recordInput.addEventListener('input', () => evaluate());
+      conditionInput.addEventListener('input', () => evaluate());
+      conditionInput.addEventListener('change', () => evaluate());
+
+      evaluate();
+    }
+  </script>
+</body>
 </html>
