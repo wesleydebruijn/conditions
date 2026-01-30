@@ -5,25 +5,27 @@ import Conditions from './conditions'
 import type { Mapping } from './types'
 
 const defaultRecord = {
-  name: 'Alice',
+  coupons: ['GRATIS_AIRPODS'],
   items: [
     {
-      name: 'Item 1',
+      name: 'Apple iPhone 16',
       type: 'phone',
+      slug: 'iphone-16',
       price: 100
     },
     {
-      name: 'Item 2',
+      name: 'Apple AirPods Pro',
       type: 'accessory',
+      slug: 'airpods-pro',
       price: 20
     },
     {
-      name: 'Item 3',
+      name: 'Apple Watch Series 10',
       type: 'accessory',
-      price: 20
+      slug: 'watch-series-10',
+      price: 200
     }
   ],
-  is_active: true
 }
 
 const defaultCondition = {
@@ -39,19 +41,20 @@ const defaultCondition = {
       type: { eq: 'phone' }
     }
   },
-  is_active: { eq: true }
+  coupons: {
+    contains: ['GRATIS_AIRPODS']
+  }
 }
 
 const mapping: Mapping = {
-  name: { label: 'Naam', type: 'text' },
-  is_active: { label: 'Actief', type: 'boolean' },
+  coupons: { label: 'Coupons', type: 'text' },
   items: {
     label: 'Items',
     type: 'object',
-    multiple: true,
     mapping: {
       name: { label: 'Naam', type: 'text' },
       type: { label: 'Type', type: 'text' },
+      slug: { label: 'Slug', type: 'text' },
       price: { label: "Prijs", type: "number" },
     }
   }
@@ -118,6 +121,10 @@ function attachListeners() {
       matchAndUpdate();
     });
     conditionInput.addEventListener('input', () => {
+      autoGrow(conditionInput);
+      matchAndUpdate();
+    });
+    conditionInput.addEventListener('change', () => {
       autoGrow(conditionInput);
       matchAndUpdate();
     });

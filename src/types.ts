@@ -39,19 +39,11 @@ export type Condition = {
 }
 
 export type Mapping = Record<string, MappingSettings>;
-export type MappingSettings =
-  | {
-      label: string;
-      type: 'object';
-      multiple: true;
-      mapping: Mapping;
-    }
-  | {
-      label: string;
-      type: 'text' | 'number' | 'boolean' | 'date';
-      multiple?: boolean;
-      mapping?: Mapping;
-    };
+export type MappingSettings = {
+  label: string;
+  type: 'text' | 'number' | 'boolean' | 'date' | 'object';
+  mapping?: Mapping;
+}
 
 export type Settings = {
   items: {
