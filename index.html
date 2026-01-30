@@ -22,7 +22,7 @@
     }
 
     .filter-builder {
-      max-width: 900px;
+      max-width: 1100px;
       margin: 0 auto;
     }
 
@@ -42,8 +42,94 @@
       font-size: 14px;
     }
 
-    textarea {
+    .builder-main-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 32px;
+    }
+
+    .panel {
+      display: flex;
+      flex-direction: column;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      border-radius: 0;
+      padding: 0;
+    }
+
+    .panel.record {
+      flex: 0 0 420px;
+      position: sticky;
+      align-self: flex-start;
+      top: 40px;
+      z-index: 1;
+      min-height: 200px;
+    }
+
+    .panel.condition {
+      flex: 1 1 0;
+    }
+
+    .panel label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: hsl(var(--muted-foreground));
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .panel textarea {
+      width: 100%;
+      min-height: 312px;
+      resize: vertical;
+      padding: 12px;
+      font-size: 13px;
+      border-radius: calc(var(--radius) - 2px);
+      border: 1px solid hsl(var(--input));
+      background: hsl(var(--background));
+      color: hsl(var(--foreground));
+      margin-bottom: 10px;
+      line-height: 1.5;
+      font-family: 'JetBrains Mono', 'Fira Mono', 'Consolas', 'Menlo', monospace;
       field-sizing: content;
+    }
+
+    .panel.condition textarea {
+      min-height: 370px;
+      font-size: 14px;
+    }
+
+    #result-row {
+      margin-top: 0;
+      margin-bottom: 2px;
+      min-height: 24px;
+      font-size: 15px;
+      text-align: right;
+      font-weight: bold;
+    }
+
+    @media (max-width: 1000px) {
+      .builder-main-row {
+        flex-direction: column;
+        gap: 20px;
+      }
+      .panel.record {
+        position: static;
+        width: 100%;
+        box-shadow: none;
+      }
+    }
+    @media (max-width: 600px) {
+      .panel textarea {
+        font-size: 12px;
+        min-height: 200px;
+      }
+      .panel.condition textarea {
+        min-height: 200px;
+      }
     }
   </style>
 </head>
@@ -54,8 +140,10 @@
       <h2>Conditions</h2>
       <p>Create complex queries in JSON format that can be evaluated in front- and backend</p>
     </div>
-    <p id="result-row"><b>evaluating...</b></p>
-    <textarea id="record-input">
+    <div class="builder-main-row">
+      <div class="panel record">
+        <label for="record-input">Test</label>
+        <textarea id="record-input">
 {
   "coupons": ["GRATIS_AIRPODS"],
   "items": [
@@ -79,8 +167,12 @@
     }
   ]
 }
-    </textarea>
-    <textarea id="condition-input">
+        </textarea>
+        <div id="result-row"><b>evaluating...</b></div>
+      </div>
+      <div class="panel condition">
+        <label for="condition-input">Conditions</label>
+        <textarea id="condition-input">
 {
   "items_count": {
     "gte": 2,
@@ -98,8 +190,11 @@
     "contains": ["GRATIS_AIRPODS"]
   }
 }
-    </textarea>
+        </textarea>
+      </div>
+    </div>
   </div>
+
   <script type="module">
     import '/src/style.css';
     import Conditions from '/src/conditions.ts';
@@ -136,9 +231,9 @@
 
         const match = new Evaluator(condition).match(record);
 
-        resultRow.innerHTML = `<b>${match ? 'Match ✅' : 'No Match ❌'}</b>`;
+        resultRow.innerHTML = match ? 'Match ✅' : 'No Match ❌';
       } catch (err) {
-        resultRow.innerHTML = `<b><span style="color: red">Invalid JSON</span></b>`;
+        resultRow.innerHTML = `<span style="color: red">Invalid JSON</span>`;
       }
     }
 

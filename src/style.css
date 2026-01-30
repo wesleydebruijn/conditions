@@ -330,8 +330,7 @@ button {
   flex: 1.2;
 }
 
-input,
-textarea {
+input {
   padding: 12px;
   border: 1px solid hsl(var(--input));
   border-radius: calc(var(--radius) - 2px);
