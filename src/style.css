@@ -244,10 +244,44 @@ button {
 }
 
 /* Fields Container */
+.conditions-field-sets-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.conditions-field-set-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.conditions-field-set-badge {
+  background: hsl(var(--secondary));
+  color: hsl(var(--secondary-foreground));
+  padding: 2px 8px;
+  border-radius: calc(var(--radius) - 2px);
+  font-size: 12px;
+  font-weight: 500;
+}
+
 .conditions-fields-container {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.conditions-field-set {
+  background: hsl(var(--muted) / 0.1);
+  border: 1px solid hsl(var(--border));
+  border-radius: calc(var(--radius) - 2px);
+  padding: 12px;
+  transition: all 0.15s ease;
+}
+
+.conditions-field-set:hover {
+  background: hsl(var(--muted) / 0.4);
 }
 
 /* Field Block */

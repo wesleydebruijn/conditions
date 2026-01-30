@@ -1,4 +1,4 @@
-import type { Group, Field, Condition, ConditionOperator, Operator } from './types';
+import type { Hash, Group, Field, FieldSet, Condition, ConditionOperator, Operator } from './types';
 
 export function deserialize(string: string): Group[] {
   const json: JSON = JSON.parse(string);
@@ -26,7 +26,7 @@ function serializeValue(operator: ConditionOperator, value: string): string | nu
   return value;
 }
 
-function serializeField(field: Field): Record<string, any> {
+function serializeField(field: Field): Hash {
   const fieldObj: any = {};
 
   for (const cond of field.conditions) {
@@ -41,15 +41,13 @@ function serializeField(field: Field): Record<string, any> {
   return fieldObj;
 }
 
-function serializeGroup(group: Group): any {
-  const groupObj: any = {};
+function serializeGroup(group: Group): Hash {
+  let groupObj: Hash = {};
 
-  if (group.operator === 'and') {
-    for (const field of group.fields) {
-      groupObj[field.key] = serializeField(field);
-    }
-  } else if (group.operator === 'or') {
-    groupObj[group.operator] = group.fields.map(field => ({ [field.key]: serializeField(field) }))
+  if (group.operator === 'and' || group.operator === 'or' && group.fieldSets.length > 0) {
+    groupObj[group.operator] = group.fieldSets.map(fieldSet => fieldSet.fields.reduce((acc, field) => ({ ...acc, [field.key]: serializeField(field) }), {}));
+  } else if (group.fieldSets.length === 1) {
+    groupObj = group.fieldSets[0].fields.reduce((acc, field) => ({ ...acc, [field.key]: serializeField(field) }), {});
   }
 
   return groupObj;
@@ -64,6 +62,10 @@ function deserializeConditions(value: Record<string, any>): Condition[] {
   });
 }
 
+function deserializeFieldSet(record: Record<string, any>): FieldSet {
+  return { fields: deserializeFields(record) }
+}
+
 function deserializeFields(record: Record<string, any>): Field[] {
   return Object.entries(record).map(([key, value]) => {
     const conditions = deserializeConditions(value);
@@ -76,10 +78,10 @@ function deserializeFields(record: Record<string, any>): Field[] {
 function deserializeGroup(record: Record<string, any>): Group {
   if ('and' in record || 'or' in record) {
     const operator: Operator = 'and' in record ? 'and' : 'or';
-    const fields = Array.isArray(record[operator]) ? record[operator].map(deserializeFields).flat() : deserializeFields(record[operator])
+    const fieldSets = Array.isArray(record[operator]) ? record[operator].map(deserializeFieldSet) : [deserializeFieldSet(record[operator])]
 
-    return { operator, fields }
+    return { operator, fieldSets }
   }
 
-  return { operator: 'and', fields: deserializeFields(record) }
+  return { operator: 'and', fieldSets: [deserializeFieldSet(record)] }
 }

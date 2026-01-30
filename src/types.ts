@@ -24,6 +24,10 @@ export type ConditionOperator =
 
 export type Group = {
   operator: Operator;
+  fieldSets: FieldSet[];
+}
+
+export type FieldSet = {
   fields: Field[];
 }
 
@@ -49,6 +53,7 @@ export type Settings = {
   items: {
     group: string;
     field: string;
+    fieldSet: string;
     condition: string;
     nestedGroup: string;
   },
