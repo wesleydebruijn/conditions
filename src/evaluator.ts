@@ -196,7 +196,7 @@ export default class Evaluator {
       case 'ends_with':
         return actual != null && expected != null && String(actual).endsWith(String(expected));
       case 'contains':
-        return actual != null && expected != null && String(actual).includes(String(expected));
+        return actual != null && expected != null && actual.includes(String(expected));
       case 'match':
       case 'regex':
         if (actual == null || expected == null) return false;
