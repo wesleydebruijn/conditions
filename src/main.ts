@@ -100,6 +100,7 @@ function toggle(enable: boolean): void {
 }
 
 function evaluate(): void {
+  recordInput!.classList.remove('record-input--match', 'record-input--no-match');
   try {
     const condition = JSON.parse(conditionInput!.value);
     const record = JSON.parse(recordInput!.value);
@@ -107,8 +108,16 @@ function evaluate(): void {
     const match = new Evaluator(condition).match(record);
 
     resultRow!.innerHTML = match ? 'Match ✅' : 'No Match ❌';
+    if (match) {
+      recordInput!.classList.remove('record-input--match');
+      void recordInput!.offsetHeight; // force reflow so animation replays
+      recordInput!.classList.add('record-input--match');
+    } else {
+      recordInput!.classList.add('record-input--no-match');
+    }
   } catch {
     resultRow!.innerHTML = '<span style="color: red">Invalid JSON</span>';
+    recordInput!.classList.add('record-input--no-match');
   }
 }
 
