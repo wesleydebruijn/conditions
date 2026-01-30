@@ -21,7 +21,7 @@ export default class Conditions {
       field: 'Field',
       fieldSet: 'Field Set',
       condition: 'Condition',
-      nestedGroup: 'Nested Group',
+      nestedGroup: 'Filter',
     },
     operators: {
       and: 'and',
@@ -198,7 +198,7 @@ export default class Conditions {
   private renderField(element: HTMLElement, fields: Field[], field: Field, mapping?: Mapping) {
     let fieldInput: HTMLInputElement | HTMLSelectElement;
 
-    const fieldElement = create('div', 'conditions-field-block');
+    const fieldElement = create('div', 'conditions-field');
     const fieldHeader = create('div', 'conditions-field-header');
     const fieldBadge = create('span', 'conditions-field-badge');
     const removeFieldBtn = create('button', 'conditions-btn conditions-btn-ghost conditions-btn-destructive');
@@ -206,7 +206,8 @@ export default class Conditions {
     const addConditionBtn = create('button', 'conditions-btn conditions-btn-outline');
     const nestedGroupsElement = create('div', 'conditions-nested-groups');
     const buttonGroup = create('div', 'conditions-button-group');
-    const addNestedGroupBtn = create('button', 'conditions-btn');
+    const nestedButtonGroup = create('div', 'conditions-button-group');
+    const addNestedGroupBtn = create('button', 'conditions-btn conditions-btn-outline');
 
     // badge
     fieldBadge.textContent = this.settings.items.field;
@@ -290,8 +291,9 @@ export default class Conditions {
     });
 
     append(fieldHeader, fieldBadge, fieldInput, removeFieldBtn);
-    append(buttonGroup, addConditionBtn, addNestedGroupBtn);
-    append(fieldElement, fieldHeader, nestedGroupsElement, conditionsElement, buttonGroup);
+    append(buttonGroup, addConditionBtn);
+    append(nestedButtonGroup, addNestedGroupBtn);
+    append(fieldElement, fieldHeader, nestedGroupsElement, nestedButtonGroup, conditionsElement, buttonGroup);
     append(element, fieldElement);
   }
 
