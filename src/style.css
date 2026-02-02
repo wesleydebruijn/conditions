@@ -71,7 +71,7 @@
   transition: all 0.15s ease;
 }
 
-.conditions-group-container:hover {
+.conditions-group-container:hover:not(:has(.conditions-group-container:hover)):not(:has(.conditions-field-set:hover)) {
   border-left-color: hsl(var(--section-group) / 0.7);
   border-color: hsl(var(--section-group) / 0.25);
   box-shadow: 0 1px 4px hsl(var(--section-group) / 0.08);
@@ -309,7 +309,7 @@ button {
   transition: all 0.15s ease;
 }
 
-.conditions-field-set:hover {
+.conditions-field-set:hover:not(:has(.conditions-field:hover)) {
   background: hsl(var(--section-fieldset) / 0.08);
   border-left-color: hsl(var(--section-fieldset) / 0.7);
   border-color: hsl(var(--section-fieldset) / 0.2);
@@ -326,7 +326,7 @@ button {
   transition: all 0.15s ease;
 }
 
-.conditions-field:hover {
+.conditions-field:hover:not(:has(.conditions-condition-row:hover)):not(:has(.conditions-group-container:hover)) {
   background: hsl(var(--section-field) / 0.08);
   border-left-color: hsl(var(--section-field) / 0.7);
   border-color: hsl(var(--section-field) / 0.2);
