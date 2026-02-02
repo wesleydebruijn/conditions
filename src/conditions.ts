@@ -104,18 +104,27 @@ export default class Conditions {
     this.input.after(this.wrapperElement);
   }
 
+  private createCollapseIcon(): SVGElement {
+    const wrap = document.createElement('div');
+    wrap.innerHTML = '<svg class="conditions-collapse-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
+    return wrap.firstElementChild as SVGElement;
+  }
+
   private renderGroup(element: HTMLElement, groups: Group[], group: Group, mapping?: Mapping, nested?: boolean) {
     const groupElement = create('div', nested ? 'conditions-group nested' : 'conditions-group');
     const groupContainer = create('div', 'conditions-group-container');
     const groupHeader = create('div', 'conditions-group-header');
+    const groupBody = create('div', 'conditions-group-body');
     const groupBadge = create('span', 'conditions-group-badge');
     const fieldSetsContainer = create('div', 'conditions-field-sets-container');
     const operatorSelect = create('select', 'conditions-select');
     const removeGroupBtn = create('button', 'conditions-btn conditions-btn-ghost conditions-btn-destructive conditions-remove-group-btn');
     const addFieldSetBtn = create('button', 'conditions-btn conditions-btn-add-fieldset');
 
-    // badge
-    groupBadge.textContent = nested ? this.settings.items.nestedGroup : this.settings.items.group;
+    // badge (collapse SVG + label; whole badge toggles collapse)
+    groupBadge.appendChild(this.createCollapseIcon());
+    groupBadge.appendChild(document.createTextNode(nested ? this.settings.items.nestedGroup : this.settings.items.group));
+    groupBadge.addEventListener('click', () => groupElement.classList.toggle('is-collapsed'));
 
     // operator select
     operatorSelect.innerHTML = Object.entries(this.settings.operators)
@@ -147,7 +156,8 @@ export default class Conditions {
     });
 
     append(groupHeader, groupBadge, operatorSelect, addFieldSetBtn, removeGroupBtn);
-    append(groupContainer, groupHeader, fieldSetsContainer);
+    append(groupBody, fieldSetsContainer);
+    append(groupContainer, groupHeader, groupBody);
     append(groupElement, groupContainer);
     append(element, groupElement);
   }
@@ -159,13 +169,16 @@ export default class Conditions {
   private renderFieldSet(element: HTMLElement, fieldSets: FieldSet[], fieldSet: FieldSet, mapping?: Mapping) {
     const fieldSetElement = create('div', 'conditions-field-set');
     const fieldSetHeader = create('div', 'conditions-field-set-header');
+    const fieldSetBody = create('div', 'conditions-field-set-body');
     const fieldSetBadge = create('span', 'conditions-field-set-badge');
     const fieldsContainer = create('div', 'conditions-fields-container');
     const removeFieldSetBtn = create('button', 'conditions-btn conditions-btn-ghost conditions-btn-destructive conditions-remove-group-btn');
     const addFieldBtn = create('button', 'conditions-btn conditions-btn-add-field');
 
-    // badge
-    fieldSetBadge.textContent = this.settings.items.fieldSet;
+    // badge (collapse SVG + label; whole badge toggles collapse)
+    fieldSetBadge.appendChild(this.createCollapseIcon());
+    fieldSetBadge.appendChild(document.createTextNode(this.settings.items.fieldSet));
+    fieldSetBadge.addEventListener('click', () => fieldSetElement.classList.toggle('is-collapsed'));
 
     // fields
     fieldSet.fields.forEach(field => this.renderField(fieldsContainer, fieldSet.fields, field, mapping));
@@ -187,7 +200,8 @@ export default class Conditions {
     });
 
     append(fieldSetHeader, fieldSetBadge, addFieldBtn, removeFieldSetBtn);
-    append(fieldSetElement, fieldSetHeader, fieldsContainer);
+    append(fieldSetBody, fieldsContainer);
+    append(fieldSetElement, fieldSetHeader, fieldSetBody);
     append(element, fieldSetElement);
   }
 
@@ -196,6 +210,7 @@ export default class Conditions {
 
     const fieldElement = create('div', 'conditions-field');
     const fieldHeader = create('div', 'conditions-field-header');
+    const fieldBody = create('div', 'conditions-field-body');
     const fieldBadge = create('span', 'conditions-field-badge');
     const removeFieldBtn = create('button', 'conditions-btn conditions-btn-ghost conditions-btn-destructive');
     const conditionsElement = create('div', 'conditions-field-conditions');
@@ -203,8 +218,10 @@ export default class Conditions {
     const nestedGroupsElement = create('div', 'conditions-nested-groups');
     const addNestedGroupBtn = create('button', 'conditions-btn conditions-btn-add-filter');
 
-    // badge
-    fieldBadge.textContent = this.settings.items.field;
+    // badge (collapse SVG + label; whole badge toggles collapse)
+    fieldBadge.appendChild(this.createCollapseIcon());
+    fieldBadge.appendChild(document.createTextNode(this.settings.items.field));
+    fieldBadge.addEventListener('click', () => fieldElement.classList.toggle('is-collapsed'));
 
     if(!mapping) {
       fieldInput = create('input', 'conditions-field-input');
@@ -285,7 +302,8 @@ export default class Conditions {
     });
 
     append(fieldHeader, fieldBadge, fieldInput, addConditionBtn, addNestedGroupBtn, removeFieldBtn);
-    append(fieldElement, fieldHeader, nestedGroupsElement, conditionsElement);
+    append(fieldBody, nestedGroupsElement, conditionsElement);
+    append(fieldElement, fieldHeader, fieldBody);
     append(element, fieldElement);
   }
 

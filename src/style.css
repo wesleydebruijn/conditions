@@ -86,6 +86,49 @@
   border-bottom: 1px solid hsl(var(--border));
 }
 
+/* Collapse toggle (SVG inside badge) and body */
+.conditions-group-badge,
+.conditions-field-set-badge,
+.conditions-field-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.conditions-group-badge:hover,
+.conditions-field-set-badge:hover,
+.conditions-field-badge:hover {
+  opacity: 0.9;
+}
+.conditions-collapse-icon {
+  display: block;
+  transition: transform 0.2s ease;
+}
+.conditions-group.is-collapsed .conditions-collapse-icon,
+.conditions-field-set.is-collapsed .conditions-collapse-icon,
+.conditions-field.is-collapsed .conditions-collapse-icon {
+  transform: rotate(-90deg);
+}
+.conditions-group-body,
+.conditions-field-set-body,
+.conditions-field-body {
+  overflow: hidden;
+  transition: opacity 0.15s ease;
+}
+.conditions-group.is-collapsed .conditions-group-body,
+.conditions-field-set.is-collapsed .conditions-field-set-body,
+.conditions-field.is-collapsed .conditions-field-body {
+  display: none;
+}
+.conditions-group.is-collapsed .conditions-group-header,
+.conditions-field-set.is-collapsed .conditions-field-set-header,
+.conditions-field.is-collapsed .conditions-field-header {
+  margin-bottom: 0;
+  padding-bottom: 6px;
+  border-bottom: none;
+}
+
 .conditions-group-badge {
   background: hsl(var(--section-group) / 0.15);
   color: hsl(var(--section-group));
