@@ -116,7 +116,7 @@ export default class Conditions {
     const addFieldSetBtn = create('button', 'conditions-btn conditions-btn-add-fieldset');
 
     // badge
-    groupBadge.textContent = this.settings.items.group;
+    groupBadge.textContent = nested ? this.settings.items.nestedGroup : this.settings.items.group;
 
     // operator select
     operatorSelect.innerHTML = Object.entries(this.settings.operators)

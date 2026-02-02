@@ -34,7 +34,7 @@
     }
 
     .builder-header h2 {
-      font-size: 18px;
+      font-size: 24px;
       font-weight: 600;
       color: hsl(var(--foreground));
       margin-bottom: 2px;
@@ -42,7 +42,7 @@
 
     .builder-header p {
       color: hsl(var(--muted-foreground));
-      font-size: 12px;
+      font-size: 14px;
     }
 
     .builder-main-row {
@@ -52,26 +52,20 @@
     }
 
     .panel {
+      flex: 1;
       display: flex;
       flex-direction: column;
-      background: transparent;
-      border: none;
-      box-shadow: none;
-      border-radius: 0;
-      padding: 0;
     }
 
     .panel.record {
-      flex: 1 1 0;
+      flex: 6;
       position: sticky;
       align-self: flex-start;
       top: 16px;
-      z-index: 1;
-      min-height: 160px;
     }
 
     .panel.condition {
-      flex: 1 1 0;
+      flex: 8;
     }
 
     .panel label {
@@ -105,21 +99,6 @@
       font-size: 13px;
     }
 
-    @keyframes record-match-pulse {
-      0% {
-        border-color: hsl(142 71% 45%);
-        box-shadow: 0 0 0 2px hsl(142 71% 45% / 0.2);
-      }
-      50% {
-        border-color: hsl(142 71% 55%);
-        box-shadow: 0 0 0 6px hsl(142 71% 45% / 0.35), 0 0 20px hsl(142 71% 45% / 0.2);
-      }
-      100% {
-        border-color: hsl(142 71% 45%);
-        box-shadow: 0 0 0 2px hsl(142 71% 45% / 0.2);
-      }
-    }
-
     .panel.record textarea.record-input--match {
       border-color: hsl(142 71% 45%);
       box-shadow: 0 0 0 2px hsl(142 71% 45% / 0.2);
@@ -140,15 +119,27 @@
       font-weight: bold;
     }
 
+    @keyframes record-match-pulse {
+      0% {
+        border-color: hsl(142 71% 45%);
+        box-shadow: 0 0 0 2px hsl(142 71% 45% / 0.2);
+      }
+      50% {
+        border-color: hsl(142 71% 55%);
+        box-shadow: 0 0 0 6px hsl(142 71% 45% / 0.35), 0 0 20px hsl(142 71% 45% / 0.2);
+      }
+      100% {
+        border-color: hsl(142 71% 45%);
+        box-shadow: 0 0 0 2px hsl(142 71% 45% / 0.2);
+      }
+    }
+
     @media (max-width: 1000px) {
       .builder-main-row {
         flex-direction: column;
-        gap: 12px;
       }
       .panel {
-        position: static;
         width: 100%;
-        box-shadow: none;
       }
     }
 
