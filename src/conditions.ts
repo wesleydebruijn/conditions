@@ -1,6 +1,6 @@
 import { deserialize, serialize } from './serializer';
 import { fieldList, fieldKey } from './mapping';
-import { create, find, visible, append } from './utils/dom';
+import { create, createIcon, find, visible, append } from './utils/dom';
 
 import type { Group, Field, FieldSet, Condition, Operator, ConditionOperator, Settings, Mapping } from './types';
 
@@ -88,7 +88,7 @@ export default class Conditions {
     const addGroupBtn = create('button', 'conditions-btn conditions-btn-add-group');
     const groupsContainer = create('div', 'conditions-groups-container');
 
-    addGroupBtn.textContent = `+ ${this.settings.items.group}`;
+    addGroupBtn.appendChild(createIcon('plus'));
     addGroupBtn.addEventListener('click', event => {
       event.preventDefault()
 
@@ -104,12 +104,6 @@ export default class Conditions {
     this.input.after(this.wrapperElement);
   }
 
-  private createCollapseIcon(): SVGElement {
-    const wrap = document.createElement('div');
-    wrap.innerHTML = '<svg class="conditions-collapse-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
-    return wrap.firstElementChild as SVGElement;
-  }
-
   private renderGroup(element: HTMLElement, groups: Group[], group: Group, mapping?: Mapping, nested?: boolean) {
     const groupElement = create('div', nested ? 'conditions-group nested' : 'conditions-group');
     const groupContainer = create('div', 'conditions-group-container');
@@ -122,7 +116,7 @@ export default class Conditions {
     const addFieldSetBtn = create('button', 'conditions-btn conditions-btn-add-fieldset');
 
     // badge (collapse SVG + label; whole badge toggles collapse)
-    groupBadge.appendChild(this.createCollapseIcon());
+    groupBadge.appendChild(createIcon('collapse'));
     groupBadge.appendChild(document.createTextNode(nested ? this.settings.items.nestedGroup : this.settings.items.group));
     groupBadge.addEventListener('click', () => groupElement.classList.toggle('is-collapsed'));
 
@@ -137,7 +131,8 @@ export default class Conditions {
     });
 
     // remove group button
-    removeGroupBtn.textContent = 'x';
+    removeGroupBtn.appendChild(createIcon('close'));
+    removeGroupBtn.setAttribute('aria-label', 'Remove');
     removeGroupBtn.addEventListener('click', event => {
       event.preventDefault();
       this.removeItem(groupElement, groups, group);
@@ -147,7 +142,7 @@ export default class Conditions {
     group.fieldSets.forEach(fieldSet => this.renderFieldSet(fieldSetsContainer, group.fieldSets, fieldSet, mapping));
 
     // add field set button
-    addFieldSetBtn.textContent = `+ ${this.settings.items.fieldSet}`;
+    addFieldSetBtn.appendChild(createIcon('plus'));
     addFieldSetBtn.addEventListener('click', event => {
       event.preventDefault()
 
@@ -176,22 +171,23 @@ export default class Conditions {
     const addFieldBtn = create('button', 'conditions-btn conditions-btn-add-field');
 
     // badge (collapse SVG + label; whole badge toggles collapse)
-    fieldSetBadge.appendChild(this.createCollapseIcon());
+    fieldSetBadge.appendChild(createIcon('collapse'));
     fieldSetBadge.appendChild(document.createTextNode(this.settings.items.fieldSet));
     fieldSetBadge.addEventListener('click', () => fieldSetElement.classList.toggle('is-collapsed'));
 
     // fields
     fieldSet.fields.forEach(field => this.renderField(fieldsContainer, fieldSet.fields, field, mapping));
 
-    // remove group button
-    removeFieldSetBtn.textContent = 'x';
+    // remove field set button
+    removeFieldSetBtn.appendChild(createIcon('close'));
+    removeFieldSetBtn.setAttribute('aria-label', 'Remove');
     removeFieldSetBtn.addEventListener('click', event => {
       event.preventDefault();
       this.removeItem(fieldSetElement, fieldSets, fieldSet);
     });
 
     // add field button
-    addFieldBtn.textContent = `+ ${this.settings.items.field}`;
+    addFieldBtn.appendChild(createIcon('plus'));
     addFieldBtn.addEventListener('click', event => {
       event.preventDefault()
 
@@ -219,7 +215,7 @@ export default class Conditions {
     const addNestedGroupBtn = create('button', 'conditions-btn conditions-btn-add-filter');
 
     // badge (collapse SVG + label; whole badge toggles collapse)
-    fieldBadge.appendChild(this.createCollapseIcon());
+    fieldBadge.appendChild(createIcon('collapse'));
     fieldBadge.appendChild(document.createTextNode(this.settings.items.field));
     fieldBadge.addEventListener('click', () => fieldElement.classList.toggle('is-collapsed'));
 
@@ -261,7 +257,8 @@ export default class Conditions {
       this.onChange();
     });
 
-    removeFieldBtn.textContent = 'x';
+    removeFieldBtn.appendChild(createIcon('close'));
+    removeFieldBtn.setAttribute('aria-label', 'Remove');
     removeFieldBtn.addEventListener('click', event => {
       event.preventDefault();
       this.removeItem(fieldElement, fields, field);
@@ -269,7 +266,7 @@ export default class Conditions {
 
     field.conditions.forEach(condition => this.renderCondition(conditionsElement, field.conditions, condition));
 
-    addConditionBtn.textContent = `+ ${this.settings.items.condition}`;
+    addConditionBtn.appendChild(createIcon('plus'));
     addConditionBtn.addEventListener('click', event => {
       event.preventDefault()
 
@@ -288,7 +285,7 @@ export default class Conditions {
       visible(addNestedGroupBtn, false);
     }
 
-    addNestedGroupBtn.textContent = `+ ${this.settings.items.nestedGroup}`;
+    addNestedGroupBtn.appendChild(createIcon('filter'));
     addNestedGroupBtn.addEventListener('click', event => {
       event.preventDefault()
 
@@ -334,7 +331,8 @@ export default class Conditions {
     });
 
     // remove button
-    removeConditionBtn.textContent = 'x';
+    removeConditionBtn.appendChild(createIcon('close'));
+    removeConditionBtn.setAttribute('aria-label', 'Remove');
     removeConditionBtn.addEventListener('click', event => {
       event.preventDefault();
       this.removeItem(conditionElement, conditions, condition);

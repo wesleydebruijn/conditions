@@ -110,6 +110,11 @@
 .conditions-field.is-collapsed .conditions-collapse-icon {
   transform: rotate(-90deg);
 }
+.conditions-icon {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
 .conditions-group-body,
 .conditions-field-set-body,
 .conditions-field-body {
