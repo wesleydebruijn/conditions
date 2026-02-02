@@ -62,9 +62,9 @@
 
 .conditions-group-container {
   background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
+  border: 1px solid hsl(var(--border) / 0.25);
   border-left-width: 3px;
-  border-left-color: hsl(var(--section-group));
+  border-left-color: hsl(var(--section-group) / 0.7);
   border-radius: var(--radius);
   padding: 10px;
   box-shadow: 0 1px 3px hsl(var(--foreground) / 0.06);
@@ -72,8 +72,8 @@
 }
 
 .conditions-group-container:hover:not(:has(.conditions-group-container:hover)):not(:has(.conditions-field-set:hover)) {
-  border-left-color: hsl(var(--section-group) / 0.7);
-  border-color: hsl(var(--section-group) / 0.25);
+  border-left-color: hsl(var(--section-group));
+  border-color: hsl(var(--section-group));
   box-shadow: 0 1px 4px hsl(var(--section-group) / 0.12), 0 1px 2px hsl(var(--foreground) / 0.06);
 }
 
@@ -303,7 +303,7 @@ button {
 .conditions-field-set {
   background: hsl(var(--section-fieldset) / 0.06);
   border: 1px solid hsl(var(--border));
-  border-left: 3px solid hsl(var(--section-fieldset));
+  border-left: 3px solid hsl(var(--section-fieldset) / 0.7);
   border-radius: var(--radius);
   padding: 8px;
   transition: all 0.15s ease;
@@ -311,16 +311,16 @@ button {
 
 .conditions-field-set:hover:not(:has(.conditions-field:hover)) {
   background: hsl(var(--section-fieldset) / 0.08);
-  border-left-color: hsl(var(--section-fieldset) / 0.7);
-  border-color: hsl(var(--section-fieldset) / 0.2);
+  border-left-color: hsl(var(--section-fieldset));
+  border-color: hsl(var(--section-fieldset));
   box-shadow: 0 1px 4px hsl(var(--section-fieldset) / 0.1), 0 1px 2px hsl(var(--foreground) / 0.06);
 }
 
 /* Field Block */
 .conditions-field {
   background: hsl(var(--section-field) / 0.08);
-  border: 1px solid hsl(var(--border));
-  border-left: 3px solid hsl(var(--section-field));
+  border: 1px solid hsl(var(--border) / 0.2);
+  border-left: 3px solid hsl(var(--section-field) / 0.7);
   border-radius: var(--radius);
   padding: 8px;
   transition: all 0.15s ease;
@@ -328,8 +328,8 @@ button {
 
 .conditions-field:hover:not(:has(.conditions-condition-row:hover)):not(:has(.conditions-group-container:hover)) {
   background: hsl(var(--section-field) / 0.08);
-  border-left-color: hsl(var(--section-field) / 0.7);
-  border-color: hsl(var(--section-field) / 0.2);
+  border-left-color: hsl(var(--section-field));
+  border-color: hsl(var(--section-field));
   box-shadow: 0 1px 4px hsl(var(--section-field) / 0.1), 0 1px 2px hsl(var(--foreground) / 0.06);
 }
 
@@ -373,7 +373,7 @@ button {
 .conditions-condition-row {
   background: hsl(var(--section-condition) / 0.08);
   border: 1px solid hsl(var(--border));
-  border-left: 3px solid hsl(var(--section-condition));
+  border-left: 3px solid hsl(var(--section-condition) / 0.7);
   border-radius: calc(var(--radius) - 2px);
   padding: 4px 6px;
   display: flex;
@@ -383,8 +383,8 @@ button {
 }
 
 .conditions-condition-row:hover {
-  border-left-color: hsl(var(--section-condition) / 0.7);
-  border-color: hsl(var(--section-condition) / 0.2);
+  border-left-color: hsl(var(--section-condition));
+  border-color: hsl(var(--section-condition));
   background: hsl(var(--section-condition) / 0.08);
   box-shadow: 0 1px 3px hsl(var(--section-condition) / 0.1), 0 1px 2px hsl(var(--foreground) / 0.06);
 }
