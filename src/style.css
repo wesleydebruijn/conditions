@@ -74,7 +74,7 @@
 .conditions-group-container:hover:not(:has(.conditions-group-container:hover)):not(:has(.conditions-field-set:hover)) {
   border-left-color: hsl(var(--section-group) / 0.7);
   border-color: hsl(var(--section-group) / 0.25);
-  box-shadow: 0 1px 4px hsl(var(--section-group) / 0.08);
+  box-shadow: 0 1px 4px hsl(var(--section-group) / 0.12), 0 1px 2px hsl(var(--foreground) / 0.06);
 }
 
 .conditions-group-header {
@@ -313,7 +313,7 @@ button {
   background: hsl(var(--section-fieldset) / 0.08);
   border-left-color: hsl(var(--section-fieldset) / 0.7);
   border-color: hsl(var(--section-fieldset) / 0.2);
-  box-shadow: 0 1px 2px hsl(var(--section-fieldset) / 0.06);
+  box-shadow: 0 1px 4px hsl(var(--section-fieldset) / 0.1), 0 1px 2px hsl(var(--foreground) / 0.06);
 }
 
 /* Field Block */
@@ -330,7 +330,7 @@ button {
   background: hsl(var(--section-field) / 0.08);
   border-left-color: hsl(var(--section-field) / 0.7);
   border-color: hsl(var(--section-field) / 0.2);
-  box-shadow: 0 1px 2px hsl(var(--section-field) / 0.06);
+  box-shadow: 0 1px 4px hsl(var(--section-field) / 0.1), 0 1px 2px hsl(var(--foreground) / 0.06);
 }
 
 .conditions-field-block:hover {
@@ -386,7 +386,7 @@ button {
   border-left-color: hsl(var(--section-condition) / 0.7);
   border-color: hsl(var(--section-condition) / 0.2);
   background: hsl(var(--section-condition) / 0.08);
-  box-shadow: 0 1px 2px hsl(var(--section-condition) / 0.06);
+  box-shadow: 0 1px 3px hsl(var(--section-condition) / 0.1), 0 1px 2px hsl(var(--foreground) / 0.06);
 }
 
 .conditions-condition-badge {
