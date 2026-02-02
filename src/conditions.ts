@@ -85,7 +85,7 @@ export default class Conditions {
 
   private render() {
     const buttonGroup = create('div', 'conditions-button-group');
-    const addGroupBtn = create('button', 'conditions-btn conditions-btn-primary');
+    const addGroupBtn = create('button', 'conditions-btn conditions-btn-add-group');
     const groupsContainer = create('div', 'conditions-groups-container');
 
     addGroupBtn.textContent = `+ ${this.settings.items.group}`;
@@ -113,7 +113,7 @@ export default class Conditions {
     const operatorSelect = create('select', 'conditions-select');
     const removeGroupBtn = create('button', 'conditions-btn conditions-btn-ghost conditions-btn-destructive conditions-remove-group-btn');
     const groupButtonGroup = create('div', 'conditions-button-group');
-    const addFieldSetBtn = create('button', 'conditions-btn conditions-btn-secondary');
+    const addFieldSetBtn = create('button', 'conditions-btn conditions-btn-add-fieldset');
 
     // badge
     groupBadge.textContent = this.settings.items.group;
@@ -165,7 +165,7 @@ export default class Conditions {
     const fieldsContainer = create('div', 'conditions-fields-container');
     const removeFieldSetBtn = create('button', 'conditions-btn conditions-btn-ghost conditions-btn-destructive conditions-remove-group-btn');
     const groupButtonGroup = create('div', 'conditions-button-group');
-    const addFieldBtn = create('button', 'conditions-btn conditions-btn-secondary');
+    const addFieldBtn = create('button', 'conditions-btn conditions-btn-add-field');
 
     // badge
     fieldSetBadge.textContent = this.settings.items.fieldSet;
@@ -203,11 +203,11 @@ export default class Conditions {
     const fieldBadge = create('span', 'conditions-field-badge');
     const removeFieldBtn = create('button', 'conditions-btn conditions-btn-ghost conditions-btn-destructive');
     const conditionsElement = create('div', 'conditions-field-conditions');
-    const addConditionBtn = create('button', 'conditions-btn conditions-btn-outline');
+    const addConditionBtn = create('button', 'conditions-btn conditions-btn-add-condition');
     const nestedGroupsElement = create('div', 'conditions-nested-groups');
     const buttonGroup = create('div', 'conditions-button-group');
     const nestedButtonGroup = create('div', 'conditions-button-group');
-    const addNestedGroupBtn = create('button', 'conditions-btn conditions-btn-outline');
+    const addNestedGroupBtn = create('button', 'conditions-btn conditions-btn-add-filter');
 
     // badge
     fieldBadge.textContent = this.settings.items.field;

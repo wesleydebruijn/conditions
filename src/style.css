@@ -19,6 +19,11 @@
   --input: 214.3 31.8% 91.4%;
   --ring: 221.2 83.2% 53.3%;
   --radius: 0.375rem;
+  /* Section accents – neutral slate palette (same hue, varying depth) */
+  --section-group: 220 18% 36%;
+  --section-fieldset: 220 14% 42%;
+  --section-field: 220 12% 48%;
+  --section-condition: 220 10% 54%;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -43,6 +48,10 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 224.3 76.3% 48%;
     --radius: 0.375rem;
+    --section-group: 220 14% 60%;
+    --section-fieldset: 220 12% 66%;
+    --section-field: 220 10% 72%;
+    --section-condition: 220 8% 78%;
   }
 }
 
@@ -60,13 +69,18 @@
 .conditions-group-container {
   background: hsl(var(--card));
   border: 1px solid hsl(var(--border));
+  border-left-width: 3px;
+  border-left-color: hsl(var(--section-group));
   border-radius: var(--radius);
   padding: 10px;
+  box-shadow: 0 1px 3px hsl(var(--foreground) / 0.06);
   transition: all 0.15s ease;
 }
 
 .conditions-group-container:hover {
-  border-color: hsl(var(--ring));
+  border-left-color: hsl(var(--section-group) / 0.7);
+  border-color: hsl(var(--section-group) / 0.25);
+  box-shadow: 0 1px 4px hsl(var(--section-group) / 0.08);
 }
 
 .conditions-group-header {
@@ -79,15 +93,15 @@
 }
 
 .conditions-group-badge {
-  background: hsl(var(--secondary));
-  color: hsl(var(--secondary-foreground));
+  background: hsl(var(--section-group) / 0.15);
+  color: hsl(var(--section-group));
   padding: 2px 6px;
   border-radius: calc(var(--radius) - 2px);
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.4px;
-  border: 1px solid hsl(var(--border));
+  border: 1px solid hsl(var(--section-group) / 0.3);
 }
 
 /* Select Styling */
@@ -209,6 +223,57 @@ button {
   justify-content: center;
 }
 
+/* Add buttons – match section panel colors */
+.conditions-btn-add-group {
+  background: hsl(var(--section-group) / 0.15);
+  color: hsl(var(--section-group));
+  border: 1px solid hsl(var(--section-group) / 0.4);
+}
+.conditions-btn-add-group:hover {
+  background: hsl(var(--section-group) / 0.2);
+  border-color: hsl(var(--section-group) / 0.6);
+}
+
+.conditions-btn-add-fieldset {
+  background: hsl(var(--section-fieldset) / 0.15);
+  color: hsl(var(--section-fieldset));
+  border: 1px solid hsl(var(--section-fieldset) / 0.4);
+}
+.conditions-btn-add-fieldset:hover {
+  background: hsl(var(--section-fieldset) / 0.2);
+  border-color: hsl(var(--section-fieldset) / 0.6);
+}
+
+.conditions-btn-add-field {
+  background: hsl(var(--section-field) / 0.15);
+  color: hsl(var(--section-field));
+  border: 1px solid hsl(var(--section-field) / 0.4);
+}
+.conditions-btn-add-field:hover {
+  background: hsl(var(--section-field) / 0.2);
+  border-color: hsl(var(--section-field) / 0.6);
+}
+
+.conditions-btn-add-condition {
+  background: hsl(var(--section-condition) / 0.15);
+  color: hsl(var(--section-condition));
+  border: 1px solid hsl(var(--section-condition) / 0.4);
+}
+.conditions-btn-add-condition:hover {
+  background: hsl(var(--section-condition) / 0.2);
+  border-color: hsl(var(--section-condition) / 0.6);
+}
+
+.conditions-btn-add-filter {
+  background: hsl(var(--section-group) / 0.15);
+  color: hsl(var(--section-group));
+  border: 1px solid hsl(var(--section-group) / 0.4);
+}
+.conditions-btn-add-filter:hover {
+  background: hsl(var(--section-group) / 0.2);
+  border-color: hsl(var(--section-group) / 0.6);
+}
+
 /* Fields Container */
 .conditions-field-sets-container {
   display: flex;
@@ -224,46 +289,58 @@ button {
 }
 
 .conditions-field-set-badge {
-  background: hsl(var(--secondary));
-  color: hsl(var(--secondary-foreground));
+  background: hsl(var(--section-fieldset) / 0.15);
+  color: hsl(var(--section-fieldset));
   padding: 2px 6px;
   border-radius: calc(var(--radius) - 2px);
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.4px;
-  border: 1px solid hsl(var(--border));
+  border: 1px solid hsl(var(--section-fieldset) / 0.3);
 }
 
 .conditions-fields-container {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .conditions-field-set {
-  background: hsl(var(--muted) / 0.1);
+  background: hsl(var(--section-fieldset) / 0.06);
   border: 1px solid hsl(var(--border));
-  border-radius: calc(var(--radius) - 2px);
+  border-left: 3px solid hsl(var(--section-fieldset));
+  border-radius: var(--radius);
   padding: 8px;
   transition: all 0.15s ease;
 }
 
 .conditions-field-set:hover {
-  background: hsl(var(--muted) / 0.4);
+  background: hsl(var(--section-fieldset) / 0.08);
+  border-left-color: hsl(var(--section-fieldset) / 0.7);
+  border-color: hsl(var(--section-fieldset) / 0.2);
+  box-shadow: 0 1px 2px hsl(var(--section-fieldset) / 0.06);
 }
 
 /* Field Block */
 .conditions-field {
-  background: hsl(var(--muted) / 0.5);
+  background: hsl(var(--section-field) / 0.08);
   border: 1px solid hsl(var(--border));
-  border-radius: calc(var(--radius) - 2px);
+  border-left: 3px solid hsl(var(--section-field));
+  border-radius: var(--radius);
   padding: 8px;
   transition: all 0.15s ease;
 }
 
+.conditions-field:hover {
+  background: hsl(var(--section-field) / 0.08);
+  border-left-color: hsl(var(--section-field) / 0.7);
+  border-color: hsl(var(--section-field) / 0.2);
+  box-shadow: 0 1px 2px hsl(var(--section-field) / 0.06);
+}
+
 .conditions-field-block:hover {
-  background: hsl(var(--muted));
+  background: hsl(var(--section-field) / 0.06);
 }
 
 .conditions-field-header {
@@ -274,15 +351,15 @@ button {
 }
 
 .conditions-field-badge {
-  background: hsl(var(--background));
-  color: hsl(var(--muted-foreground));
+  background: hsl(var(--section-field) / 0.15);
+  color: hsl(var(--section-field));
   padding: 2px 6px;
   border-radius: calc(var(--radius) - 2px);
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.4px;
-  border: 1px solid hsl(var(--border));
+  border: 1px solid hsl(var(--section-field) / 0.3);
 }
 
 .conditions-field-select,
@@ -294,14 +371,15 @@ button {
 .conditions-field-conditions {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   margin-bottom: 4px;
   margin-top: 4px;
 }
 
 .conditions-condition-row {
-  background: hsl(var(--background));
+  background: hsl(var(--section-condition) / 0.08);
   border: 1px solid hsl(var(--border));
+  border-left: 3px solid hsl(var(--section-condition));
   border-radius: calc(var(--radius) - 2px);
   padding: 4px 6px;
   display: flex;
@@ -311,12 +389,15 @@ button {
 }
 
 .conditions-condition-row:hover {
-  border-color: hsl(var(--ring));
+  border-left-color: hsl(var(--section-condition) / 0.7);
+  border-color: hsl(var(--section-condition) / 0.2);
+  background: hsl(var(--section-condition) / 0.08);
+  box-shadow: 0 1px 2px hsl(var(--section-condition) / 0.06);
 }
 
 .conditions-condition-badge {
-  background: hsl(var(--muted));
-  color: hsl(var(--muted-foreground));
+  background: hsl(var(--section-condition) / 0.2);
+  color: hsl(var(--section-condition));
   padding: 1px 4px;
   border-radius: calc(var(--radius) - 2px);
   font-size: 10px;
