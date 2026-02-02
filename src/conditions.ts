@@ -299,7 +299,7 @@ export default class Conditions {
     });
 
     append(fieldHeader, fieldBadge, fieldInput, addConditionBtn, addNestedGroupBtn, removeFieldBtn);
-    append(fieldBody, nestedGroupsElement, conditionsElement);
+    append(fieldBody, conditionsElement, nestedGroupsElement);
     append(fieldElement, fieldHeader, fieldBody);
     append(element, fieldElement);
   }
