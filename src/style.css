@@ -62,19 +62,16 @@
 
 .conditions-group-container {
   background: hsl(var(--card));
-  border: 1px solid hsl(var(--border) / 0.25);
-  border-left-width: 3px;
-  border-left-color: hsl(var(--section-group) / 0.7);
+  border: 1px solid hsl(var(--border) / 0.4);
+  border-left-width: 2px;
+  border-left-color: hsl(var(--section-group) / 0.5);
   border-radius: var(--radius);
   padding: 10px;
-  box-shadow: 0 1px 3px hsl(var(--foreground) / 0.06);
   transition: all 0.15s ease;
 }
 
 .conditions-group-container:hover:not(:has(.conditions-group-container:hover)):not(:has(.conditions-field-set:hover)) {
-  border-left-color: hsl(var(--section-group));
-  border-color: hsl(var(--section-group));
-  box-shadow: 0 1px 4px hsl(var(--section-group) / 0.12), 0 1px 2px hsl(var(--foreground) / 0.06);
+  border-left-color: hsl(var(--section-group) / 0.8);
 }
 
 .conditions-group-header {
@@ -83,7 +80,7 @@
   gap: 6px;
   margin-bottom: 8px;
   padding-bottom: 6px;
-  border-bottom: 1px solid hsl(var(--border));
+  border-bottom: 1px solid hsl(var(--border) / 0.5);
 }
 
 /* Collapse toggle (SVG inside badge) and body */
@@ -135,7 +132,7 @@
 }
 
 .conditions-group-badge {
-  background: hsl(var(--section-group) / 0.15);
+  background: hsl(var(--section-group) / 0.1);
   color: hsl(var(--section-group));
   padding: 2px 6px;
   border-radius: calc(var(--radius) - 2px);
@@ -143,14 +140,13 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.4px;
-  border: 1px solid hsl(var(--section-group) / 0.3);
 }
 
 /* Select Styling */
 select {
   height: 28px;
   padding: 0 28px 0 8px;
-  border: 1px solid hsl(var(--input));
+  border: 1px solid hsl(var(--border) / 0.5);
   border-radius: calc(var(--radius) - 2px);
   background: hsl(var(--background));
   font-size: 13px;
@@ -170,8 +166,7 @@ select:hover {
 
 select:focus {
   outline: none;
-  border-color: hsl(var(--ring));
-  box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2);
+  border-color: hsl(var(--ring) / 0.6);
 }
 
 .operator-select {
@@ -267,53 +262,43 @@ button {
 
 /* Add buttons – match section panel colors */
 .conditions-btn-add-group {
-  background: hsl(var(--section-group) / 0.15);
+  background: hsl(var(--section-group) / 0.08);
   color: hsl(var(--section-group));
-  border: 1px solid hsl(var(--section-group) / 0.4);
 }
 .conditions-btn-add-group:hover {
-  background: hsl(var(--section-group) / 0.2);
-  border-color: hsl(var(--section-group) / 0.6);
+  background: hsl(var(--section-group) / 0.14);
 }
 
 .conditions-btn-add-fieldset {
-  background: hsl(var(--section-fieldset) / 0.15);
+  background: hsl(var(--section-fieldset) / 0.08);
   color: hsl(var(--section-fieldset));
-  border: 1px solid hsl(var(--section-fieldset) / 0.4);
 }
 .conditions-btn-add-fieldset:hover {
-  background: hsl(var(--section-fieldset) / 0.2);
-  border-color: hsl(var(--section-fieldset) / 0.6);
+  background: hsl(var(--section-fieldset) / 0.14);
 }
 
 .conditions-btn-add-field {
-  background: hsl(var(--section-field) / 0.15);
+  background: hsl(var(--section-field) / 0.08);
   color: hsl(var(--section-field));
-  border: 1px solid hsl(var(--section-field) / 0.4);
 }
 .conditions-btn-add-field:hover {
-  background: hsl(var(--section-field) / 0.2);
-  border-color: hsl(var(--section-field) / 0.6);
+  background: hsl(var(--section-field) / 0.14);
 }
 
 .conditions-btn-add-condition {
-  background: hsl(var(--section-condition) / 0.15);
+  background: hsl(var(--section-condition) / 0.08);
   color: hsl(var(--section-condition));
-  border: 1px solid hsl(var(--section-condition) / 0.4);
 }
 .conditions-btn-add-condition:hover {
-  background: hsl(var(--section-condition) / 0.2);
-  border-color: hsl(var(--section-condition) / 0.6);
+  background: hsl(var(--section-condition) / 0.14);
 }
 
 .conditions-btn-add-filter {
-  background: hsl(var(--section-group) / 0.15);
+  background: hsl(var(--section-group) / 0.08);
   color: hsl(var(--section-group));
-  border: 1px solid hsl(var(--section-group) / 0.4);
 }
 .conditions-btn-add-filter:hover {
-  background: hsl(var(--section-group) / 0.2);
-  border-color: hsl(var(--section-group) / 0.6);
+  background: hsl(var(--section-group) / 0.14);
 }
 
 /* Show add and destroy buttons only on hover (root add group button always visible) */
@@ -357,7 +342,7 @@ button {
 }
 
 .conditions-field-set-badge {
-  background: hsl(var(--section-fieldset) / 0.15);
+  background: hsl(var(--section-fieldset) / 0.1);
   color: hsl(var(--section-fieldset));
   padding: 2px 6px;
   border-radius: calc(var(--radius) - 2px);
@@ -365,7 +350,6 @@ button {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.4px;
-  border: 1px solid hsl(var(--section-fieldset) / 0.3);
 }
 
 .conditions-fields-container {
@@ -375,40 +359,32 @@ button {
 }
 
 .conditions-field-set {
-  background: hsl(var(--section-fieldset) / 0.06);
-  border: 1px solid hsl(var(--border));
-  border-left: 3px solid hsl(var(--section-fieldset) / 0.7);
+  background: hsl(var(--section-fieldset) / 0.04);
+  border: 1px solid hsl(var(--border) / 0.5);
+  border-left-width: 2px;
+  border-left-color: hsl(var(--section-fieldset) / 0.5);
   border-radius: var(--radius);
   padding: 8px;
   transition: all 0.15s ease;
 }
 
 .conditions-field-set:hover:not(:has(.conditions-field:hover)) {
-  background: hsl(var(--section-fieldset) / 0.08);
-  border-left-color: hsl(var(--section-fieldset));
-  border-color: hsl(var(--section-fieldset));
-  box-shadow: 0 1px 4px hsl(var(--section-fieldset) / 0.1), 0 1px 2px hsl(var(--foreground) / 0.06);
+  border-left-color: hsl(var(--section-fieldset) / 0.75);
 }
 
 /* Field Block */
 .conditions-field {
-  background: hsl(var(--section-field) / 0.08);
-  border: 1px solid hsl(var(--border) / 0.2);
-  border-left: 3px solid hsl(var(--section-field) / 0.7);
+  background: hsl(var(--section-field) / 0.04);
+  border: 1px solid hsl(var(--border) / 0.4);
+  border-left-width: 2px;
+  border-left-color: hsl(var(--section-field) / 0.5);
   border-radius: var(--radius);
   padding: 8px;
   transition: all 0.15s ease;
 }
 
 .conditions-field:hover:not(:has(.conditions-condition-row:hover)):not(:has(.conditions-group-container:hover)) {
-  background: hsl(var(--section-field) / 0.08);
-  border-left-color: hsl(var(--section-field));
-  border-color: hsl(var(--section-field));
-  box-shadow: 0 1px 4px hsl(var(--section-field) / 0.1), 0 1px 2px hsl(var(--foreground) / 0.06);
-}
-
-.conditions-field-block:hover {
-  background: hsl(var(--section-field) / 0.06);
+  border-left-color: hsl(var(--section-field) / 0.75);
 }
 
 .conditions-field-header {
@@ -419,7 +395,7 @@ button {
 }
 
 .conditions-field-badge {
-  background: hsl(var(--section-field) / 0.15);
+  background: hsl(var(--section-field) / 0.1);
   color: hsl(var(--section-field));
   padding: 2px 6px;
   border-radius: calc(var(--radius) - 2px);
@@ -427,7 +403,6 @@ button {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.4px;
-  border: 1px solid hsl(var(--section-field) / 0.3);
 }
 
 .conditions-field-select,
@@ -445,8 +420,8 @@ button {
 }
 
 .conditions-condition-row {
-  background: hsl(var(--section-condition) / 0.08);
-  border: 1px solid hsl(var(--border));
+  background: hsl(var(--section-condition) / 0.04);
+  border: none;
   border-radius: calc(var(--radius) - 2px);
   padding: 4px 6px;
   display: flex;
@@ -456,9 +431,7 @@ button {
 }
 
 .conditions-condition-row:hover {
-  border-color: hsl(var(--section-condition) / 0.4);
   background: hsl(var(--section-condition) / 0.08);
-  box-shadow: 0 1px 3px hsl(var(--section-condition) / 0.1), 0 1px 2px hsl(var(--foreground) / 0.06);
 }
 
 .conditions-condition-inputs {
@@ -473,7 +446,7 @@ button {
 
 input {
   padding: 6px 8px;
-  border: 1px solid hsl(var(--input));
+  border: 1px solid hsl(var(--border) / 0.5);
   border-radius: calc(var(--radius) - 2px);
   background: hsl(var(--background));
   font-size: 12px;
@@ -485,7 +458,7 @@ input {
   flex: 1;
   height: 28px;
   padding: 0 8px;
-  border: 1px solid hsl(var(--input));
+  border: 1px solid hsl(var(--border) / 0.5);
   border-radius: calc(var(--radius) - 2px);
   background: hsl(var(--background));
   font-size: 13px;
@@ -499,8 +472,7 @@ input {
 
 .conditions-value-input:focus {
   outline: none;
-  border-color: hsl(var(--ring));
-  box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2);
+  border-color: hsl(var(--ring) / 0.6);
 }
 
 /* Button Groups */
