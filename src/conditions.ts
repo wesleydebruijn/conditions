@@ -112,7 +112,6 @@ export default class Conditions {
     const fieldSetsContainer = create('div', 'conditions-field-sets-container');
     const operatorSelect = create('select', 'conditions-select');
     const removeGroupBtn = create('button', 'conditions-btn conditions-btn-ghost conditions-btn-destructive conditions-remove-group-btn');
-    const groupButtonGroup = create('div', 'conditions-button-group');
     const addFieldSetBtn = create('button', 'conditions-btn conditions-btn-add-fieldset');
 
     // badge
@@ -147,9 +146,8 @@ export default class Conditions {
       this.addItem(fieldSetsContainer, group.fieldSets, newFieldSet, mapping, this.renderFieldSet.bind(this));
     });
 
-    append(groupHeader, groupBadge, operatorSelect, removeGroupBtn);
-    append(groupButtonGroup, addFieldSetBtn);
-    append(groupContainer, groupHeader, fieldSetsContainer, groupButtonGroup);
+    append(groupHeader, groupBadge, operatorSelect, addFieldSetBtn, removeGroupBtn);
+    append(groupContainer, groupHeader, fieldSetsContainer);
     append(groupElement, groupContainer);
     append(element, groupElement);
   }
@@ -164,7 +162,6 @@ export default class Conditions {
     const fieldSetBadge = create('span', 'conditions-field-set-badge');
     const fieldsContainer = create('div', 'conditions-fields-container');
     const removeFieldSetBtn = create('button', 'conditions-btn conditions-btn-ghost conditions-btn-destructive conditions-remove-group-btn');
-    const groupButtonGroup = create('div', 'conditions-button-group');
     const addFieldBtn = create('button', 'conditions-btn conditions-btn-add-field');
 
     // badge
@@ -189,9 +186,8 @@ export default class Conditions {
       this.addItem(fieldsContainer, fieldSet.fields, newField, mapping, this.renderField.bind(this));
     });
 
-    append(fieldSetHeader, fieldSetBadge, removeFieldSetBtn);
-    append(groupButtonGroup, addFieldBtn);
-    append(fieldSetElement, fieldSetHeader, fieldsContainer, groupButtonGroup);
+    append(fieldSetHeader, fieldSetBadge, addFieldBtn, removeFieldSetBtn);
+    append(fieldSetElement, fieldSetHeader, fieldsContainer);
     append(element, fieldSetElement);
   }
 
@@ -205,8 +201,6 @@ export default class Conditions {
     const conditionsElement = create('div', 'conditions-field-conditions');
     const addConditionBtn = create('button', 'conditions-btn conditions-btn-add-condition');
     const nestedGroupsElement = create('div', 'conditions-nested-groups');
-    const buttonGroup = create('div', 'conditions-button-group');
-    const nestedButtonGroup = create('div', 'conditions-button-group');
     const addNestedGroupBtn = create('button', 'conditions-btn conditions-btn-add-filter');
 
     // badge
@@ -290,10 +284,8 @@ export default class Conditions {
       this.addItem(nestedGroupsElement, field.where, newGroup, currentMapping, this.renderNestedGroups.bind(this));
     });
 
-    append(fieldHeader, fieldBadge, fieldInput, removeFieldBtn);
-    append(buttonGroup, addConditionBtn);
-    append(nestedButtonGroup, addNestedGroupBtn);
-    append(fieldElement, fieldHeader, nestedGroupsElement, nestedButtonGroup, conditionsElement, buttonGroup);
+    append(fieldHeader, fieldBadge, fieldInput, addConditionBtn, addNestedGroupBtn, removeFieldBtn);
+    append(fieldElement, fieldHeader, nestedGroupsElement, conditionsElement);
     append(element, fieldElement);
   }
 

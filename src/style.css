@@ -268,6 +268,34 @@ button {
   border-color: hsl(var(--section-group) / 0.6);
 }
 
+/* Show add and destroy buttons only on hover */
+.conditions-wrapper .conditions-btn-add-group,
+.conditions-group-header .conditions-btn-add-fieldset,
+.conditions-group-header .conditions-btn-destructive,
+.conditions-field-set-header .conditions-btn-add-field,
+.conditions-field-set-header .conditions-btn-destructive,
+.conditions-field-header .conditions-btn-add-condition,
+.conditions-field-header .conditions-btn-add-filter,
+.conditions-field-header .conditions-btn-destructive,
+.conditions-condition-row .conditions-btn-destructive {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.conditions-wrapper:hover .conditions-btn-add-group,
+.conditions-group-header:hover .conditions-btn-add-fieldset,
+.conditions-group-header:hover .conditions-btn-destructive,
+.conditions-field-set-header:hover .conditions-btn-add-field,
+.conditions-field-set-header:hover .conditions-btn-destructive,
+.conditions-field-header:hover .conditions-btn-add-condition,
+.conditions-field-header:hover .conditions-btn-add-filter,
+.conditions-field-header:hover .conditions-btn-destructive,
+.conditions-condition-row:hover .conditions-btn-destructive {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 /* Fields Container */
 .conditions-field-sets-container {
   display: flex;
