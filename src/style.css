@@ -19,11 +19,11 @@
   --input: 214.3 31.8% 91.4%;
   --ring: 221.2 83.2% 53.3%;
   --radius: 0.375rem;
-  /* Section accents – analogous blue/teal palette (similar, harmonious) */
-  --section-group: 210 55% 42%;
-  --section-fieldset: 195 50% 44%;
-  --section-field: 185 48% 46%;
-  --section-condition: 200 52% 48%;
+  /* Section accents – barely tinted gray palette */
+  --section-group: 210 4% 42%;
+  --section-fieldset: 195 3.5% 44%;
+  --section-field: 185 3% 46%;
+  --section-condition: 200 3.5% 48%;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -48,10 +48,10 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 224.3 76.3% 48%;
     --radius: 0.375rem;
-    --section-group: 210 45% 58%;
-    --section-fieldset: 195 42% 60%;
-    --section-field: 185 40% 62%;
-    --section-condition: 200 42% 64%;
+    --section-group: 210 3% 66%;
+    --section-fieldset: 195 2.5% 68%;
+    --section-field: 185 2.5% 70%;
+    --section-condition: 200 3% 72%;
   }
 }
 
@@ -268,8 +268,7 @@ button {
   border-color: hsl(var(--section-group) / 0.6);
 }
 
-/* Show add and destroy buttons only on hover */
-.conditions-wrapper .conditions-btn-add-group,
+/* Show add and destroy buttons only on hover (root add group button always visible) */
 .conditions-group-header .conditions-btn-add-fieldset,
 .conditions-group-header .conditions-btn-destructive,
 .conditions-field-set-header .conditions-btn-add-field,
@@ -283,7 +282,6 @@ button {
   transition: opacity 0.15s ease;
 }
 
-.conditions-wrapper:hover .conditions-btn-add-group,
 .conditions-group-header:hover .conditions-btn-add-fieldset,
 .conditions-group-header:hover .conditions-btn-destructive,
 .conditions-field-set-header:hover .conditions-btn-add-field,
@@ -401,7 +399,6 @@ button {
 .conditions-condition-row {
   background: hsl(var(--section-condition) / 0.08);
   border: 1px solid hsl(var(--border));
-  border-left: 3px solid hsl(var(--section-condition) / 0.7);
   border-radius: calc(var(--radius) - 2px);
   padding: 4px 6px;
   display: flex;
@@ -411,23 +408,9 @@ button {
 }
 
 .conditions-condition-row:hover {
-  border-left-color: hsl(var(--section-condition));
-  border-color: hsl(var(--section-condition));
+  border-color: hsl(var(--section-condition) / 0.4);
   background: hsl(var(--section-condition) / 0.08);
   box-shadow: 0 1px 3px hsl(var(--section-condition) / 0.1), 0 1px 2px hsl(var(--foreground) / 0.06);
-}
-
-.conditions-condition-badge {
-  background: hsl(var(--section-condition) / 0.2);
-  color: hsl(var(--section-condition));
-  padding: 1px 4px;
-  border-radius: calc(var(--radius) - 2px);
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.2px;
-  min-width: 36px;
-  text-align: center;
 }
 
 .conditions-condition-inputs {
@@ -482,9 +465,6 @@ input {
 
 
 @media (max-width: 768px) {
-  .conditions-condition-badge {
-    display: none;
-  }
   .conditions-condition-inputs {
     flex-wrap: wrap;
   }

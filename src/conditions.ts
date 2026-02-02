@@ -291,14 +291,10 @@ export default class Conditions {
 
   private renderCondition(element: HTMLElement, conditions: Condition[], condition: Condition, _mapping?: Mapping) {
     const conditionElement = create('div', 'conditions-condition-row');
-    const conditionBadge = create('span', 'conditions-condition-badge');
     const conditionInputs = create('div', 'conditions-condition-inputs');
     const operatorSelect = create('select', 'conditions-operator-select');
     const valueInput = create('input', 'conditions-value-input');
     const removeConditionBtn = create('button', 'conditions-btn conditions-btn-ghost conditions-btn-destructive');
-
-    // badge
-    conditionBadge.textContent = this.settings.items.condition;
 
     // operator select
     operatorSelect.innerHTML = Object.entries(this.settings.conditionOperators)
@@ -327,7 +323,7 @@ export default class Conditions {
     });
 
     append(conditionInputs, operatorSelect, valueInput);
-    append(conditionElement, conditionBadge, conditionInputs, removeConditionBtn);
+    append(conditionElement, conditionInputs, removeConditionBtn);
     append(element, conditionElement);
   }
 
