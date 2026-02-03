@@ -2,7 +2,17 @@ import { deserialize, serialize } from './serializer';
 import { fieldList, fieldKey } from './mapping';
 import { create, createIcon, find, visible, append } from './utils/dom';
 
-import type { Group, Field, FieldSet, Condition, Operator, ConditionOperator, Settings, Mapping } from './types';
+import type {
+  Group,
+  Field,
+  FieldSet,
+  Condition,
+  Operator,
+  ConditionOperator,
+  Settings,
+  Mapping,
+  ClassNames,
+} from './types';
 
 declare global {
   interface HTMLInputElement {
@@ -16,6 +26,44 @@ declare global {
 
 export default class Conditions {
   private settings: Settings = {
+    classNames: {
+      wrapper: 'conditions-wrapper',
+      groupsContainer: 'conditions-groups-container',
+
+      groupSection: 'conditions-group-section',
+      groupHeader: 'conditions-group-header',
+      groupBody: 'conditions-group-body',
+      groupBadge: 'conditions-group-badge',
+      select: 'conditions-select',
+
+      fieldsetSection: 'conditions-fieldset-section',
+      fieldsetHeader: 'conditions-fieldset-header',
+      fieldsetBody: 'conditions-fieldset-body',
+      fieldsetBadge: 'conditions-fieldset-badge',
+
+      fieldSection: 'conditions-field-section',
+      fieldHeader: 'conditions-field-header',
+      fieldBody: 'conditions-field-body',
+      fieldBadge: 'conditions-field-badge',
+      fieldConditions: 'conditions-field-conditions',
+      fieldNestedGroups: 'conditions-field-nested-groups',
+      fieldInput: 'conditions-field-input',
+      fieldSelect: 'conditions-field-select',
+
+      conditionSection: 'conditions-condition-section',
+      conditionInputs: 'conditions-condition-inputs',
+      operatorSelect: 'conditions-operator-select',
+      valueInput: 'conditions-value-input',
+
+      isCollapsed: 'is-collapsed',
+
+      buttonAddGroup: 'conditions-btn-add-group',
+      buttonAddFieldSet: 'conditions-btn-add-fieldset',
+      buttonAddField: 'conditions-btn-add-field',
+      buttonAddCondition: 'conditions-btn-add-condition',
+      buttonAddFilter: 'conditions-btn-add-filter',
+      buttonRemove: 'conditions-btn-remove',
+    },
     items: {
       group: 'Group',
       field: 'Field',
@@ -58,19 +106,20 @@ export default class Conditions {
     settings: Partial<Settings> = {}
   ) {
     this.settings = { ...this.settings, ...settings };
+
     this.input = find(input);
     this.input.addEventListener('change', event => {
       if (!event.isTrusted) return; // ignore programmatic events
 
       this.groups = deserialize(this.input.value);
       this.wrapperElement.remove();
-      this.wrapperElement = create('div', 'conditions-wrapper');
+      this.wrapperElement = create('div', this.settings.classNames.wrapper);
 
       this.render();
     });
     this.input.conditions = this;
     this.groups = deserialize(this.input.value);
-    this.wrapperElement = create('div', 'conditions-wrapper');
+    this.wrapperElement = create('div', this.settings.classNames.wrapper);
     visible(this.input, false);
 
     this.render();
@@ -84,8 +133,8 @@ export default class Conditions {
   }
 
   private render() {
-    const addGroupBtn = create('button', 'conditions-btn-add-group');
-    const groupsContainer = create('div', 'conditions-groups-container');
+    const addGroupBtn = create('button', this.settings.classNames.buttonAddGroup);
+    const groupsContainer = create('div', this.settings.classNames.groupsContainer);
 
     addGroupBtn.appendChild(createIcon('plus'));
     addGroupBtn.addEventListener('click', event => {
@@ -103,18 +152,18 @@ export default class Conditions {
   }
 
   private renderGroup(element: HTMLElement, groups: Group[], group: Group, mapping?: Mapping, nested?: boolean) {
-    const groupSection = create('div', 'conditions-group-section');
-    const groupHeader = create('div', 'conditions-group-header');
-    const groupBody = create('div', 'conditions-group-body');
-    const groupBadge = create('span', 'conditions-group-badge');
-    const operatorSelect = create('select', 'conditions-select');
-    const removeGroupBtn = create('button', 'conditions-btn-remove');
-    const addFieldSetBtn = create('button', 'conditions-btn-add-fieldset');
+    const groupSection = create('div', this.settings.classNames.groupSection);
+    const groupHeader = create('div', this.settings.classNames.groupHeader);
+    const groupBody = create('div', this.settings.classNames.groupBody);
+    const groupBadge = create('span', this.settings.classNames.groupBadge);
+    const operatorSelect = create('select', this.settings.classNames.select);
+    const removeGroupBtn = create('button', this.settings.classNames.buttonRemove);
+    const addFieldSetBtn = create('button', this.settings.classNames.buttonAddFieldSet);
 
     // badge (collapse SVG + label; whole badge toggles collapse)
     groupBadge.appendChild(createIcon('collapse'));
     groupBadge.appendChild(document.createTextNode(nested ? this.settings.items.nestedGroup : this.settings.items.group));
-    groupBadge.addEventListener('click', () => groupSection.classList.toggle('is-collapsed'));
+    groupBadge.addEventListener('click', () => groupSection.classList.toggle(this.settings.classNames.isCollapsed));
 
     // operator select
     operatorSelect.innerHTML = Object.entries(this.settings.operators)
@@ -156,17 +205,17 @@ export default class Conditions {
   }
 
   private renderFieldSet(element: HTMLElement, fieldSets: FieldSet[], fieldSet: FieldSet, mapping?: Mapping) {
-    const fieldSetSection = create('div', 'conditions-fieldset-section');
-    const fieldSetHeader = create('div', 'conditions-fieldset-header');
-    const fieldSetBody = create('div', 'conditions-fieldset-body');
-    const fieldSetBadge = create('span', 'conditions-fieldset-badge');
-    const removeFieldSetBtn = create('button', 'conditions-btn-remove');
-    const addFieldBtn = create('button', 'conditions-btn-add-field');
+    const fieldSetSection = create('div', this.settings.classNames.fieldsetSection);
+    const fieldSetHeader = create('div', this.settings.classNames.fieldsetHeader);
+    const fieldSetBody = create('div', this.settings.classNames.fieldsetBody);
+    const fieldSetBadge = create('span', this.settings.classNames.fieldsetBadge);
+    const removeFieldSetBtn = create('button', this.settings.classNames.buttonRemove);
+    const addFieldBtn = create('button', this.settings.classNames.buttonAddField);
 
     // badge (collapse SVG + label; whole badge toggles collapse)
     fieldSetBadge.appendChild(createIcon('collapse'));
     fieldSetBadge.appendChild(document.createTextNode(this.settings.items.fieldSet));
-    fieldSetBadge.addEventListener('click', () => fieldSetSection.classList.toggle('is-collapsed'));
+    fieldSetBadge.addEventListener('click', () => fieldSetSection.classList.toggle(this.settings.classNames.isCollapsed));
 
     // fields
     fieldSet.fields.forEach(field => this.renderField(fieldSetBody, fieldSet.fields, field, mapping));
@@ -196,26 +245,26 @@ export default class Conditions {
   private renderField(element: HTMLElement, fields: Field[], field: Field, mapping?: Mapping) {
     let fieldInput: HTMLInputElement | HTMLSelectElement;
 
-    const fieldElement = create('div', 'conditions-field-section');
-    const fieldHeader = create('div', 'conditions-field-header');
-    const fieldBody = create('div', 'conditions-field-body');
-    const fieldBadge = create('span', 'conditions-field-badge');
-    const removeFieldBtn = create('button', 'conditions-btn-remove');
-    const conditionsElement = create('div', 'conditions-field-conditions');
-    const addConditionBtn = create('button', 'conditions-btn-add-condition');
-    const nestedGroupsElement = create('div', 'conditions-field-nested-groups');
-    const addNestedGroupBtn = create('button', 'conditions-btn-add-filter');
+    const fieldElement = create('div', this.settings.classNames.fieldSection);
+    const fieldHeader = create('div', this.settings.classNames.fieldHeader);
+    const fieldBody = create('div', this.settings.classNames.fieldBody);
+    const fieldBadge = create('span', this.settings.classNames.fieldBadge);
+    const removeFieldBtn = create('button', this.settings.classNames.buttonRemove);
+    const conditionsElement = create('div', this.settings.classNames.fieldConditions);
+    const addConditionBtn = create('button', this.settings.classNames.buttonAddCondition);
+    const nestedGroupsElement = create('div', this.settings.classNames.fieldNestedGroups);
+    const addNestedGroupBtn = create('button', this.settings.classNames.buttonAddFilter);
 
     // badge (collapse SVG + label; whole badge toggles collapse)
     fieldBadge.appendChild(createIcon('collapse'));
     fieldBadge.appendChild(document.createTextNode(this.settings.items.field));
-    fieldBadge.addEventListener('click', () => fieldElement.classList.toggle('is-collapsed'));
+    fieldBadge.addEventListener('click', () => fieldElement.classList.toggle(this.settings.classNames.isCollapsed));
 
     if(!mapping) {
-      fieldInput = create('input', 'conditions-field-input');
+      fieldInput = create('input', this.settings.classNames.fieldInput);
       fieldInput.value = field.key;
     } else {
-      fieldInput = create('select', 'conditions-field-select');
+      fieldInput = create('select', this.settings.classNames.fieldSelect);
       fieldInput.setAttribute('data-field', fieldKey(field.key));
       fieldInput.innerHTML =
         `<option value="">--- Select ${this.settings.items.field} ---</option>` +
@@ -297,11 +346,11 @@ export default class Conditions {
   }
 
   private renderCondition(element: HTMLElement, conditions: Condition[], condition: Condition, _mapping?: Mapping) {
-    const conditionElement = create('div', 'conditions-condition-section');
-    const conditionInputs = create('div', 'conditions-condition-inputs');
-    const operatorSelect = create('select', 'conditions-operator-select');
-    const valueInput = create('input', 'conditions-value-input');
-    const removeConditionBtn = create('button', 'conditions-btn-remove');
+    const conditionElement = create('div', this.settings.classNames.conditionSection);
+    const conditionInputs = create('div', this.settings.classNames.conditionInputs);
+    const operatorSelect = create('select', this.settings.classNames.operatorSelect);
+    const valueInput = create('input', this.settings.classNames.valueInput);
+    const removeConditionBtn = create('button', this.settings.classNames.buttonRemove);
 
     // operator select
     operatorSelect.innerHTML = Object.entries(this.settings.conditionOperators)

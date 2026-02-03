@@ -43,21 +43,62 @@ export type Condition = {
 }
 
 export type Mapping = Record<string, MappingSettings>;
+
 export type MappingSettings = {
   label: string;
   type: 'text' | 'number' | 'boolean' | 'date' | 'object';
   mapping?: Mapping;
-}
+};
+
+export type ClassNames = {
+  wrapper: string;
+  groupsContainer: string;
+
+  groupSection: string;
+  groupHeader: string;
+  groupBody: string;
+  groupBadge: string;
+  select: string;
+
+  fieldsetSection: string;
+  fieldsetHeader: string;
+  fieldsetBody: string;
+  fieldsetBadge: string;
+
+  fieldSection: string;
+  fieldHeader: string;
+  fieldBody: string;
+  fieldBadge: string;
+  fieldConditions: string;
+  fieldNestedGroups: string;
+  fieldInput: string;
+  fieldSelect: string;
+
+  conditionSection: string;
+  conditionInputs: string;
+  operatorSelect: string;
+  valueInput: string;
+
+  isCollapsed: string;
+
+  buttonAddGroup: string;
+  buttonAddFieldSet: string;
+  buttonAddField: string;
+  buttonAddCondition: string;
+  buttonAddFilter: string;
+  buttonRemove: string;
+};
 
 export type Settings = {
+  classNames: ClassNames;
   items: {
     group: string;
     field: string;
     fieldSet: string;
     condition: string;
     nestedGroup: string;
-  },
-  operators: Record<Operator, string>
-  conditionOperators: Partial<Record<ConditionOperator, string>>
+  };
+  operators: Record<Operator, string>;
+  conditionOperators: Partial<Record<ConditionOperator, string>>;
   mapping?: Mapping;
-}
+};
