@@ -93,36 +93,43 @@
   cursor: pointer;
   transition: opacity 0.15s ease;
 }
+
 .conditions-group-badge:hover,
 .conditions-field-set-badge:hover,
 .conditions-field-badge:hover {
   opacity: 0.9;
 }
+
 .conditions-collapse-icon {
   display: block;
   transition: transform 0.2s ease;
 }
+
 .conditions-group.is-collapsed .conditions-collapse-icon,
 .conditions-field-set.is-collapsed .conditions-collapse-icon,
 .conditions-field.is-collapsed .conditions-collapse-icon {
   transform: rotate(-90deg);
 }
+
 .conditions-icon {
   display: inline-block;
   vertical-align: middle;
   flex-shrink: 0;
 }
+
 .conditions-group-body,
 .conditions-field-set-body,
 .conditions-field-body {
   overflow: hidden;
   transition: opacity 0.15s ease;
 }
+
 .conditions-group.is-collapsed .conditions-group-body,
 .conditions-field-set.is-collapsed .conditions-field-set-body,
 .conditions-field.is-collapsed .conditions-field-body {
   display: none;
 }
+
 .conditions-group.is-collapsed .conditions-group-header,
 .conditions-field-set.is-collapsed .conditions-field-set-header,
 .conditions-field.is-collapsed .conditions-field-header {
@@ -182,7 +189,9 @@ button {
   font-weight: 500;
 }
 
-.conditions-btn {
+/* Base for all conditions builder buttons (single-class usage) */
+.conditions-btn,
+[class^="conditions-btn-"] {
   height: 28px;
   padding: 0 10px;
   border-radius: calc(var(--radius) - 2px);
@@ -193,31 +202,13 @@ button {
   white-space: nowrap;
 }
 
-.conditions-remove-group-btn {
+.conditions-btn-remove {
   margin-left: auto;
-}
-
-.conditions-remove-group-btn:hover {
-  background: hsl(var(--destructive));
-  color: hsl(var(--destructive-foreground));
-}
-
-.conditions-btn-ghost {
-  background: transparent;
-  color: hsl(var(--foreground));
-}
-
-.conditions-btn-ghost:hover {
-  background: hsl(var(--accent));
-  color: hsl(var(--accent-foreground));
-}
-
-.conditions-btn-destructive {
   background: transparent;
   color: hsl(var(--destructive));
 }
 
-.conditions-btn-destructive:hover {
+.conditions-btn-remove:hover {
   background: hsl(var(--destructive));
   color: hsl(var(--destructive-foreground));
 }
@@ -265,6 +256,7 @@ button {
   background: hsl(var(--section-group) / 0.08);
   color: hsl(var(--section-group));
 }
+
 .conditions-btn-add-group:hover {
   background: hsl(var(--section-group) / 0.14);
 }
@@ -273,6 +265,7 @@ button {
   background: hsl(var(--section-fieldset) / 0.08);
   color: hsl(var(--section-fieldset));
 }
+
 .conditions-btn-add-fieldset:hover {
   background: hsl(var(--section-fieldset) / 0.14);
 }
@@ -281,6 +274,7 @@ button {
   background: hsl(var(--section-field) / 0.08);
   color: hsl(var(--section-field));
 }
+
 .conditions-btn-add-field:hover {
   background: hsl(var(--section-field) / 0.14);
 }
@@ -289,6 +283,7 @@ button {
   background: hsl(var(--section-condition) / 0.08);
   color: hsl(var(--section-condition));
 }
+
 .conditions-btn-add-condition:hover {
   background: hsl(var(--section-condition) / 0.14);
 }
@@ -297,32 +292,33 @@ button {
   background: hsl(var(--section-group) / 0.08);
   color: hsl(var(--section-group));
 }
+
 .conditions-btn-add-filter:hover {
   background: hsl(var(--section-group) / 0.14);
 }
 
-/* Show add and destroy buttons only on hover (root add group button always visible) */
+/* Show add and remove buttons only on hover (root add group button always visible) */
 .conditions-group-header .conditions-btn-add-fieldset,
-.conditions-group-header .conditions-btn-destructive,
+.conditions-group-header .conditions-btn-remove,
 .conditions-field-set-header .conditions-btn-add-field,
-.conditions-field-set-header .conditions-btn-destructive,
+.conditions-field-set-header .conditions-btn-remove,
 .conditions-field-header .conditions-btn-add-condition,
 .conditions-field-header .conditions-btn-add-filter,
-.conditions-field-header .conditions-btn-destructive,
-.conditions-condition-row .conditions-btn-destructive {
+.conditions-field-header .conditions-btn-remove,
+.conditions-condition-row .conditions-btn-remove {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.15s ease;
 }
 
 .conditions-group-header:hover .conditions-btn-add-fieldset,
-.conditions-group-header:hover .conditions-btn-destructive,
+.conditions-group-header:hover .conditions-btn-remove,
 .conditions-field-set-header:hover .conditions-btn-add-field,
-.conditions-field-set-header:hover .conditions-btn-destructive,
+.conditions-field-set-header:hover .conditions-btn-remove,
 .conditions-field-header:hover .conditions-btn-add-condition,
 .conditions-field-header:hover .conditions-btn-add-filter,
-.conditions-field-header:hover .conditions-btn-destructive,
-.conditions-condition-row:hover .conditions-btn-destructive {
+.conditions-field-header:hover .conditions-btn-remove,
+.conditions-condition-row:hover .conditions-btn-remove {
   opacity: 1;
   pointer-events: auto;
 }

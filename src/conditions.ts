@@ -85,7 +85,7 @@ export default class Conditions {
 
   private render() {
     const buttonGroup = create('div', 'conditions-button-group');
-    const addGroupBtn = create('button', 'conditions-btn conditions-btn-add-group');
+    const addGroupBtn = create('button', 'conditions-btn-add-group');
     const groupsContainer = create('div', 'conditions-groups-container');
 
     addGroupBtn.appendChild(createIcon('plus'));
@@ -112,8 +112,8 @@ export default class Conditions {
     const groupBadge = create('span', 'conditions-group-badge');
     const fieldSetsContainer = create('div', 'conditions-field-sets-container');
     const operatorSelect = create('select', 'conditions-select');
-    const removeGroupBtn = create('button', 'conditions-btn conditions-btn-ghost conditions-btn-destructive conditions-remove-group-btn');
-    const addFieldSetBtn = create('button', 'conditions-btn conditions-btn-add-fieldset');
+    const removeGroupBtn = create('button', 'conditions-btn-remove');
+    const addFieldSetBtn = create('button', 'conditions-btn-add-fieldset');
 
     // badge (collapse SVG + label; whole badge toggles collapse)
     groupBadge.appendChild(createIcon('collapse'));
@@ -167,8 +167,8 @@ export default class Conditions {
     const fieldSetBody = create('div', 'conditions-field-set-body');
     const fieldSetBadge = create('span', 'conditions-field-set-badge');
     const fieldsContainer = create('div', 'conditions-fields-container');
-    const removeFieldSetBtn = create('button', 'conditions-btn conditions-btn-ghost conditions-btn-destructive conditions-remove-group-btn');
-    const addFieldBtn = create('button', 'conditions-btn conditions-btn-add-field');
+    const removeFieldSetBtn = create('button', 'conditions-btn-remove');
+    const addFieldBtn = create('button', 'conditions-btn-add-field');
 
     // badge (collapse SVG + label; whole badge toggles collapse)
     fieldSetBadge.appendChild(createIcon('collapse'));
@@ -208,11 +208,11 @@ export default class Conditions {
     const fieldHeader = create('div', 'conditions-field-header');
     const fieldBody = create('div', 'conditions-field-body');
     const fieldBadge = create('span', 'conditions-field-badge');
-    const removeFieldBtn = create('button', 'conditions-btn conditions-btn-ghost conditions-btn-destructive');
+    const removeFieldBtn = create('button', 'conditions-btn-remove');
     const conditionsElement = create('div', 'conditions-field-conditions');
-    const addConditionBtn = create('button', 'conditions-btn conditions-btn-add-condition');
+    const addConditionBtn = create('button', 'conditions-btn-add-condition');
     const nestedGroupsElement = create('div', 'conditions-nested-groups');
-    const addNestedGroupBtn = create('button', 'conditions-btn conditions-btn-add-filter');
+    const addNestedGroupBtn = create('button', 'conditions-btn-add-filter');
 
     // badge (collapse SVG + label; whole badge toggles collapse)
     fieldBadge.appendChild(createIcon('collapse'));
@@ -309,7 +309,7 @@ export default class Conditions {
     const conditionInputs = create('div', 'conditions-condition-inputs');
     const operatorSelect = create('select', 'conditions-operator-select');
     const valueInput = create('input', 'conditions-value-input');
-    const removeConditionBtn = create('button', 'conditions-btn conditions-btn-ghost conditions-btn-destructive');
+    const removeConditionBtn = create('button', 'conditions-btn-remove');
 
     // operator select
     operatorSelect.innerHTML = Object.entries(this.settings.conditionOperators)
