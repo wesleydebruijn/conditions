@@ -105,9 +105,9 @@
   letter-spacing: 0.4px;
 }
 
-.conditions-select,
+.conditions-group-operator-select,
 .conditions-field-select,
-.conditions-operator-select {
+.conditions-condition-operator-select {
   height: 28px;
   padding: 0 28px 0 8px;
   border: 1px solid hsl(var(--border) / 0.5);
@@ -124,15 +124,15 @@
   background-size: 14px;
 }
 
-.conditions-select:hover,
+.conditions-group-operator-select:hover,
 .conditions-field-select:hover,
-.conditions-operator-select:hover {
+.conditions-condition-operator-select:hover {
   border-color: hsl(var(--ring));
 }
 
-.conditions-select:focus,
+.conditions-group-operator-select:focus,
 .conditions-field-select:focus,
-.conditions-operator-select:focus {
+.conditions-condition-operator-select:focus {
   outline: none;
   border-color: hsl(var(--ring) / 0.6);
 }
@@ -351,7 +351,7 @@
   flex: 1;
 }
 
-.conditions-operator-select {
+.conditions-condition-operator-select {
   flex: 1.2;
 }
 
@@ -365,7 +365,7 @@ input {
   transition: all 0.15s ease;
 }
 
-.conditions-value-input {
+.conditions-condition-value-input {
   flex: 1;
   height: 28px;
   padding: 0 8px;
@@ -377,11 +377,11 @@ input {
   transition: all 0.15s ease;
 }
 
-.conditions-value-input:hover {
+.conditions-condition-value-input:hover {
   border-color: hsl(var(--ring));
 }
 
-.conditions-value-input:focus {
+.conditions-condition-value-input:focus {
   outline: none;
   border-color: hsl(var(--ring) / 0.6);
 }

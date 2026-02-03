@@ -33,7 +33,7 @@ export default class Conditions {
       groupHeader: 'conditions-group-header',
       groupBody: 'conditions-group-body',
       groupBadge: 'conditions-group-badge',
-      select: 'conditions-select',
+      groupSelect: 'conditions-group-operator-select',
 
       fieldsetSection: 'conditions-fieldset-section',
       fieldsetHeader: 'conditions-fieldset-header',
@@ -51,8 +51,8 @@ export default class Conditions {
 
       conditionSection: 'conditions-condition-section',
       conditionInputs: 'conditions-condition-inputs',
-      operatorSelect: 'conditions-operator-select',
-      valueInput: 'conditions-value-input',
+      conditionSelect: 'conditions-condition-operator-select',
+      conditionValueInput: 'conditions-condition-value-input',
 
       isCollapsed: 'is-collapsed',
 
@@ -66,7 +66,7 @@ export default class Conditions {
     items: {
       group: 'Group',
       field: 'Field',
-      fieldSet: 'Field Set',
+      fieldset: 'Field Set',
       condition: 'Condition',
       nestedGroup: 'Filter',
     },
@@ -155,7 +155,7 @@ export default class Conditions {
     const groupHeader = create('div', this.settings.classNames.groupHeader);
     const groupBody = create('div', this.settings.classNames.groupBody);
     const groupBadge = create('span', this.settings.classNames.groupBadge);
-    const operatorSelect = create('select', this.settings.classNames.select);
+    const groupOperatorSelect = create('select', this.settings.classNames.groupSelect);
     const removeGroupBtn = create('button', this.settings.classNames.buttonRemove);
     const addFieldSetBtn = create('button', this.settings.classNames.buttonAddFieldSet);
 
@@ -165,25 +165,24 @@ export default class Conditions {
     groupBadge.addEventListener('click', () => groupSection.classList.toggle(this.settings.classNames.isCollapsed));
 
     // operator select
-    operatorSelect.innerHTML = Object.entries(this.settings.operators)
+    groupOperatorSelect.innerHTML = Object.entries(this.settings.operators)
       .map(([key, label]) => `<option value="${key}"${group.operator === key ? " selected" : ""}>${label}</option>`)
       .join('');
 
-    operatorSelect.addEventListener('change', () => {
-      group.operator = operatorSelect.value as Operator;
+      groupOperatorSelect.addEventListener('change', () => {
+      group.operator = groupOperatorSelect.value as Operator;
       this.onChange();
     });
 
     // remove group button
     removeGroupBtn.appendChild(createIcon('close'));
-    removeGroupBtn.setAttribute('aria-label', 'Remove');
     removeGroupBtn.addEventListener('click', event => {
       event.preventDefault();
       this.removeItem(groupSection, groups, group);
     });
 
     // field sets
-    group.fieldSets.forEach(fieldSet => this.renderFieldSet(groupBody, group.fieldSets, fieldSet, mapping));
+    group.fieldSets.forEach(fieldset => this.renderFieldSet(groupBody, group.fieldSets, fieldset, mapping));
 
     // add field set button
     addFieldSetBtn.appendChild(createIcon('plus'));
@@ -194,7 +193,7 @@ export default class Conditions {
       this.addItem(groupBody, group.fieldSets, newFieldSet, mapping, this.renderFieldSet.bind(this));
     });
 
-    append(groupHeader, groupBadge, operatorSelect, addFieldSetBtn, removeGroupBtn);
+    append(groupHeader, groupBadge, groupOperatorSelect, addFieldSetBtn, removeGroupBtn);
     append(groupSection, groupHeader, groupBody);
     append(element, groupSection);
   }
@@ -203,7 +202,7 @@ export default class Conditions {
     this.renderGroup(element, groups, group, mapping, true);
   }
 
-  private renderFieldSet(element: HTMLElement, fieldSets: FieldSet[], fieldSet: FieldSet, mapping?: Mapping) {
+  private renderFieldSet(element: HTMLElement, fieldSets: FieldSet[], fieldset: FieldSet, mapping?: Mapping) {
     const fieldSetSection = create('div', this.settings.classNames.fieldsetSection);
     const fieldSetHeader = create('div', this.settings.classNames.fieldsetHeader);
     const fieldSetBody = create('div', this.settings.classNames.fieldsetBody);
@@ -213,18 +212,18 @@ export default class Conditions {
 
     // badge (collapse SVG + label; whole badge toggles collapse)
     fieldSetBadge.appendChild(createIcon('collapse'));
-    fieldSetBadge.appendChild(document.createTextNode(this.settings.items.fieldSet));
+    fieldSetBadge.appendChild(document.createTextNode(this.settings.items.fieldset));
     fieldSetBadge.addEventListener('click', () => fieldSetSection.classList.toggle(this.settings.classNames.isCollapsed));
 
     // fields
-    fieldSet.fields.forEach(field => this.renderField(fieldSetBody, fieldSet.fields, field, mapping));
+    fieldset.fields.forEach(field => this.renderField(fieldSetBody, fieldset.fields, field, mapping));
 
     // remove field set button
     removeFieldSetBtn.appendChild(createIcon('close'));
     removeFieldSetBtn.setAttribute('aria-label', 'Remove');
     removeFieldSetBtn.addEventListener('click', event => {
       event.preventDefault();
-      this.removeItem(fieldSetSection, fieldSets, fieldSet);
+      this.removeItem(fieldSetSection, fieldSets, fieldset);
     });
 
     // add field button
@@ -233,7 +232,7 @@ export default class Conditions {
       event.preventDefault()
 
       const newField: Field = { key: '', conditions: [] };
-      this.addItem(fieldSetBody, fieldSet.fields, newField, mapping, this.renderField.bind(this));
+      this.addItem(fieldSetBody, fieldset.fields, newField, mapping, this.renderField.bind(this));
     });
 
     append(fieldSetHeader, fieldSetBadge, addFieldBtn, removeFieldSetBtn);
@@ -254,7 +253,6 @@ export default class Conditions {
     const nestedGroupsElement = create('div', this.settings.classNames.fieldNestedGroups);
     const addNestedGroupBtn = create('button', this.settings.classNames.buttonAddFilter);
 
-    // badge (collapse SVG + label; whole badge toggles collapse)
     fieldBadge.appendChild(createIcon('collapse'));
     fieldBadge.appendChild(document.createTextNode(this.settings.items.field));
     fieldBadge.addEventListener('click', () => fieldElement.classList.toggle(this.settings.classNames.isCollapsed));
@@ -347,8 +345,8 @@ export default class Conditions {
   private renderCondition(element: HTMLElement, conditions: Condition[], condition: Condition, _mapping?: Mapping) {
     const conditionElement = create('div', this.settings.classNames.conditionSection);
     const conditionInputs = create('div', this.settings.classNames.conditionInputs);
-    const operatorSelect = create('select', this.settings.classNames.operatorSelect);
-    const valueInput = create('input', this.settings.classNames.valueInput);
+    const operatorSelect = create('select', this.settings.classNames.conditionSelect);
+    const valueInput = create('input', this.settings.classNames.conditionValueInput);
     const removeConditionBtn = create('button', this.settings.classNames.buttonRemove);
 
     // operator select
@@ -372,7 +370,6 @@ export default class Conditions {
 
     // remove button
     removeConditionBtn.appendChild(createIcon('close'));
-    removeConditionBtn.setAttribute('aria-label', 'Remove');
     removeConditionBtn.addEventListener('click', event => {
       event.preventDefault();
       this.removeItem(conditionElement, conditions, condition);

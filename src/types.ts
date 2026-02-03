@@ -58,7 +58,7 @@ export type ClassNames = {
   groupHeader: string;
   groupBody: string;
   groupBadge: string;
-  select: string;
+  groupSelect: string;
 
   fieldsetSection: string;
   fieldsetHeader: string;
@@ -76,8 +76,8 @@ export type ClassNames = {
 
   conditionSection: string;
   conditionInputs: string;
-  operatorSelect: string;
-  valueInput: string;
+  conditionSelect: string;
+  conditionValueInput: string;
 
   isCollapsed: string;
 
@@ -94,7 +94,7 @@ export type Settings = {
   items: {
     group: string;
     field: string;
-    fieldSet: string;
+    fieldset: string;
     condition: string;
     nestedGroup: string;
   };

@@ -45,7 +45,7 @@ function serializeGroup(group: Group): Hash {
   let groupObj: Hash = {};
 
   if ((group.operator === 'and' || group.operator === 'or') && group.fieldSets.length > 1) {
-    groupObj[group.operator] = group.fieldSets.map(fieldSet => fieldSet.fields.reduce((acc, field) => ({ ...acc, [field.key]: serializeField(field) }), {}));
+    groupObj[group.operator] = group.fieldSets.map(fieldset => fieldset.fields.reduce((acc, field) => ({ ...acc, [field.key]: serializeField(field) }), {}));
   } else if (group.fieldSets.length === 1) {
     groupObj = group.fieldSets[0].fields.reduce((acc, field) => ({ ...acc, [field.key]: serializeField(field) }), {});
   }
