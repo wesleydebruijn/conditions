@@ -62,3 +62,7 @@ export function createIcon(icon: keyof typeof ICONS): SVGElement {
 export function append(element: HTMLElement, ...children: HTMLElement[]): void {
   children.forEach(child => element.appendChild(child));
 }
+
+export function prepend(element: HTMLElement, ...children: HTMLElement[]): void {
+  children.forEach(child => element.prepend(child));
+}

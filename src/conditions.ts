@@ -1,6 +1,6 @@
 import { deserialize, serialize } from './serializer';
 import { fieldList, fieldKey } from './mapping';
-import { create, createIcon, find, visible, append } from './utils/dom';
+import { create, createIcon, find, visible, append, prepend } from './utils/dom';
 
 import type {
   Group,
@@ -195,7 +195,7 @@ export default class Conditions {
 
     append(groupHeader, groupBadge, groupOperatorSelect, addFieldSetBtn, removeGroupBtn);
     append(groupSection, groupHeader, groupBody);
-    append(element, groupSection);
+    nested ? prepend(element, groupSection) : append(element, groupSection);
   }
 
   private renderNestedGroups(element: HTMLElement, groups: Group[], group: Group, mapping?: Mapping) {
@@ -237,7 +237,7 @@ export default class Conditions {
 
     append(fieldSetHeader, fieldSetBadge, addFieldBtn, removeFieldSetBtn);
     append(fieldSetSection, fieldSetHeader, fieldSetBody);
-    append(element, fieldSetSection);
+    prepend(element, fieldSetSection);
   }
 
   private renderField(element: HTMLElement, fields: Field[], field: Field, mapping?: Mapping) {
@@ -339,7 +339,7 @@ export default class Conditions {
     append(fieldHeader, fieldBadge, fieldInput, addConditionBtn, addNestedGroupBtn, removeFieldBtn);
     append(fieldBody, conditionsElement, nestedGroupsElement);
     append(fieldElement, fieldHeader, fieldBody);
-    append(element, fieldElement);
+    prepend(element, fieldElement);
   }
 
   private renderCondition(element: HTMLElement, conditions: Condition[], condition: Condition, _mapping?: Mapping) {
@@ -377,11 +377,11 @@ export default class Conditions {
 
     append(conditionInputs, operatorSelect, valueInput);
     append(conditionElement, conditionInputs, removeConditionBtn);
-    append(element, conditionElement);
+    prepend(element, conditionElement);
   }
 
   private addItem<T>(element: HTMLElement, array: T[], item: T, mapping: Mapping | undefined, renderItem: (element: HTMLElement, array: T[], item: T, mapping?: Mapping) => void) {
-    array.push(item);
+    array.unshift(item);
 
     this.onChange();
 
