@@ -11,7 +11,6 @@ import type {
   ConditionOperator,
   Settings,
   Mapping,
-  ClassNames,
 } from './types';
 
 declare global {
