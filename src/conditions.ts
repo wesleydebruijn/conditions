@@ -25,6 +25,7 @@ declare global {
 
 export default class Conditions {
   private settings: Settings = {
+    hideInput: true,
     classNames: {
       wrapper: 'conditions-wrapper',
       groupsContainer: 'conditions-groups-container',
@@ -66,7 +67,7 @@ export default class Conditions {
     items: {
       group: 'Group',
       field: 'Field',
-      fieldset: 'Field Set',
+      fieldset: 'Fieldset',
       condition: 'Condition',
       nestedGroup: 'Filter',
     },
@@ -106,7 +107,7 @@ export default class Conditions {
   ) {
     this.settings = { ...this.settings, ...settings };
 
-    this.input = find(input);
+    this.input = find<HTMLInputElement | HTMLTextAreaElement>(input);
     this.input.addEventListener('change', event => {
       if (!event.isTrusted) return; // ignore programmatic events
 
@@ -119,7 +120,7 @@ export default class Conditions {
     this.input.conditions = this;
     this.groups = deserialize(this.input.value);
     this.wrapperElement = create('div', this.settings.classNames.wrapper);
-    visible(this.input, false);
+    if(this.settings.hideInput) visible(this.input, false);
 
     this.render();
   }
@@ -128,7 +129,7 @@ export default class Conditions {
     this.input.conditions = null;
     this.wrapperElement.remove();
 
-    visible(this.input, true);
+    if(this.settings.hideInput) visible(this.input, true);
   }
 
   private render() {
@@ -159,7 +160,7 @@ export default class Conditions {
     const removeGroupBtn = create('button', this.settings.classNames.buttonRemove);
     const addFieldSetBtn = create('button', this.settings.classNames.buttonAddFieldSet);
 
-    // badge (collapse SVG + label; whole badge toggles collapse)
+    // badge
     groupBadge.appendChild(createIcon('collapse'));
     groupBadge.appendChild(document.createTextNode(nested ? this.settings.items.nestedGroup : this.settings.items.group));
     groupBadge.addEventListener('click', () => groupSection.classList.toggle(this.settings.classNames.isCollapsed));
@@ -210,7 +211,7 @@ export default class Conditions {
     const removeFieldSetBtn = create('button', this.settings.classNames.buttonRemove);
     const addFieldBtn = create('button', this.settings.classNames.buttonAddField);
 
-    // badge (collapse SVG + label; whole badge toggles collapse)
+    // badge
     fieldSetBadge.appendChild(createIcon('collapse'));
     fieldSetBadge.appendChild(document.createTextNode(this.settings.items.fieldset));
     fieldSetBadge.addEventListener('click', () => fieldSetSection.classList.toggle(this.settings.classNames.isCollapsed));
@@ -220,7 +221,6 @@ export default class Conditions {
 
     // remove field set button
     removeFieldSetBtn.appendChild(createIcon('close'));
-    removeFieldSetBtn.setAttribute('aria-label', 'Remove');
     removeFieldSetBtn.addEventListener('click', event => {
       event.preventDefault();
       this.removeItem(fieldSetSection, fieldSets, fieldset);
@@ -253,13 +253,21 @@ export default class Conditions {
     const nestedGroupsElement = create('div', this.settings.classNames.fieldNestedGroups);
     const addNestedGroupBtn = create('button', this.settings.classNames.buttonAddFilter);
 
+    // badge
     fieldBadge.appendChild(createIcon('collapse'));
     fieldBadge.appendChild(document.createTextNode(this.settings.items.field));
     fieldBadge.addEventListener('click', () => fieldElement.classList.toggle(this.settings.classNames.isCollapsed));
 
+    // input
     if(!mapping) {
       fieldInput = create('input', this.settings.classNames.fieldInput);
       fieldInput.value = field.key;
+
+      fieldInput.addEventListener('change', event => {
+        event.preventDefault();
+        field.key = fieldInput.value;
+        this.onChange();
+      });
     } else {
       fieldInput = create('select', this.settings.classNames.fieldSelect);
       fieldInput.setAttribute('data-field', fieldKey(field.key));
@@ -275,6 +283,9 @@ export default class Conditions {
         const prevField = fieldKey(fieldInput.getAttribute('data-field'));
         const nextField = fieldKey(fieldInput.value);
 
+        field.key = fieldInput.value;
+        this.onChange();
+
         if(prevField !== nextField) {
           fieldInput.setAttribute('data-field', fieldInput.value);
 
@@ -288,15 +299,8 @@ export default class Conditions {
         }
       });
     }
-
-    fieldInput.addEventListener('change', event => {
-      event.preventDefault();
-      field.key = fieldInput.value;
-      this.onChange();
-    });
-
+    // remove field button
     removeFieldBtn.appendChild(createIcon('close'));
-    removeFieldBtn.setAttribute('aria-label', 'Remove');
     removeFieldBtn.addEventListener('click', event => {
       event.preventDefault();
       this.removeItem(fieldElement, fields, field);
@@ -304,6 +308,7 @@ export default class Conditions {
 
     field.conditions.forEach(condition => this.renderCondition(conditionsElement, field.conditions, condition));
 
+    // add condition button
     addConditionBtn.appendChild(createIcon('plus'));
     addConditionBtn.addEventListener('click', event => {
       event.preventDefault()

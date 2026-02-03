@@ -3,6 +3,7 @@ import Conditions from './conditions';
 import Evaluator from './evaluator';
 
 const initialConfig = {
+  hideInput: true,
   mapping: {
     coupons: { label: 'Coupons', type: 'text' },
     items: {
@@ -56,7 +57,7 @@ const initialCondition = {
     },
   },
   coupons: {
-    contains: ['GRATIS_AIRPODS'],
+    contains: 'GRATIS_AIRPODS',
   },
 };
 

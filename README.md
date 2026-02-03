@@ -70,7 +70,7 @@ Example (same shape as in the demo):
 {
   "items_count": { "gte": 2, "where": { "type": { "eq": "accessory" } } },
   "items_price_sum": { "gte": 100, "where": { "type": { "eq": "phone" } } },
-  "coupons": { "contains": ["GRATIS_AIRPODS"] }
+  "coupons": { "contains": "GRATIS_AIRPODS" }
 }
 ```
 
@@ -81,9 +81,10 @@ The `Settings` configures the Conditions UI builder (labels and schema). It is p
 
 ```ts
 type Settings = {
+  hideInput: boolean     // hide original form input
   items: {
     group: string;       // e.g. "Group" — label for top-level groups
-    fieldset: string;    // e.g. "Field Set" — label for field-set blocks
+    fieldset: string;    // e.g. "Fieldset" — label for field-set blocks
     field: string;       // e.g. "Field" — label in field selector and buttons
     condition: string;   // e.g. "Condition" — label for condition rows
     nestedGroup: string; // e.g. "Filter" — label for nested AND/OR groups

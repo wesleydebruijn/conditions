@@ -50,47 +50,45 @@ export type MappingSettings = {
   mapping?: Mapping;
 };
 
-export type ClassNames = {
-  wrapper: string;
-  groupsContainer: string;
-
-  groupSection: string;
-  groupHeader: string;
-  groupBody: string;
-  groupBadge: string;
-  groupSelect: string;
-
-  fieldsetSection: string;
-  fieldsetHeader: string;
-  fieldsetBody: string;
-  fieldsetBadge: string;
-
-  fieldSection: string;
-  fieldHeader: string;
-  fieldBody: string;
-  fieldBadge: string;
-  fieldConditions: string;
-  fieldNestedGroups: string;
-  fieldInput: string;
-  fieldSelect: string;
-
-  conditionSection: string;
-  conditionInputs: string;
-  conditionSelect: string;
-  conditionValueInput: string;
-
-  isCollapsed: string;
-
-  buttonAddGroup: string;
-  buttonAddFieldSet: string;
-  buttonAddField: string;
-  buttonAddCondition: string;
-  buttonAddFilter: string;
-  buttonRemove: string;
-};
-
 export type Settings = {
-  classNames: ClassNames;
+  classNames: {
+    wrapper: string;
+    groupsContainer: string;
+
+    groupSection: string;
+    groupHeader: string;
+    groupBody: string;
+    groupBadge: string;
+    groupSelect: string;
+
+    fieldsetSection: string;
+    fieldsetHeader: string;
+    fieldsetBody: string;
+    fieldsetBadge: string;
+
+    fieldSection: string;
+    fieldHeader: string;
+    fieldBody: string;
+    fieldBadge: string;
+    fieldConditions: string;
+    fieldNestedGroups: string;
+    fieldInput: string;
+    fieldSelect: string;
+
+    conditionSection: string;
+    conditionInputs: string;
+    conditionSelect: string;
+    conditionValueInput: string;
+
+    isCollapsed: string;
+
+    buttonAddGroup: string;
+    buttonAddFieldSet: string;
+    buttonAddField: string;
+    buttonAddCondition: string;
+    buttonAddFilter: string;
+    buttonRemove: string;
+  };
   items: {
     group: string;
     field: string;
@@ -100,5 +98,6 @@ export type Settings = {
   };
   operators: Record<Operator, string>;
   conditionOperators: Partial<Record<ConditionOperator, string>>;
+  hideInput: boolean;
   mapping?: Mapping;
 };

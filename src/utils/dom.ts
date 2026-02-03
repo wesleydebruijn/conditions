@@ -5,18 +5,10 @@ const ICONS = {
   filter: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="7" x2="20" y2="7"/><circle cx="7" cy="7" r="1.5"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="17" cy="12" r="1.5"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="12" cy="17" r="1.5"/></svg>',
 }
 
-export function className(
-  element: HTMLElement | null,
-  className: string,
-  add: boolean = true
-): void {
+export function className(element: HTMLElement | null, className: string): void {
   if (!element) return;
 
-  if (add) {
-    element.classList.add(...className.split(" "));
-  } else {
-    element.classList.remove(...className.split(" "));
-  }
+  element.classList.add(...className.split(" "));
 }
 
 export function visible(element: HTMLElement | null, visible: boolean): void {
@@ -25,19 +17,16 @@ export function visible(element: HTMLElement | null, visible: boolean): void {
   element.style.display = visible ? "" : "none";
 }
 
-export function find(
-  input: HTMLInputElement | HTMLTextAreaElement | string,
-): HTMLInputElement | HTMLTextAreaElement {
-  let element: HTMLInputElement | HTMLTextAreaElement | null;
+export function find<T extends HTMLElement>(input: T | string): T {
+  let element: T | null;
 
   if (typeof input === "string") {
-    element = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(input);
+    element = document.querySelector<T>(input);
   } else {
     element = input;
   }
 
   if (!element) throw new Error(`Element ${input} not found`);
-  if (element.conditions) throw new Error("Conditions already initialized on element");
 
   return element;
 }
@@ -53,10 +42,11 @@ export function create<K extends keyof HTMLElementTagNameMap>(
   return element;
 }
 
-export function createIcon(icon: keyof typeof ICONS): SVGElement {
-  const wrap = document.createElement('div');
-  wrap.innerHTML = ICONS[icon];
-  return wrap.firstElementChild as SVGElement;
+export function createIcon(icon: keyof typeof ICONS): HTMLElement {
+  const temp = document.createElement('span');
+  temp.innerHTML = ICONS[icon];
+
+  return temp.firstElementChild as HTMLElement;
 }
 
 export function append(element: HTMLElement, ...children: HTMLElement[]): void {
