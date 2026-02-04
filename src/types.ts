@@ -42,12 +42,13 @@ export type Condition = {
   value: string;
 }
 
-export type Mapping = Record<string, MappingSettings>;
+export type SchemaType = 'text' | 'date' | 'number' | 'boolean' | 'object' | 'text[]' | 'number[]' | 'boolean[]' | 'object[]' | 'date[]';
+export type Schema = Record<string, SchemaItem>;
 
-export type MappingSettings = {
+export type SchemaItem = {
   label: string;
-  type: 'text' | 'number' | 'boolean' | 'date' | 'object';
-  mapping?: Mapping;
+  type: SchemaType;
+  schema?: Schema;
 };
 
 export type Settings = {
@@ -99,5 +100,5 @@ export type Settings = {
   operators: Record<Operator, string>;
   conditionOperators: Partial<Record<ConditionOperator, string>>;
   hideInput: boolean;
-  mapping?: Mapping;
+  schema?: Schema;
 };

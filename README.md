@@ -13,20 +13,20 @@ import Conditions from './conditions';
 
 const textarea = document.querySelector('#condition-input');
 const settings = {
-  mapping: {
+  schema: {
     status: { label: 'Status', type: 'text' },
     amount: { label: 'Amount', type: 'number' },
   },
 };
 
-const conditions = new Conditions(textarea, { mapping: settings.mapping });
+const conditions = new Conditions(textarea, { schema: settings.schema });
 
 // Tear down and show raw JSON again
 conditions.destroy();
 ```
 
 - **First argument** — `HTMLInputElement`, `HTMLTextAreaElement`, or a CSS selector string.
-- **Second argument** — Optional [Settings](#settings). At minimum you can pass `{ mapping }` so the builder knows which fields exist and their types; other options (e.g. `items`, `operators`, `conditionOperators`) customize labels.
+- **Second argument** — Optional [Settings](#settings). At minimum you can pass `{ schema }` so the builder knows which fields exist and their types; other options (e.g. `items`, `operators`, `conditionOperators`) customize labels.
 
 ### Evaluator (run conditions)
 
@@ -91,11 +91,11 @@ type Settings = {
   };
   operators: Record<Operator, string>;           // labels for "and" | "or"
   conditionOperators: Partial<Record<ConditionOperator, string>>;  // labels for eq, ne, gt, gte, ...
-  mapping?: Mapping;     // optional schema: which fields exist, their labels and types
+  schema?: Schema;     // optional schema: which fields exist, their labels and types
 };
 ```
 
 - **items** — Copy used in the builder (buttons like “+ Group”, “+ Field”, and the “Select Field” placeholder). Change these to localize or rename concepts.
 - **operators** — Labels for the logical operators `and` and `or` in the group header.
 - **conditionOperators** — Labels for condition operators (`eq`, `ne`, `gt`, `gte`, `in`, `contains`, etc.). Partial: you can override only some; the rest keep default labels.
-- **mapping** — Optional. Describes the record shape: field keys, human-readable labels, and types (`text`, `number`, `boolean`, `date`, `object`). When provided, the builder uses it for the field dropdown and for typing value inputs. Nested objects use a nested `mapping`.
+- **schema** — Optional. Describes the record shape: field keys, human-readable labels, and types (`text`, `number`, `boolean`, `date`, `object`). When provided, the builder uses it for the field dropdown and for typing value inputs. Nested objects use a nested `schema`.

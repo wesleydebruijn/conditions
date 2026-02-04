@@ -4,12 +4,12 @@ import Evaluator from './evaluator';
 
 const initialConfig = {
   hideInput: true,
-  mapping: {
-    coupons: { label: 'Coupons', type: 'text' },
+  schema: {
+    coupons: { label: 'Coupons', type: 'text[]' },
     items: {
       label: 'Items',
-      type: 'object',
-      mapping: {
+      type: 'object[]',
+      schema: {
         name: { label: 'Naam', type: 'text' },
         type: { label: 'Type', type: 'text' },
         slug: { label: 'Slug', type: 'text' },

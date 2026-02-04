@@ -1,6 +1,6 @@
 import { deserialize, serialize } from './serializer';
-import { fieldList, fieldKey } from './mapping';
-import { create, createIcon, find, visible, append, prepend } from './utils/dom';
+import { fieldList, fieldKey, fieldOperatorValid, fieldType } from './schema';
+import { create, createIcon, find, visible, append, prepend } from './dom';
 
 import type {
   Group,
@@ -10,8 +10,8 @@ import type {
   Operator,
   ConditionOperator,
   Settings,
-  Mapping,
-  MappingSettings,
+  Schema,
+  SchemaItem,
 } from './types';
 
 declare global {
@@ -142,17 +142,17 @@ export default class Conditions {
       event.preventDefault()
 
       const newGroup: Group = { operator: 'and', fieldSets: [{ fields: [{ key: '', conditions: [] }] }] };
-      this.addItem(groupsContainer, this.groups, newGroup, this.settings.mapping, this.renderGroup.bind(this));
+      this.addItem(groupsContainer, this.groups, newGroup, this.settings.schema, this.renderGroup.bind(this));
     });
 
-    this.groups.forEach(group => this.renderGroup(groupsContainer, this.groups, group, this.settings.mapping));
+    this.groups.forEach(group => this.renderGroup(groupsContainer, this.groups, group, this.settings.schema));
 
     append(this.wrapperElement, groupsContainer, addGroupBtn);
 
     this.input.after(this.wrapperElement);
   }
 
-  private renderGroup(element: HTMLElement, groups: Group[], group: Group, mapping?: Mapping, nested?: boolean) {
+  private renderGroup(element: HTMLElement, groups: Group[], group: Group, schema?: Schema, nested?: boolean) {
     const groupSection = create('div', this.settings.classNames.groupSection);
     const groupHeader = create('div', this.settings.classNames.groupHeader);
     const groupBody = create('div', this.settings.classNames.groupBody);
@@ -184,7 +184,7 @@ export default class Conditions {
     });
 
     // field sets
-    group.fieldSets.forEach(fieldset => this.renderFieldSet(groupBody, group.fieldSets, fieldset, mapping));
+    group.fieldSets.forEach(fieldset => this.renderFieldSet(groupBody, group.fieldSets, fieldset, schema));
 
     // add field set button
     addFieldSetBtn.appendChild(createIcon('plus'));
@@ -192,7 +192,7 @@ export default class Conditions {
       event.preventDefault()
 
       const newFieldSet: FieldSet = { fields: [{ key: '', conditions: [] }] };
-      this.addItem(groupBody, group.fieldSets, newFieldSet, mapping, this.renderFieldSet.bind(this));
+      this.addItem(groupBody, group.fieldSets, newFieldSet, schema, this.renderFieldSet.bind(this));
     });
 
     append(groupHeader, groupBadge, groupOperatorSelect, addFieldSetBtn, removeGroupBtn);
@@ -200,11 +200,11 @@ export default class Conditions {
     nested ? prepend(element, groupSection) : append(element, groupSection);
   }
 
-  private renderNestedGroups(element: HTMLElement, groups: Group[], group: Group, mapping?: Mapping) {
-    this.renderGroup(element, groups, group, mapping, true);
+  private renderNestedGroups(element: HTMLElement, groups: Group[], group: Group, schema?: Schema) {
+    this.renderGroup(element, groups, group, schema, true);
   }
 
-  private renderFieldSet(element: HTMLElement, fieldSets: FieldSet[], fieldset: FieldSet, mapping?: Mapping) {
+  private renderFieldSet(element: HTMLElement, fieldSets: FieldSet[], fieldset: FieldSet, schema?: Schema) {
     const fieldSetSection = create('div', this.settings.classNames.fieldsetSection);
     const fieldSetHeader = create('div', this.settings.classNames.fieldsetHeader);
     const fieldSetBody = create('div', this.settings.classNames.fieldsetBody);
@@ -218,7 +218,7 @@ export default class Conditions {
     fieldSetBadge.addEventListener('click', () => fieldSetSection.classList.toggle(this.settings.classNames.isCollapsed));
 
     // fields
-    fieldset.fields.forEach(field => this.renderField(fieldSetBody, fieldset.fields, field, mapping));
+    fieldset.fields.forEach(field => this.renderField(fieldSetBody, fieldset.fields, field, schema));
 
     // remove field set button
     removeFieldSetBtn.appendChild(createIcon('close'));
@@ -233,7 +233,7 @@ export default class Conditions {
       event.preventDefault()
 
       const newField: Field = { key: '', conditions: [] };
-      this.addItem(fieldSetBody, fieldset.fields, newField, mapping, this.renderField.bind(this));
+      this.addItem(fieldSetBody, fieldset.fields, newField, schema, this.renderField.bind(this));
     });
 
     append(fieldSetHeader, fieldSetBadge, addFieldBtn, removeFieldSetBtn);
@@ -241,7 +241,7 @@ export default class Conditions {
     prepend(element, fieldSetSection);
   }
 
-  private renderField(element: HTMLElement, fields: Field[], field: Field, mapping?: Mapping) {
+  private renderField(element: HTMLElement, fields: Field[], field: Field, schema?: Schema) {
     let fieldInput: HTMLInputElement | HTMLSelectElement;
 
     const fieldElement = create('div', this.settings.classNames.fieldSection);
@@ -255,7 +255,7 @@ export default class Conditions {
     const addNestedGroupBtn = create('button', this.settings.classNames.buttonAddFilter);
 
     const currentField = fieldKey(field.key);
-    const currentMapping = mapping && mapping[currentField];
+    const currentSchema = schema && schema[currentField];
 
     // badge
     fieldBadge.appendChild(createIcon('collapse'));
@@ -263,7 +263,7 @@ export default class Conditions {
     fieldBadge.addEventListener('click', () => fieldElement.classList.toggle(this.settings.classNames.isCollapsed));
 
     // input
-    if(!mapping) {
+    if(!schema) {
       fieldInput = create('input', this.settings.classNames.fieldInput);
       fieldInput.value = field.key;
 
@@ -276,8 +276,8 @@ export default class Conditions {
       fieldInput = create('select', this.settings.classNames.fieldSelect);
       fieldInput.setAttribute('data-field', currentField);
       fieldInput.innerHTML =
-        `<option value="">--- Select ${this.settings.items.field} ---</option>` +
-        fieldList(mapping)
+        `<option value="">--- select ${this.settings.items.field.toLowerCase()} ---</option>` +
+        fieldList(schema)
           .map(({ key, label }) => `<option value="${key}"${field.key === key ? " selected" : ""}>${label}</option>`)
           .join('');
 
@@ -299,7 +299,7 @@ export default class Conditions {
           conditionsElement.innerHTML = '';
           nestedGroupsElement.innerHTML = '';
 
-          visible(addNestedGroupBtn, mapping[nextField] && mapping[nextField].type === 'object');
+          visible(addNestedGroupBtn, schema[nextField] && schema[nextField].type === 'object');
         }
       });
     }
@@ -310,7 +310,7 @@ export default class Conditions {
       this.removeItem(fieldElement, fields, field);
     });
 
-    field.conditions.forEach(condition => this.renderCondition(conditionsElement, field.conditions, condition, mapping && mapping[fieldKey(field.key)]));
+    field.conditions.forEach(condition => this.renderCondition(conditionsElement, field.conditions, condition, schema && schema[fieldKey(field.key)]));
 
     // add condition button
     addConditionBtn.appendChild(createIcon('plus'));
@@ -318,14 +318,14 @@ export default class Conditions {
       event.preventDefault()
 
       const currentField = fieldKey(fieldInput.getAttribute('data-field'));
-      const currentMapping = mapping && mapping[currentField]
+      const currentSchema = schema && schema[currentField]
 
       const newCondition: Condition = { operator: 'eq', value: '' };
-      this.addItem(conditionsElement, field.conditions, newCondition, currentMapping, this.renderCondition.bind(this));
+      this.addItem(conditionsElement, field.conditions, newCondition, currentSchema, this.renderCondition.bind(this));
     });
 
-    if(!currentMapping || currentMapping.type === 'object') {
-      field.where?.forEach(group => this.renderNestedGroups(nestedGroupsElement, field.where!, group, mapping && mapping[fieldKey(field.key)] ? mapping[fieldKey(field.key)].mapping : undefined));
+    if(!currentSchema || fieldType(currentSchema.type) === 'object') {
+      field.where?.forEach(group => this.renderNestedGroups(nestedGroupsElement, field.where!, group, schema && schema[fieldKey(field.key)] ? schema[fieldKey(field.key)].schema : undefined));
       visible(addNestedGroupBtn, true);
     } else {
       visible(addNestedGroupBtn, false);
@@ -336,12 +336,12 @@ export default class Conditions {
       event.preventDefault()
 
       const currentField = fieldKey(fieldInput.getAttribute('data-field'));
-      const currentMapping = mapping && mapping[currentField] ? mapping[currentField].mapping : undefined;
+      const currentSchema = schema && schema[currentField] ? schema[currentField].schema : undefined;
 
       if(!field.where) field.where = [];
 
       const newGroup: Group = { operator: 'and', fieldSets: [{ fields: [{ key: '', conditions: [] }] }] };
-      this.addItem(nestedGroupsElement, field.where, newGroup, currentMapping, this.renderNestedGroups.bind(this));
+      this.addItem(nestedGroupsElement, field.where, newGroup, currentSchema, this.renderNestedGroups.bind(this));
     });
 
     append(fieldHeader, fieldBadge, fieldInput, addConditionBtn, addNestedGroupBtn, removeFieldBtn);
@@ -350,7 +350,7 @@ export default class Conditions {
     prepend(element, fieldElement);
   }
 
-  private renderCondition(element: HTMLElement, conditions: Condition[], condition: Condition, _mapping?: MappingSettings) {
+  private renderCondition(element: HTMLElement, conditions: Condition[], condition: Condition, schema?: SchemaItem) {
     const conditionElement = create('div', this.settings.classNames.conditionSection);
     const conditionInputs = create('div', this.settings.classNames.conditionInputs);
     const operatorSelect = create('select', this.settings.classNames.conditionSelect);
@@ -358,7 +358,8 @@ export default class Conditions {
     const removeConditionBtn = create('button', this.settings.classNames.buttonRemove);
 
     // operator select
-    operatorSelect.innerHTML = Object.entries(this.settings.conditionOperators)
+    operatorSelect.innerHTML = `<option value="">--- select operator ---</option>` + Object.entries(this.settings.conditionOperators)
+      .filter(([key, _label]) => !schema || fieldOperatorValid(key as ConditionOperator, schema.type))
       .map(([key, label]) => `<option value="${key}"${condition.operator === key ? " selected" : ""}>${label}</option>`)
       .join('');
 
@@ -388,12 +389,12 @@ export default class Conditions {
     prepend(element, conditionElement);
   }
 
-  private addItem<T, M>(element: HTMLElement, array: T[], item: T, mapping: M | undefined, renderItem: (element: HTMLElement, array: T[], item: T, mapping?: M) => void) {
+  private addItem<T, M>(element: HTMLElement, array: T[], item: T, schema: M | undefined, renderItem: (element: HTMLElement, array: T[], item: T, schema?: M) => void) {
     array.unshift(item);
 
     this.onChange();
 
-    renderItem(element, array, item, mapping);
+    renderItem(element, array, item, schema);
   }
 
   private removeItem<T>(element: HTMLElement, array: T[], item: T) {
