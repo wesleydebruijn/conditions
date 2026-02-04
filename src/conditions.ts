@@ -11,6 +11,7 @@ import type {
   ConditionOperator,
   Settings,
   Mapping,
+  MappingSettings,
 } from './types';
 
 declare global {
@@ -253,6 +254,9 @@ export default class Conditions {
     const nestedGroupsElement = create('div', this.settings.classNames.fieldNestedGroups);
     const addNestedGroupBtn = create('button', this.settings.classNames.buttonAddFilter);
 
+    const currentField = fieldKey(field.key);
+    const currentMapping = mapping && mapping[currentField];
+
     // badge
     fieldBadge.appendChild(createIcon('collapse'));
     fieldBadge.appendChild(document.createTextNode(this.settings.items.field));
@@ -270,7 +274,7 @@ export default class Conditions {
       });
     } else {
       fieldInput = create('select', this.settings.classNames.fieldSelect);
-      fieldInput.setAttribute('data-field', fieldKey(field.key));
+      fieldInput.setAttribute('data-field', currentField);
       fieldInput.innerHTML =
         `<option value="">--- Select ${this.settings.items.field} ---</option>` +
         fieldList(mapping)
@@ -289,13 +293,13 @@ export default class Conditions {
         if(prevField !== nextField) {
           fieldInput.setAttribute('data-field', fieldInput.value);
 
+          field.conditions = [];
+          field.where = [];
+
+          conditionsElement.innerHTML = '';
           nestedGroupsElement.innerHTML = '';
-          if(mapping[nextField] && mapping[nextField].type === 'object') {
-            visible(addNestedGroupBtn, true);
-          } else {
-            visible(addNestedGroupBtn, false);
-            field.where = undefined;
-          }
+
+          visible(addNestedGroupBtn, mapping[nextField] && mapping[nextField].type === 'object');
         }
       });
     }
@@ -306,7 +310,7 @@ export default class Conditions {
       this.removeItem(fieldElement, fields, field);
     });
 
-    field.conditions.forEach(condition => this.renderCondition(conditionsElement, field.conditions, condition));
+    field.conditions.forEach(condition => this.renderCondition(conditionsElement, field.conditions, condition, mapping && mapping[fieldKey(field.key)]));
 
     // add condition button
     addConditionBtn.appendChild(createIcon('plus'));
@@ -314,14 +318,13 @@ export default class Conditions {
       event.preventDefault()
 
       const currentField = fieldKey(fieldInput.getAttribute('data-field'));
-      const currentMapping = mapping && mapping[currentField] ? mapping[currentField].mapping : undefined;
+      const currentMapping = mapping && mapping[currentField]
 
       const newCondition: Condition = { operator: 'eq', value: '' };
       this.addItem(conditionsElement, field.conditions, newCondition, currentMapping, this.renderCondition.bind(this));
     });
 
-    const currentField = fieldKey(field.key)
-    if(!mapping || mapping[currentField] && mapping[currentField].type === 'object') {
+    if(!currentMapping || currentMapping.type === 'object') {
       field.where?.forEach(group => this.renderNestedGroups(nestedGroupsElement, field.where!, group, mapping && mapping[fieldKey(field.key)] ? mapping[fieldKey(field.key)].mapping : undefined));
       visible(addNestedGroupBtn, true);
     } else {
@@ -347,7 +350,7 @@ export default class Conditions {
     prepend(element, fieldElement);
   }
 
-  private renderCondition(element: HTMLElement, conditions: Condition[], condition: Condition, _mapping?: Mapping) {
+  private renderCondition(element: HTMLElement, conditions: Condition[], condition: Condition, _mapping?: MappingSettings) {
     const conditionElement = create('div', this.settings.classNames.conditionSection);
     const conditionInputs = create('div', this.settings.classNames.conditionInputs);
     const operatorSelect = create('select', this.settings.classNames.conditionSelect);
@@ -385,7 +388,7 @@ export default class Conditions {
     prepend(element, conditionElement);
   }
 
-  private addItem<T>(element: HTMLElement, array: T[], item: T, mapping: Mapping | undefined, renderItem: (element: HTMLElement, array: T[], item: T, mapping?: Mapping) => void) {
+  private addItem<T, M>(element: HTMLElement, array: T[], item: T, mapping: M | undefined, renderItem: (element: HTMLElement, array: T[], item: T, mapping?: M) => void) {
     array.unshift(item);
 
     this.onChange();
