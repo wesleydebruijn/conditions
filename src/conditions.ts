@@ -308,7 +308,7 @@ export default class Conditions {
           nestedGroupsElement.innerHTML = '';
         }
 
-        visible(addNestedGroupBtn, schema[nextField] && schema[nextField].type === 'object');
+        visible(addNestedGroupBtn, fieldType(schema[nextField]?.type) === 'object');
       });
     }
     // remove field button
@@ -332,7 +332,7 @@ export default class Conditions {
       this.addItem(conditionsElement, field.conditions, newCondition, currentSchema, this.renderCondition.bind(this));
     });
 
-    if(!currentSchema || fieldType(currentSchema.type) === 'object') {
+    if(!schema || (currentSchema && fieldType(currentSchema.type) === 'object')) {
       field.where?.forEach(group => this.renderNestedGroups(nestedGroupsElement, field.where!, group, schema && schema[fieldKey(field.key)] ? schema[fieldKey(field.key)].schema : undefined));
       visible(addNestedGroupBtn, true);
     } else {
