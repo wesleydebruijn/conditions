@@ -107,7 +107,8 @@
 
 .conditions-group-operator-select,
 .conditions-field-select,
-.conditions-condition-operator-select {
+.conditions-condition-operator-select,
+.conditions-condition-value-select {
   height: 28px;
   padding: 0 28px 0 8px;
   border: 1px solid hsl(var(--border) / 0.5);
@@ -126,13 +127,15 @@
 
 .conditions-group-operator-select:hover,
 .conditions-field-select:hover,
-.conditions-condition-operator-select:hover {
+.conditions-condition-operator-select:hover,
+.conditions-condition-value-select:hover {
   border-color: hsl(var(--ring));
 }
 
 .conditions-group-operator-select:focus,
 .conditions-field-select:focus,
-.conditions-condition-operator-select:focus {
+.conditions-condition-operator-select:focus,
+.conditions-condition-value-select:focus {
   outline: none;
   border-color: hsl(var(--ring) / 0.6);
 }

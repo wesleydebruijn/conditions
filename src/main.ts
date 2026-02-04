@@ -11,7 +11,7 @@ const initialConfig = {
       type: 'object[]',
       schema: {
         name: { label: 'Naam', type: 'text' },
-        type: { label: 'Type', type: 'text' },
+        type: { label: 'Type', type: 'text', options: [{ key: 'phone', label: 'Telefoon' }, { key: 'accessory', label: 'Accessoire' }] },
         slug: { label: 'Slug', type: 'text' },
         price: { label: 'Prijs', type: 'number' },
       },

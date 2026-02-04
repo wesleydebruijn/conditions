@@ -48,6 +48,7 @@ export type Schema = Record<string, SchemaItem>;
 export type SchemaItem = {
   label: string;
   type: SchemaType;
+  options?: { [key: string]: string }[];
   schema?: Schema;
 };
 
@@ -80,6 +81,7 @@ export type Settings = {
     conditionInputs: string;
     conditionSelect: string;
     conditionValueInput: string;
+    conditionValueSelect: string;
 
     isCollapsed: string;
 

@@ -19,7 +19,7 @@ const settings = {
   },
 };
 
-const conditions = new Conditions(textarea, { schema: settings.schema });
+const conditions = new Conditions(textarea, settings);
 
 // Tear down and show raw JSON again
 conditions.destroy();

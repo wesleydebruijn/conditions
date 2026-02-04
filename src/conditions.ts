@@ -55,6 +55,7 @@ export default class Conditions {
       conditionInputs: 'conditions-condition-inputs',
       conditionSelect: 'conditions-condition-operator-select',
       conditionValueInput: 'conditions-condition-value-input',
+      conditionValueSelect: 'conditions-condition-value-select',
 
       isCollapsed: 'is-collapsed',
 
@@ -308,7 +309,7 @@ export default class Conditions {
           nestedGroupsElement.innerHTML = '';
         }
 
-        visible(addNestedGroupBtn, schema[nextField] && schema[nextField].type === 'object');
+        visible(addNestedGroupBtn, schema[nextField] && fieldType(schema[nextField].type) === 'object');
       });
     }
     // remove field button
@@ -332,7 +333,7 @@ export default class Conditions {
       this.addItem(conditionsElement, field.conditions, newCondition, currentSchema, this.renderCondition.bind(this));
     });
 
-    if(!currentSchema || fieldType(currentSchema.type) === 'object') {
+    if(!schema || (currentSchema && fieldType(currentSchema.type) === 'object')) {
       field.where?.forEach(group => this.renderNestedGroups(nestedGroupsElement, field.where!, group, schema && schema[fieldKey(field.key)] ? schema[fieldKey(field.key)].schema : undefined));
       visible(addNestedGroupBtn, true);
     } else {
@@ -359,10 +360,11 @@ export default class Conditions {
   }
 
   private renderCondition(element: HTMLElement, conditions: Condition[], condition: Condition, schema?: SchemaItem) {
+    let valueInput: HTMLInputElement | HTMLSelectElement;
+
     const conditionElement = create('div', this.settings.classNames.conditionSection);
     const conditionInputs = create('div', this.settings.classNames.conditionInputs);
     const operatorSelect = create('select', this.settings.classNames.conditionSelect);
-    const valueInput = create('input', this.settings.classNames.conditionValueInput);
     const removeConditionBtn = create('button', this.settings.classNames.buttonRemove);
 
     // operator select
@@ -377,16 +379,33 @@ export default class Conditions {
 
       visible(valueInput, operatorHasValue(condition.operator));
 
+      const isMultiple = condition.operator === 'in' || condition.operator === 'not_in';
+      valueInput.multiple = isMultiple;
+
       this.onChange();
     });
 
-    // value input
-    valueInput.value = condition.value;
+    // value input/select
+    if(!schema || !schema.options) {
+      valueInput = create('input', this.settings.classNames.conditionValueInput);
+      valueInput.value = condition.value;
+    } else {
+      valueInput = create('select', this.settings.classNames.conditionValueSelect);
+      valueInput.innerHTML = `<option value="">--- select value ---</option>` + schema.options.map(({ key, label }) => `<option value="${key}"${condition.value === key ? " selected" : ""}>${label}</option>`).join('');
+    }
+
     valueInput.addEventListener('change', event => {
       event.preventDefault();
-      condition.value = valueInput.value;
+
+      if (valueInput instanceof HTMLSelectElement && valueInput.multiple) {
+        const selected = Array.from(valueInput.selectedOptions).map(opt => opt.value);
+        condition.value = selected.join(',');
+      } else {
+        condition.value = valueInput.value;
+      }
       this.onChange();
     });
+
     visible(valueInput, operatorHasValue(condition.operator));
 
     // remove button
