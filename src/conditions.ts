@@ -1,5 +1,5 @@
 import { deserialize, serialize } from './serializer';
-import { fieldList, fieldKey, fieldOperatorValid, fieldType } from './schema';
+import { fieldList, fieldKey, fieldOperatorValid, fieldType, operatorHasValue } from './schema';
 import { create, createIcon, find, visible, append, prepend } from './dom';
 
 import type {
@@ -275,6 +275,7 @@ export default class Conditions {
     } else {
       fieldInput = create('select', this.settings.classNames.fieldSelect);
       fieldInput.setAttribute('data-field', currentField);
+      if(currentSchema) fieldInput.setAttribute('data-type', currentSchema.type);
       fieldInput.innerHTML =
         `<option value="">--- select ${this.settings.items.field.toLowerCase()} ---</option>` +
         fieldList(schema)
@@ -287,20 +288,27 @@ export default class Conditions {
         const prevField = fieldKey(fieldInput.getAttribute('data-field'));
         const nextField = fieldKey(fieldInput.value);
 
+        const prevType = fieldType(fieldInput.getAttribute('data-type'));
+        const nextType = fieldType(schema[nextField]?.type);
+
         field.key = fieldInput.value;
         this.onChange();
 
+        // clear conditions when type changes
+        if(prevType !== nextType) {
+          fieldInput.setAttribute('data-type', nextType);
+          field.conditions = [];
+          conditionsElement.innerHTML = '';
+        }
+
+        // clear nested groups when field changes
         if(prevField !== nextField) {
           fieldInput.setAttribute('data-field', fieldInput.value);
-
-          field.conditions = [];
           field.where = [];
-
-          conditionsElement.innerHTML = '';
           nestedGroupsElement.innerHTML = '';
-
-          visible(addNestedGroupBtn, schema[nextField] && schema[nextField].type === 'object');
         }
+
+        visible(addNestedGroupBtn, schema[nextField] && schema[nextField].type === 'object');
       });
     }
     // remove field button
@@ -366,6 +374,9 @@ export default class Conditions {
     operatorSelect.addEventListener('change', event => {
       event.preventDefault();
       condition.operator = operatorSelect.value as ConditionOperator;
+
+      visible(valueInput, operatorHasValue(condition.operator));
+
       this.onChange();
     });
 
@@ -376,6 +387,7 @@ export default class Conditions {
       condition.value = valueInput.value;
       this.onChange();
     });
+    visible(valueInput, operatorHasValue(condition.operator));
 
     // remove button
     removeConditionBtn.appendChild(createIcon('close'));

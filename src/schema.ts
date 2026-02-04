@@ -23,11 +23,16 @@ export function fieldKey(key: string | null): string {
   return key ? key.replace(/_.+_sum$/, '').replace(/_count$/, '') : '';
 }
 
-export function fieldType(type: SchemaType): SchemaType {
-  return type.replace(/[\[\]]+/, '') as SchemaType;
+export function fieldType(type: string | null): string {
+  return type ? type.replace(/[\[\]]+/, '') as SchemaType : '';
 }
+
 export function fieldIsArray(type: string): boolean {
   return type.endsWith('[]');
+}
+
+export function operatorHasValue(operator: ConditionOperator): boolean {
+  return !['exists', 'not_exists', 'null', 'empty', 'not_empty'].includes(operator);
 }
 
 export function fieldOperatorValid(operator: ConditionOperator, type: SchemaType): boolean {

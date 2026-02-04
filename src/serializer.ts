@@ -17,6 +17,7 @@ function isNumber(value: string): boolean {
 }
 
 function serializeValue(operator: ConditionOperator, value: string): string | number | boolean | number[] | string[] {
+  if (['exists', 'not_exists', 'null', 'empty', 'not_empty'].includes(operator)) return true;
   if (operator === 'between') return value.split(',').map(Number);
   if (operator === 'in' || operator === 'not_in') return value.split(',').every(isNumber) ? value.split(',').map(Number) : value.split(',');
   if (value === 'true') return true;
