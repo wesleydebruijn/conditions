@@ -1,48 +1,69 @@
-export type Hash = Record<string, any>;
+export type Hash = Record<string, unknown>;
 export type ConditionHash = Hash | Array<Hash>;
 
-export type Operator = 'and' | 'or';
+export type Operator = "and" | "or";
 export type ConditionOperator =
-  | 'eq' | '='
-  | 'ne' | '!='
-  | 'gt' | '>'
-  | 'gte' | '>='
-  | 'lt' | '<'
-  | 'lte' | '<='
-  | 'in'
-  | 'nin' | 'not_in'
-  | 'between'
-  | 'like'
-  | 'exists'
-  | 'not_exists' | 'null'
-  | 'startswith' | 'starts_with'
-  | 'endswith' | 'ends_with'
-  | 'contains'
-  | 'match' | 'regex'
-  | 'empty'
-  | 'not_empty'
+  | "eq"
+  | "="
+  | "ne"
+  | "!="
+  | "gt"
+  | ">"
+  | "gte"
+  | ">="
+  | "lt"
+  | "<"
+  | "lte"
+  | "<="
+  | "in"
+  | "nin"
+  | "not_in"
+  | "between"
+  | "like"
+  | "exists"
+  | "not_exists"
+  | "null"
+  | "startswith"
+  | "starts_with"
+  | "endswith"
+  | "ends_with"
+  | "contains"
+  | "match"
+  | "regex"
+  | "empty"
+  | "not_empty";
 
 export type Group = {
   operator: Operator;
   fieldSets: FieldSet[];
-}
+};
 
 export type FieldSet = {
   fields: Field[];
-}
+};
 
 export type Field = {
   key: string;
   conditions: Condition[];
   where?: Group[];
-}
+};
 
 export type Condition = {
   operator: ConditionOperator;
   value: string;
-}
+};
 
-export type SchemaType = 'text' | 'date' | 'number' | 'boolean' | 'object' | 'text[]' | 'number[]' | 'boolean[]' | 'object[]' | 'date[]';
+export type SchemaType =
+  | "text"
+  | "date"
+  | "number"
+  | "boolean"
+  | "object"
+  | "text[]"
+  | "number[]"
+  | "boolean[]"
+  | "object[]"
+  | "date[]";
 export type Schema = Record<string, SchemaItem>;
 
 export type SchemaItem = {

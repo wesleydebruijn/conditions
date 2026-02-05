@@ -20,7 +20,7 @@
       font-size: 13px;
       line-height: 1.4;
     }
-
+ 
     .filter-builder {
       max-width: 1200px;
       margin: 0 auto;
@@ -116,6 +116,19 @@
       justify-content: space-between;
     }
 
+    .btn {
+      background: none;
+      border: none;
+      padding: 4px 8px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      background: hsl(var(--foreground) / 0.08);
+      color: hsl(var(--foreground));
+      cursor: pointer;
+    }
+
     #result-row {
       margin-top: 0;
       margin-bottom: 2px;
@@ -172,7 +185,7 @@
         <p>Create complex queries in JSON format that can be evaluated in front- and backend</p>
       </div>
       <div class="btn-group">
-        <button id="toggle-btn" class="conditions-btn conditions-btn-secondary" type="button">🛠️</button>
+        <button id="toggle-btn" class="btn" type="button">🛠️</button>
       </div>
     </div>
 
