@@ -1,31 +1,30 @@
 import type { Schema, SchemaType, ConditionOperator, SchemaItem } from './types';
 
-export function fieldList(schema: Schema): { key: string, label: string }[] {
-  return Object.entries(schema).flatMap(([key, value]) => {
-    if(fieldType(value.type) !== 'object') return [{ key, label: value.label }];
+export function fieldList(schema: Schema, parent?: { key: string, label: string }): { key: string, label: string }[] {
+  return Object.entries(schema).flatMap(([childKey, childValue]) => {
+    const key = parent ? `${parent.key}.${childKey}` : childKey;
+    const label = parent ? `${parent.label} → ${childValue.label}` : childValue.label;
 
-    if(fieldIsArray(value.type)) {
-      const numberFields = value.schema ? Object.entries(value.schema).filter(([_, value]) => fieldType(value.type) === 'number') : [];
+    if(fieldType(childValue.type) !== 'object') return [{ key, label }];
+    if(!childValue.schema) return [];
+    if(!fieldIsArray(childValue.type)) return fieldList(childValue.schema, { key, label });
+    
+    const numberFields = Object.entries(childValue.schema).filter(([_, value]) => fieldType(value.type) === 'number');
 
-      return [
-        {
-          key: `${key}_count`,
-          label: `${value.label} (count)`,
-        },
-        ...numberFields.map(([subkey, subvalue]) => ({
-          key: `${key}_${subkey}_sum`,
-          label: `${value.label} → ${subvalue.label} (sum)`,
-        })),
-      ]
-    } else {
-      const nestedFields = value.schema ? fieldList(value.schema) : [];
-
-      return nestedFields.map(nested => ({ key: `${key}.${nested.key}`, label: `${value.label} → ${nested.label}` }));
-    }
+    return [
+      {
+        key: `${key}_count`,
+        label: `${label} (count)`,
+      },
+      ...numberFields.map(([subkey, subvalue]) => ({
+        key: `${key}_${subkey}_sum`,
+        label: `${label} → ${subvalue.label} (sum)`,
+      })),
+    ]
   });
 }
 
-export function fieldSchemaItem(schema: Schema | undefined, string: string) {
+export function fieldSchemaItem(schema: Schema | undefined, string: string): SchemaItem | undefined {
   if(!schema) return;
 
   const [key, ...rest] = string.split('.');
@@ -55,6 +54,7 @@ export function fieldOperatorValid(operator: ConditionOperator, type: SchemaType
   switch (operator) {
     case 'eq':
     case 'ne':
+      return !fieldIsArray(type) || fieldType(type) === 'object';
     case 'in':
     case 'not_in':
     case 'exists':

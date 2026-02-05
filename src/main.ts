@@ -17,6 +17,14 @@ const initialConfig = {
         provider: { label: 'Provider', type: 'text' },
         monthly_fee: { label: 'Monthly Fee', type: 'number' },
         contract_term: { label: 'Contract Duration', type: 'number' },
+        promotions: {
+          label: 'Promotions',
+          type: 'object[]',
+          schema: {
+            name: { label: 'Name', type: 'text' },
+            discount: { label: 'Discount', type: 'number' },
+          },
+        },
         content: { 
           label: 'Content',
           type: 'object', 
@@ -42,6 +50,12 @@ const initialRecord = {
       price: 200,
       monthly_fee: 10,
       contract_term: 24,
+      promotions: [
+        {
+          name: 'Discount 10 euro',
+          discount: 10,
+        },
+      ],
       content: {
         data: 10000,
         minutes: 500,
