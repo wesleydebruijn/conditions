@@ -5,6 +5,7 @@ import Evaluator from './evaluator';
 const initialConfig = {
   hideInput: true,
   schema: {
+    active: { label: 'Active', type: 'boolean' },
     coupons: { label: 'Coupons', type: 'text[]' },
     items: {
       label: 'Items',
@@ -40,6 +41,7 @@ const initialConfig = {
 };
 
 const initialRecord = {
+  active: true,
   coupons: ['FREE_AIRPODS'],
   items: [
     {
@@ -83,23 +85,7 @@ const initialRecord = {
   ],
 };
 
-const initialCondition = {
-  items_count: {
-    gte: 2,
-    where: {
-      type: { eq: 'accessory' },
-    },
-  },
-  items_price_sum: {
-    gte: 100,
-    where: {
-      type: { eq: 'phone' },
-    },
-  },
-  coupons: {
-    contains: 'FREE_AIRPODS',
-  },
-};
+const initialCondition = {};
 
 let conditions: Conditions | null = null;
 const recordInput = document.getElementById('record-input') as HTMLTextAreaElement | null;

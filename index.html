@@ -110,6 +110,12 @@
       box-shadow: 0 0 0 2px hsl(0 72% 51% / 0.2);
     }
 
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
     #result-row {
       margin-top: 0;
       margin-bottom: 2px;
@@ -172,9 +178,11 @@
 
     <div class="builder-main-row">
       <div class="panel record">
-        <label for="record-input">Test</label>
+        <div class="panel-header">
+          <label for="record-input">Test</label>
+          <div id="result-row"><b>evaluating...</b></div>
+        </div>
         <textarea id="record-input" spellcheck="false"></textarea>
-        <div id="result-row"><b>evaluating...</b></div>
       </div>
 
       <div class="panel condition">
