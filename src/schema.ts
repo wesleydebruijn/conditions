@@ -1,29 +1,45 @@
-import type { Schema, SchemaType, ConditionOperator } from './types';
+import type { Schema, SchemaType, ConditionOperator, SchemaItem } from './types';
 
 export function fieldList(schema: Schema): { key: string, label: string }[] {
   return Object.entries(schema).flatMap(([key, value]) => {
     if(fieldType(value.type) !== 'object') return [{ key, label: value.label }];
 
-    const numberFields = value.schema ? Object.entries(value.schema).filter(([_, value]) => fieldType(value.type) === 'number') : [];
+    if(fieldIsArray(value.type)) {
+      const numberFields = value.schema ? Object.entries(value.schema).filter(([_, value]) => fieldType(value.type) === 'number') : [];
 
-    return [
-      {
-        key: `${key}_count`,
-        label: `${value.label} (count)`,
-      },
-      ...numberFields.map(([subkey, subvalue]) => ({
-        key: `${key}_${subkey}_sum`,
-        label: `${value.label} → ${subvalue.label} (sum)`,
-      })),
-    ]
+      return [
+        {
+          key: `${key}_count`,
+          label: `${value.label} (count)`,
+        },
+        ...numberFields.map(([subkey, subvalue]) => ({
+          key: `${key}_${subkey}_sum`,
+          label: `${value.label} → ${subvalue.label} (sum)`,
+        })),
+      ]
+    } else {
+      const nestedFields = value.schema ? fieldList(value.schema) : [];
+
+      return nestedFields.map(nested => ({ key: `${key}.${nested.key}`, label: `${value.label} → ${nested.label}` }));
+    }
   });
 }
 
-export function fieldKey(key: string | null): string {
+export function fieldSchemaItem(schema: Schema | undefined, string: string) {
+  if(!schema) return;
+
+  const [key, ...rest] = string.split('.');
+
+  if(rest.length === 0 || !schema[key].schema) return schema[key];
+
+  return fieldSchemaItem(schema[key].schema, rest.join('.'));
+}
+
+export function fieldKey(key: string | null | undefined): string {
   return key ? key.replace(/_.+_sum$/, '').replace(/_count$/, '') : '';
 }
 
-export function fieldType(type: string | null): string {
+export function fieldType(type: string | null | undefined): string {
   return type ? type.replace(/[\[\]]+/, '') as SchemaType : '';
 }
 

@@ -9,13 +9,13 @@ Build and evaluate JSON conditions in the browser. Use **Conditions** for the UI
 Attach the visual builder to an `<input>` or `<textarea>`. The element’s value must hold (or will hold) JSON in the [condition format](#condition-format) the Evaluator expects. The builder hides the element and renders the UI; changes are synced back into the element’s value.
 
 ```ts
-import Conditions from './conditions';
+import Conditions from "./conditions";
 
-const textarea = document.querySelector('#condition-input');
+const textarea = document.querySelector("#condition-input");
 const settings = {
   schema: {
-    status: { label: 'Status', type: 'text' },
-    amount: { label: 'Amount', type: 'number' },
+    status: { label: "Status", type: "text" },
+    amount: { label: "Amount", type: "number" },
   },
 };
 
@@ -33,23 +33,23 @@ conditions.destroy();
 Evaluator takes a condition object (or array) and evaluates it against records. No DOM.
 
 ```ts
-import Evaluator from './evaluator';
+import Evaluator from "./evaluator";
 
 const condition = {
-  status: { eq: 'active' },
+  status: { eq: "active" },
   amount: { gte: 100 },
 };
 
 const evaluator = new Evaluator(condition);
 
-evaluator.match({ status: 'active', amount: 150 });  // true
-evaluator.match({ status: 'draft', amount: 200 });   // false
+evaluator.match({ status: "active", amount: 150 }); // true
+evaluator.match({ status: "draft", amount: 200 }); // false
 
 const records = [
-  { status: 'active', amount: 50 },
-  { status: 'active', amount: 200 },
+  { status: "active", amount: 50 },
+  { status: "active", amount: 200 },
 ];
-evaluator.filter(records);  // [{ status: 'active', amount: 200 }]
+evaluator.filter(records); // [{ status: 'active', amount: 200 }]
 ```
 
 - **Constructor** — `new Evaluator(conditions)`. `conditions` is a [ConditionHash](src/types.ts): either a single object or an array of condition objects.
@@ -70,28 +70,29 @@ Example (same shape as in the demo):
 {
   "items_count": { "gte": 2, "where": { "type": { "eq": "accessory" } } },
   "items_price_sum": { "gte": 100, "where": { "type": { "eq": "phone" } } },
-  "coupons": { "contains": "GRATIS_AIRPODS" }
+  "coupons": { "contains": "FREE_AIRPODS" }
 }
 ```
 
 ---
 
 ## Settings
+
 The `Settings` configures the Conditions UI builder (labels and schema). It is passed when constructing `new Conditions(element, settings)`.
 
 ```ts
 type Settings = {
-  hideInput: boolean     // hide original form input
+  hideInput: boolean; // hide original form input
   items: {
-    group: string;       // e.g. "Group" — label for top-level groups
-    fieldset: string;    // e.g. "Fieldset" — label for field-set blocks
-    field: string;       // e.g. "Field" — label in field selector and buttons
-    condition: string;   // e.g. "Condition" — label for condition rows
+    group: string; // e.g. "Group" — label for top-level groups
+    fieldset: string; // e.g. "Fieldset" — label for field-set blocks
+    field: string; // e.g. "Field" — label in field selector and buttons
+    condition: string; // e.g. "Condition" — label for condition rows
     nestedGroup: string; // e.g. "Filter" — label for nested AND/OR groups
   };
-  operators: Record<Operator, string>;           // labels for "and" | "or"
-  conditionOperators: Partial<Record<ConditionOperator, string>>;  // labels for eq, ne, gt, gte, ...
-  schema?: Schema;     // optional schema: which fields exist, their labels and types
+  operators: Record<Operator, string>; // labels for "and" | "or"
+  conditionOperators: Partial<Record<ConditionOperator, string>>; // labels for eq, ne, gt, gte, ...
+  schema?: Schema; // optional schema: which fields exist, their labels and types
 };
 ```
 

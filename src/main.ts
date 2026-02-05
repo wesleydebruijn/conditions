@@ -13,15 +13,41 @@ const initialConfig = {
         name: { label: 'Naam', type: 'text' },
         type: { label: 'Type', type: 'text' },
         slug: { label: 'Slug', type: 'text' },
-        price: { label: 'Prijs', type: 'number' },
+        price: { label: 'Price', type: 'number' },
+        provider: { label: 'Provider', type: 'text' },
+        monthly_fee: { label: 'Monthly Fee', type: 'number' },
+        contract_term: { label: 'Contract Duration', type: 'number' },
+        content: { 
+          label: 'Content',
+          type: 'object', 
+          schema: {
+            data: { label: 'Data', type: 'number' },
+            minutes: { label: 'Minutes', type: 'number' },
+            sms: { label: 'SMS', type: 'number' },
+          },
+        },
       },
     },
   },
 };
 
 const initialRecord = {
-  coupons: ['GRATIS_AIRPODS'],
+  coupons: ['FREE_AIRPODS'],
   items: [
+    {
+      name: 'Vodafone 10GB + Apple iPhone 15',
+      type: 'proposition',
+      slug: 'vodafone-10gb-iphone-15',
+      provider: 'vodafone',
+      price: 200,
+      monthly_fee: 10,
+      contract_term: 24,
+      content: {
+        data: 10000,
+        minutes: 500,
+        sms: 100,
+      },
+    },
     {
       name: 'Apple iPhone 16',
       type: 'phone',
@@ -57,7 +83,7 @@ const initialCondition = {
     },
   },
   coupons: {
-    contains: 'GRATIS_AIRPODS',
+    contains: 'FREE_AIRPODS',
   },
 };
 

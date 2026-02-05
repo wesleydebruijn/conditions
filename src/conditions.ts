@@ -1,5 +1,5 @@
 import { deserialize, serialize } from './serializer';
-import { fieldList, fieldKey, fieldOperatorValid, fieldType, operatorHasValue } from './schema';
+import { fieldList, fieldKey, fieldOperatorValid, fieldType, operatorHasValue, fieldSchemaItem } from './schema';
 import { create, createIcon, find, visible, append, prepend } from './dom';
 
 import type {
@@ -255,7 +255,7 @@ export default class Conditions {
     const addNestedGroupBtn = create('button', this.settings.classNames.buttonAddFilter);
 
     const currentField = fieldKey(field.key);
-    const currentSchema = schema && schema[currentField];
+    const currentSchema = fieldSchemaItem(schema, currentField);
 
     // badge
     fieldBadge.appendChild(createIcon('collapse'));
@@ -289,7 +289,7 @@ export default class Conditions {
         const nextField = fieldKey(fieldInput.value);
 
         const prevType = fieldType(fieldInput.getAttribute('data-type'));
-        const nextType = fieldType(schema[nextField]?.type);
+        const nextType = fieldType(fieldSchemaItem(schema, nextField)?.type);
 
         field.key = fieldInput.value;
         this.onChange();
@@ -308,7 +308,7 @@ export default class Conditions {
           nestedGroupsElement.innerHTML = '';
         }
 
-        visible(addNestedGroupBtn, fieldType(schema[nextField]?.type) === 'object');
+        visible(addNestedGroupBtn, fieldType(fieldSchemaItem(schema, nextField)?.type) === 'object');
       });
     }
     // remove field button
@@ -318,7 +318,7 @@ export default class Conditions {
       this.removeItem(fieldElement, fields, field);
     });
 
-    field.conditions.forEach(condition => this.renderCondition(conditionsElement, field.conditions, condition, schema && schema[fieldKey(field.key)]));
+    field.conditions.forEach(condition => this.renderCondition(conditionsElement, field.conditions, condition, fieldSchemaItem(schema, fieldKey(field.key))));
 
     // add condition button
     addConditionBtn.appendChild(createIcon('plus'));
@@ -326,25 +326,25 @@ export default class Conditions {
       event.preventDefault()
 
       const currentField = fieldKey(fieldInput.getAttribute('data-field'));
-      const currentSchema = schema && schema[currentField]
+      const currentSchema = fieldSchemaItem(schema, currentField);
 
       const newCondition: Condition = { operator: 'eq', value: '' };
       this.addItem(conditionsElement, field.conditions, newCondition, currentSchema, this.renderCondition.bind(this));
     });
 
     if(!schema || (currentSchema && fieldType(currentSchema.type) === 'object')) {
-      field.where?.forEach(group => this.renderNestedGroups(nestedGroupsElement, field.where!, group, schema && schema[fieldKey(field.key)] ? schema[fieldKey(field.key)].schema : undefined));
+      field.where?.forEach(group => this.renderNestedGroups(nestedGroupsElement, field.where!, group, fieldSchemaItem(schema, currentField)?.schema));
       visible(addNestedGroupBtn, true);
     } else {
       visible(addNestedGroupBtn, false);
     }
-
+ 
     addNestedGroupBtn.appendChild(createIcon('filter'));
     addNestedGroupBtn.addEventListener('click', event => {
       event.preventDefault()
 
       const currentField = fieldKey(fieldInput.getAttribute('data-field'));
-      const currentSchema = schema && schema[currentField] ? schema[currentField].schema : undefined;
+      const currentSchema = fieldSchemaItem(schema, currentField)?.schema;
 
       if(!field.where) field.where = [];
 
