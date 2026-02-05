@@ -1,5 +1,19 @@
 import type { Hash, Group, Field, FieldSet, Condition, ConditionOperator, Operator } from './types';
 
+const ALIAS_CONDITIONS: Record<string, ConditionOperator> = {
+  '=': 'eq',
+  '!=': 'ne',
+  '>': 'gt',
+  '>=': 'gte',
+  '<': 'lt',
+  '<=': 'lte',
+  'nin': 'not_in',
+  'startswith': 'starts_with',
+  'endswith': 'ends_with',
+  'regex': 'match',
+  'null': 'not_exists',
+};
+
 export function deserialize(string: string): Group[] {
   const json: JSON = JSON.parse(string);
 
@@ -57,7 +71,7 @@ function serializeGroup(group: Group): Hash {
 function deserializeConditions(value: Record<string, any>): Condition[] {
   return Object.entries(value).filter(([operator, _value]) => operator !== "where").map(([operator, value]) => {
     return {
-      operator: operator as ConditionOperator,
+      operator: ALIAS_CONDITIONS[operator] || operator as ConditionOperator,
       value: String(value)
     }
   });
