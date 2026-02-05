@@ -65,11 +65,7 @@ export default class Evaluator {
     return Object.entries(hash).every(([field, expected_value]) => {
       const fieldKey = String(field);
 
-      // Try both string and symbol-ish property (JS doesn't really use Symbol for keys as often)
-      let actualValue =
-        record[fieldKey] !== undefined
-          ? record[fieldKey]
-          : record[(fieldKey as any)];
+      const actualValue = fieldKey.split('.').reduce((acc, key) => acc && acc[key], record);
 
       // Handle special aggregation fields like count & sum
       if (fieldKey.endsWith('_count') && typeof expected_value === 'object' && expected_value !== null && !Array.isArray(expected_value)) {
