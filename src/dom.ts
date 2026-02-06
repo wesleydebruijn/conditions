@@ -60,17 +60,26 @@ export function prepend(element: HTMLElement, ...children: HTMLElement[]): void 
   for (const child of children) element.prepend(child);
 }
 
-export function createSelectOptions(
-  select: HTMLSelectElement,
+export function createSelect<T>(
+  className: string,
   options: string[][],
-  selected?: string,
-): void {
-  select.innerHTML = options
+  callback: (value: T) => void,
+  settings?: { selected?: T; allowEmpty?: boolean },
+): HTMLSelectElement {
+  const element = create("select", className);
+
+  const allOptions = settings?.allowEmpty ? [["", " -- select an option --"], ...options] : options;
+  element.innerHTML = allOptions
     .map(
       ([key, value]) =>
-        `<option value="${key}"${selected === key ? " selected" : ""}>${value}</option>`,
+        `<option value="${key}"${settings?.selected === key ? " selected" : ""}>${value}</option>`,
     )
     .join("");
+  element.addEventListener("change", () => {
+    callback(element.value as T);
+  });
+
+  return element;
 }
 
 export function createButton(
@@ -82,6 +91,17 @@ export function createButton(
   element.appendChild(createIcon(icon));
   element.addEventListener("click", (event) => {
     event.preventDefault();
+    callback();
+  });
+
+  return element;
+}
+
+export function createBadge(className: string, text: string, callback: () => void): HTMLElement {
+  const element = create("span", className);
+  element.appendChild(createIcon("collapse"));
+  element.appendChild(document.createTextNode(text));
+  element.addEventListener("click", () => {
     callback();
   });
 

@@ -9,9 +9,9 @@ import {
 } from "./schema";
 import {
   create,
-  createIcon,
-  createSelectOptions,
+  createSelect,
   createButton,
+  createBadge,
   find,
   visible,
   append,
@@ -130,13 +130,13 @@ export default class Conditions {
 
       this.groups = deserialize(this.input.value);
       this.wrapperElement.remove();
-      this.wrapperElement = create("div", this.settings.classNames.wrapper);
+      this.wrapperElement = create("div", this.className("wrapper"));
 
       this.render();
     });
     this.input.conditions = this;
     this.groups = deserialize(this.input.value);
-    this.wrapperElement = create("div", this.settings.classNames.wrapper);
+    this.wrapperElement = create("div", this.className("wrapper"));
     if (this.settings.hideInput) visible(this.input, false);
 
     this.render();
@@ -150,19 +150,15 @@ export default class Conditions {
   }
 
   private render() {
-    const addGroupBtn = create("button", this.settings.classNames.buttonAddGroup);
-    const groupsContainer = create("div", this.settings.classNames.groupsContainer);
+    const container = create("div", this.className("groupsContainer"));
 
-    addGroupBtn.appendChild(createIcon("plus"));
-    addGroupBtn.addEventListener("click", (event) => {
-      event.preventDefault();
-
+    const addBtn = createButton(this.className("buttonAddGroup"), "plus", () => {
       const newGroup: Group = {
         operator: "and",
         fieldSets: [{ fields: [{ key: "", conditions: [] }] }],
       };
       this.addItem(
-        groupsContainer,
+        container,
         this.groups,
         newGroup,
         this.settings.schema,
@@ -171,10 +167,10 @@ export default class Conditions {
     });
 
     for (const group of this.groups) {
-      this.renderGroup(groupsContainer, this.groups, group, this.settings.schema);
+      this.renderGroup(container, this.groups, group, this.settings.schema);
     }
 
-    append(this.wrapperElement, groupsContainer, addGroupBtn);
+    append(this.wrapperElement, container, addBtn);
 
     this.input.after(this.wrapperElement);
   }
@@ -186,41 +182,32 @@ export default class Conditions {
     schema?: Schema,
     nested?: boolean,
   ) {
-    const groupSection = create("div", this.settings.classNames.groupSection);
-    const groupHeader = create("div", this.settings.classNames.groupHeader);
-    const groupBody = create("div", this.settings.classNames.groupBody);
-    const groupBadge = create("span", this.settings.classNames.groupBadge);
-    const groupOperatorSelect = create("select", this.settings.classNames.groupSelect);
-    const removeGroupBtn = create("button", this.settings.classNames.buttonRemove);
-    const addFieldSetBtn = create("button", this.settings.classNames.buttonAddFieldSet);
+    const groupSection = create("div", this.className("groupSection"));
+    const groupHeader = create("div", this.className("groupHeader"));
+    const groupBody = create("div", this.className("groupBody"));
 
     // badge
-    groupBadge.appendChild(createIcon("collapse"));
-    groupBadge.appendChild(
-      document.createTextNode(nested ? this.settings.items.nestedGroup : this.settings.items.group),
-    );
-    groupBadge.addEventListener("click", () =>
-      groupSection.classList.toggle(this.settings.classNames.isCollapsed),
+    const groupBadge = createBadge(
+      this.className("groupBadge"),
+      nested ? this.settings.items.nestedGroup : this.settings.items.group,
+      () => groupSection.classList.toggle(this.className("isCollapsed")),
     );
 
     // operator select
-    createSelectOptions(
-      groupOperatorSelect,
+    const groupOperatorSelect = createSelect(
+      this.className("groupSelect"),
       Object.entries(this.settings.operators),
-      group.operator,
+      (value: Operator) => {
+        group.operator = value;
+        this.onChange();
+      },
+      { selected: group.operator },
     );
 
-    groupOperatorSelect.addEventListener("change", () => {
-      group.operator = groupOperatorSelect.value as Operator;
-      this.onChange();
-    });
-
     // remove group button
-    removeGroupBtn.appendChild(createIcon("close"));
-    removeGroupBtn.addEventListener("click", (event) => {
-      event.preventDefault();
-      this.removeItem(groupSection, groups, group);
-    });
+    const removeGroupBtn = createButton(this.className("buttonRemove"), "close", () =>
+      this.removeItem(groupSection, groups, group),
+    );
 
     // field sets
     for (const fieldset of group.fieldSets) {
@@ -228,10 +215,7 @@ export default class Conditions {
     }
 
     // add field set button
-    addFieldSetBtn.appendChild(createIcon("plus"));
-    addFieldSetBtn.addEventListener("click", (event) => {
-      event.preventDefault();
-
+    const addFieldSetBtn = createButton(this.className("buttonAddFieldSet"), "plus", () => {
       const newFieldSet: FieldSet = { fields: [{ key: "", conditions: [] }] };
       this.addItem(groupBody, group.fieldSets, newFieldSet, schema, this.renderFieldSet.bind(this));
     });
@@ -251,16 +235,15 @@ export default class Conditions {
     fieldset: FieldSet,
     schema?: Schema,
   ) {
-    const fieldSetSection = create("div", this.settings.classNames.fieldsetSection);
-    const fieldSetHeader = create("div", this.settings.classNames.fieldsetHeader);
-    const fieldSetBody = create("div", this.settings.classNames.fieldsetBody);
-    const fieldSetBadge = create("span", this.settings.classNames.fieldsetBadge);
+    const fieldSetSection = create("div", this.className("fieldsetSection"));
+    const fieldSetHeader = create("div", this.className("fieldsetHeader"));
+    const fieldSetBody = create("div", this.className("fieldsetBody"));
 
     // badge
-    fieldSetBadge.appendChild(createIcon("collapse"));
-    fieldSetBadge.appendChild(document.createTextNode(this.settings.items.fieldset));
-    fieldSetBadge.addEventListener("click", () =>
-      fieldSetSection.classList.toggle(this.settings.classNames.isCollapsed),
+    const fieldSetBadge = createBadge(
+      this.className("fieldsetBadge"),
+      this.settings.items.fieldset,
+      () => fieldSetSection.classList.toggle(this.className("isCollapsed")),
     );
 
     // fields
@@ -269,11 +252,11 @@ export default class Conditions {
     }
 
     // remove field set button
-    const removeFieldSetBtn = createButton(this.settings.classNames.buttonRemove, "close", () =>
+    const removeFieldSetBtn = createButton(this.className("buttonRemove"), "close", () =>
       this.removeItem(fieldSetSection, fieldSets, fieldset),
     );
 
-    const addFieldBtn = createButton(this.settings.classNames.buttonAddField, "plus", () => {
+    const addFieldBtn = createButton(this.className("buttonAddField"), "plus", () => {
       const newField: Field = { key: "", conditions: [] };
       this.addItem(fieldSetBody, fieldset.fields, newField, schema, this.renderField.bind(this));
     });
@@ -286,49 +269,42 @@ export default class Conditions {
   private renderField(element: HTMLElement, fields: Field[], field: Field, schema?: Schema) {
     let fieldInput: HTMLInputElement | HTMLSelectElement;
 
-    const fieldElement = create("div", this.settings.classNames.fieldSection);
-    const fieldHeader = create("div", this.settings.classNames.fieldHeader);
-    const fieldBody = create("div", this.settings.classNames.fieldBody);
-    const fieldBadge = create("span", this.settings.classNames.fieldBadge);
-    const conditionsElement = create("div", this.settings.classNames.fieldConditions);
-    const nestedGroupsElement = create("div", this.settings.classNames.fieldNestedGroups);
+    const fieldElement = create("div", this.className("fieldSection"));
+    const fieldHeader = create("div", this.className("fieldHeader"));
+    const fieldBody = create("div", this.className("fieldBody"));
+    const conditionsElement = create("div", this.className("fieldConditions"));
+    const nestedGroupsElement = create("div", this.className("fieldNestedGroups"));
 
-    const addNestedGroupBtn = createButton(
-      this.settings.classNames.buttonAddFilter,
-      "filter",
-      () => {
-        const currentField = fieldKey(fieldInput.getAttribute("data-field"));
-        const currentSchema = fieldSchemaItem(schema, currentField)?.schema;
+    const addNestedGroupBtn = createButton(this.className("buttonAddFilter"), "filter", () => {
+      const currentField = fieldKey(fieldInput.getAttribute("data-field"));
+      const currentSchema = fieldSchemaItem(schema, currentField)?.schema;
 
-        if (!field.where) field.where = [];
+      if (!field.where) field.where = [];
 
-        const newGroup: Group = {
-          operator: "and",
-          fieldSets: [{ fields: [{ key: "", conditions: [] }] }],
-        };
-        this.addItem(
-          nestedGroupsElement,
-          field.where,
-          newGroup,
-          currentSchema,
-          this.renderNestedGroups.bind(this),
-        );
-      },
-    );
+      const newGroup: Group = {
+        operator: "and",
+        fieldSets: [{ fields: [{ key: "", conditions: [] }] }],
+      };
+      this.addItem(
+        nestedGroupsElement,
+        field.where,
+        newGroup,
+        currentSchema,
+        this.renderNestedGroups.bind(this),
+      );
+    });
 
     const currentField = fieldKey(field.key);
     const currentSchema = fieldSchemaItem(schema, currentField);
 
     // badge
-    fieldBadge.appendChild(createIcon("collapse"));
-    fieldBadge.appendChild(document.createTextNode(this.settings.items.field));
-    fieldBadge.addEventListener("click", () =>
-      fieldElement.classList.toggle(this.settings.classNames.isCollapsed),
+    const fieldBadge = createBadge(this.className("fieldBadge"), this.settings.items.field, () =>
+      fieldElement.classList.toggle(this.className("isCollapsed")),
     );
 
     // input
     if (!schema) {
-      fieldInput = create("input", this.settings.classNames.fieldInput);
+      fieldInput = create("input", this.className("fieldInput"));
       fieldInput.value = field.key;
 
       fieldInput.addEventListener("change", (event) => {
@@ -337,53 +313,47 @@ export default class Conditions {
         this.onChange();
       });
     } else {
-      fieldInput = create("select", this.settings.classNames.fieldSelect);
-      fieldInput.setAttribute("data-field", currentField);
-      if (currentSchema) fieldInput.setAttribute("data-type", currentSchema.type);
-      createSelectOptions(
-        fieldInput,
-        [
-          ["", `--- select ${this.settings.items.field.toLowerCase()} ---`],
-          ...fieldList(schema).map(({ key, label }) => [key, label]),
-        ],
-        field.key,
+      fieldInput = createSelect(
+        this.className("fieldSelect"),
+        fieldList(schema).map(({ key, label }) => [key, label]),
+        (value: string) => {
+          const prevField = fieldKey(fieldInput.getAttribute("data-field"));
+          const nextField = fieldKey(value);
+
+          const prevType = fieldType(fieldInput.getAttribute("data-type"));
+          const nextType = fieldType(fieldSchemaItem(schema, nextField)?.type);
+
+          field.key = value;
+          this.onChange();
+
+          // clear conditions when type changes
+          if (prevType !== nextType) {
+            fieldInput.setAttribute("data-type", nextType);
+            field.conditions = [];
+            conditionsElement.innerHTML = "";
+          }
+
+          // clear nested groups when field changes
+          if (prevField !== nextField) {
+            fieldInput.setAttribute("data-field", value);
+            field.where = [];
+            nestedGroupsElement.innerHTML = "";
+          }
+
+          visible(
+            addNestedGroupBtn,
+            fieldType(fieldSchemaItem(schema, nextField)?.type) === "object",
+          );
+        },
+        { selected: field.key, allowEmpty: true },
       );
 
-      fieldInput.addEventListener("change", (event) => {
-        event.preventDefault();
-
-        const prevField = fieldKey(fieldInput.getAttribute("data-field"));
-        const nextField = fieldKey(fieldInput.value);
-
-        const prevType = fieldType(fieldInput.getAttribute("data-type"));
-        const nextType = fieldType(fieldSchemaItem(schema, nextField)?.type);
-
-        field.key = fieldInput.value;
-        this.onChange();
-
-        // clear conditions when type changes
-        if (prevType !== nextType) {
-          fieldInput.setAttribute("data-type", nextType);
-          field.conditions = [];
-          conditionsElement.innerHTML = "";
-        }
-
-        // clear nested groups when field changes
-        if (prevField !== nextField) {
-          fieldInput.setAttribute("data-field", fieldInput.value);
-          field.where = [];
-          nestedGroupsElement.innerHTML = "";
-        }
-
-        visible(
-          addNestedGroupBtn,
-          fieldType(fieldSchemaItem(schema, nextField)?.type) === "object",
-        );
-      });
+      fieldInput.setAttribute("data-field", currentField);
+      if (currentSchema) fieldInput.setAttribute("data-type", currentSchema.type);
     }
 
     // remove field button
-    const removeFieldBtn = createButton(this.settings.classNames.buttonRemove, "close", () =>
+    const removeFieldBtn = createButton(this.className("buttonRemove"), "close", () =>
       this.removeItem(fieldElement, fields, field),
     );
 
@@ -398,23 +368,19 @@ export default class Conditions {
     }
 
     // add condition button
-    const addConditionBtn = createButton(
-      this.settings.classNames.buttonAddCondition,
-      "plus",
-      () => {
-        const currentField = fieldKey(fieldInput.getAttribute("data-field"));
-        const currentSchema = fieldSchemaItem(schema, currentField);
+    const addConditionBtn = createButton(this.className("buttonAddCondition"), "plus", () => {
+      const currentField = fieldKey(fieldInput.getAttribute("data-field"));
+      const currentSchema = fieldSchemaItem(schema, currentField);
 
-        const newCondition: Condition = { operator: "eq", value: "" };
-        this.addItem(
-          conditionsElement,
-          field.conditions,
-          newCondition,
-          currentSchema,
-          this.renderCondition.bind(this),
-        );
-      },
-    );
+      const newCondition: Condition = { operator: "eq", value: "" };
+      this.addItem(
+        conditionsElement,
+        field.conditions,
+        newCondition,
+        currentSchema,
+        this.renderCondition.bind(this),
+      );
+    });
 
     if (field.where) {
       for (const group of field.where) {
@@ -442,46 +408,39 @@ export default class Conditions {
     condition: Condition,
     schema?: SchemaItem,
   ) {
-    const conditionElement = create("div", this.settings.classNames.conditionSection);
-    const conditionInputs = create("div", this.settings.classNames.conditionInputs);
-    const operatorSelect = create("select", this.settings.classNames.conditionSelect);
-    const valueInput = create("input", this.settings.classNames.conditionValueInput);
-    const removeConditionBtn = create("button", this.settings.classNames.buttonRemove);
+    const conditionElement = create("div", this.className("conditionSection"));
+    const conditionInputs = create("div", this.className("conditionInputs"));
+    const valueInput = create("input", this.className("conditionValueInput"));
 
     // operator select
-    const filteredOperators = Object.entries(this.settings.conditionOperators).filter(
+    const filteredOptions = Object.entries(this.settings.conditionOperators).filter(
       ([key, _label]) => !schema || fieldOperatorValid(key as ConditionOperator, schema.type),
     );
-    createSelectOptions(
-      operatorSelect,
-      [["", "--- select operator ---"], ...filteredOperators],
-      condition.operator,
+
+    const operatorSelect = createSelect(
+      this.className("conditionSelect"),
+      filteredOptions,
+      (value: ConditionOperator) => {
+        condition.operator = value;
+        visible(valueInput, operatorHasValue(condition.operator));
+
+        this.onChange();
+      },
+      { selected: condition.operator, allowEmpty: true },
     );
-
-    operatorSelect.addEventListener("change", (event) => {
-      event.preventDefault();
-      condition.operator = operatorSelect.value as ConditionOperator;
-
-      visible(valueInput, operatorHasValue(condition.operator));
-
-      this.onChange();
-    });
 
     // value input
     valueInput.value = condition.value;
-    valueInput.addEventListener("change", (event) => {
-      event.preventDefault();
+    valueInput.addEventListener("change", () => {
       condition.value = valueInput.value;
       this.onChange();
     });
     visible(valueInput, operatorHasValue(condition.operator));
 
     // remove button
-    removeConditionBtn.appendChild(createIcon("close"));
-    removeConditionBtn.addEventListener("click", (event) => {
-      event.preventDefault();
-      this.removeItem(conditionElement, conditions, condition);
-    });
+    const removeConditionBtn = createButton(this.className("buttonRemove"), "close", () =>
+      this.removeItem(conditionElement, conditions, condition),
+    );
 
     append(conditionInputs, operatorSelect, valueInput);
     append(conditionElement, conditionInputs, removeConditionBtn);
@@ -516,5 +475,9 @@ export default class Conditions {
 
     const event = new Event("change", { bubbles: true });
     this.input.dispatchEvent(event);
+  }
+
+  private className(className: keyof Settings["classNames"]) {
+    return this.settings.classNames[className];
   }
 }
