@@ -71,15 +71,11 @@ export default class Evaluator {
   }
 
   private evaluateCountCondition(record: Hash, countField: string, condition: Hash): boolean {
-    // Extract base field name (e.g., 'items' from 'items_count')
     const baseField = countField.replace(/_count$/, "");
-    let items: any[] = record[baseField] || [];
+    let items: Hash[] = record[baseField] || [];
 
     // Apply 'where' filter if present
-    let where_conditions = condition["where"];
-    if (where_conditions !== undefined) {
-      items = this.filter(items, where_conditions);
-    }
+    if (condition.where) items = this.filter(items, condition.where);
 
     const count = Array.isArray(items) ? items.length : 0;
 
@@ -98,26 +94,22 @@ export default class Evaluator {
     const baseField = match[1];
     const sumField = match[2];
 
-    let items: any[] = record[baseField] || [];
+    let items: Hash[] = record[baseField] || [];
 
     // Apply 'where' filter if present
-    let where_conditions = condition["where"];
-    if (where_conditions !== undefined) {
-      items = this.filter(items, where_conditions);
-    }
+    if (condition.where) items = this.filter(items, condition.where);
 
     // Calculate sum of the specified field
-    const sum_value: number = items.reduce((sum, item) => {
-      let fieldValue = item[sumField];
-      if (fieldValue === undefined) fieldValue = item[sumField as any];
-      let f = parseFloat(fieldValue) || 0;
-      return sum + f;
+    const sumValue: number = items.reduce((sum, item) => {
+      const fieldValue = item[sumField];
+      if (!fieldValue) return sum;
+      return sum + Number.parseFloat(fieldValue);
     }, 0);
 
     // Check sum conditions
     return Object.entries(condition).every(([op, value]) => {
       if (op === "where") return true;
-      return this.evaluateOperator(sum_value, op as ConditionOperator, value);
+      return this.evaluateOperator(sumValue, op as ConditionOperator, value);
     });
   }
 
