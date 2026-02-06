@@ -55,15 +55,13 @@ export type Condition = {
 
 export type SchemaType =
   | "text"
-  | "date"
   | "number"
   | "boolean"
   | "object"
   | "text[]"
   | "number[]"
   | "boolean[]"
-  | "object[]"
-  | "date[]";
+  | "object[]";
 export type Schema = Record<string, SchemaItem>;
 
 export type SchemaItem = {
