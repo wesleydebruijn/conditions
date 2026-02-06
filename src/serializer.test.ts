@@ -1,5 +1,5 @@
-import { deserialize, isNumber, serialize } from "./serializer";
-import type { Group } from "./types";
+import { deserialize, isNumber, serialize, serializeValue, serializeField } from "./serializer";
+import type { Group, Field } from "./types";
 
 describe("isNumber", () => {
   it("returns true for numeric strings", () => {
@@ -189,5 +189,82 @@ describe("serialize / deserialize", () => {
         ],
       },
     ]);
+  });
+});
+
+describe("serializeValue", () => {
+  it("serializes non-value operators correctly", () => {
+    expect(serializeValue("exists", "")).toBe(true);
+    expect(serializeValue("not_exists", "")).toBe(true);
+    expect(serializeValue("null", "")).toBe(true);
+    expect(serializeValue("empty", "")).toBe(true);
+    expect(serializeValue("not_empty", "")).toBe(true);
+  });
+
+  it("serializes between operator correctly", () => {
+    expect(serializeValue("between", "1,10")).toEqual([1, 10]);
+  });
+
+  it("serializes in operator correctly", () => {
+    expect(serializeValue("in", "1,2,3")).toEqual([1, 2, 3]);
+    expect(serializeValue("in", "phone,accessory,other")).toEqual(["phone", "accessory", "other"]);
+  });
+
+  it("serializes not_in operator correctly", () => {
+    expect(serializeValue("not_in", "1,2,3")).toEqual([1, 2, 3]);
+    expect(serializeValue("not_in", "phone,accessory,other")).toEqual([
+      "phone",
+      "accessory",
+      "other",
+    ]);
+  });
+
+  it("serializes boolean values correctly", () => {
+    expect(serializeValue("eq", "true")).toBe(true);
+    expect(serializeValue("eq", "false")).toBe(false);
+  });
+
+  it("serializes number values correctly", () => {
+    expect(serializeValue("eq", "1")).toBe(1);
+    expect(serializeValue("eq", "1.5")).toBe(1.5);
+  });
+
+  it("serializes string values correctly", () => {
+    expect(serializeValue("eq", "hello")).toBe("hello");
+  });
+});
+
+describe("serializeField", () => {
+  it("serializes field with conditions correctly", () => {
+    const field: Field = {
+      key: "fieldKey",
+      conditions: [
+        { operator: "gt", value: "1" },
+        { operator: "lt", value: "5" },
+      ],
+    };
+
+    const expected = { gt: 1, lt: 5 };
+
+    expect(serializeField(field)).toEqual(expected);
+  });
+
+  it("serializes field with where conditions correctly", () => {
+    const field: Field = {
+      key: "fieldKey",
+      conditions: [{ operator: "eq", value: "value" }],
+      where: [
+        {
+          operator: "and",
+          fieldSets: [
+            { fields: [{ key: "nestedField", conditions: [{ operator: "eq", value: "value" }] }] },
+          ],
+        },
+      ],
+    };
+
+    const expected = { eq: "value", where: { nestedField: { eq: "value" } } };
+
+    expect(serializeField(field)).toEqual(expected);
   });
 });
