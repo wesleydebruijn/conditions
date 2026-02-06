@@ -1,5 +1,9 @@
 import type { Hash, ConditionHash, ConditionOperator } from "./types";
 
+function isObject(value: unknown): boolean {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 export default class Evaluator {
   private conditions: ConditionHash;
 
@@ -16,83 +20,57 @@ export default class Evaluator {
   }
 
   private evaluate(conditions: ConditionHash, record: Hash): boolean {
-    if (Array.isArray(conditions)) {
-      return this.evaluateArray(conditions, record);
-    } else if (typeof conditions === "object" && conditions !== null) {
-      return this.evaluateHash(conditions as { [key: string]: any }, record);
-    } else {
-      return false;
-    }
+    if (Array.isArray(conditions)) return this.evaluateArray(conditions, record);
+    if (isObject(conditions)) return this.evaluateHash(conditions, record);
+
+    return false;
   }
 
-  private evaluateHash(hash: { [key: string]: any }, record: Hash): boolean {
+  private evaluateHash(hash: Hash, record: Hash): boolean {
     if (!hash || Object.keys(hash).length === 0) return true;
 
-    if ("and" in hash) {
-      return this.evaluateAnd(hash["and"], record);
-    } else if ("or" in hash) {
-      return this.evaluateOr(hash["or"], record);
-    } else {
-      return this.evaluateFieldConditions(hash, record);
-    }
+    if ("and" in hash) return this.evaluateAnd(hash.and, record);
+    if ("or" in hash) return this.evaluateOr(hash.or, record);
+
+    return this.evaluateFieldConditions(hash, record);
   }
 
-  private evaluateArray(array: any[], record: Hash): boolean {
-    return array.every((condition) => this.evaluate(condition, record));
+  private evaluateArray(array: Hash[], record: Hash): boolean {
+    return array.every((cond) => this.evaluate(cond, record));
   }
 
   private evaluateAnd(conditions: ConditionHash, record: Hash): boolean {
-    if (Array.isArray(conditions)) {
-      return conditions.every((condition) => this.evaluate(condition, record));
-    } else if (typeof conditions === "object" && conditions !== null) {
-      return this.evaluate(conditions as { [key: string]: any }, record);
-    } else {
-      return false;
-    }
+    if (Array.isArray(conditions)) return conditions.every((cond) => this.evaluate(cond, record));
+    if (isObject(conditions)) return this.evaluate(conditions, record);
+
+    return false;
   }
 
   private evaluateOr(conditions: ConditionHash, record: Hash): boolean {
-    if (Array.isArray(conditions)) {
-      return conditions.some((condition) => this.evaluate(condition, record));
-    } else if (typeof conditions === "object" && conditions !== null) {
-      return this.evaluate(conditions as { [key: string]: any }, record);
-    } else {
-      return false;
-    }
+    if (Array.isArray(conditions)) return conditions.some((cond) => this.evaluate(cond, record));
+    if (isObject(conditions)) return this.evaluate(conditions, record);
+
+    return false;
   }
 
-  private evaluateFieldConditions(hash: { [key: string]: any }, record: Hash): boolean {
-    return Object.entries(hash).every(([field, expected_value]) => {
+  private evaluateFieldConditions(hash: Hash, record: Hash): boolean {
+    return Object.entries(hash).every(([field, expectedValue]) => {
       const fieldKey = String(field);
 
-      const actualValue = fieldKey.split(".").reduce((acc, key) => acc && acc[key], record);
+      const actualValue = fieldKey.split(".").reduce((acc, key) => acc?.[key], record);
 
       // Handle special aggregation fields like count & sum
-      if (
-        fieldKey.endsWith("_count") &&
-        typeof expected_value === "object" &&
-        expected_value !== null &&
-        !Array.isArray(expected_value)
-      ) {
-        return this.evaluateCountCondition(record, fieldKey, expected_value);
-      } else if (
-        fieldKey.endsWith("_sum") &&
-        typeof expected_value === "object" &&
-        expected_value !== null &&
-        !Array.isArray(expected_value)
-      ) {
-        return this.evaluateSumCondition(record, fieldKey, expected_value);
-      } else {
-        return this.matchFieldValue(actualValue, expected_value);
-      }
+      const hasCount = fieldKey.endsWith("_count") && isObject(expectedValue);
+      if (hasCount) return this.evaluateCountCondition(record, fieldKey, expectedValue);
+
+      const hasSum = fieldKey.endsWith("_sum") && isObject(expectedValue);
+      if (hasSum) return this.evaluateSumCondition(record, fieldKey, expectedValue);
+
+      return this.matchFieldValue(actualValue, expectedValue);
     });
   }
 
-  private evaluateCountCondition(
-    record: Hash,
-    countField: string,
-    condition: { [key: string]: any },
-  ): boolean {
+  private evaluateCountCondition(record: Hash, countField: string, condition: Hash): boolean {
     // Extract base field name (e.g., 'items' from 'items_count')
     const baseField = countField.replace(/_count$/, "");
     let items: any[] = record[baseField] || [];
@@ -112,11 +90,7 @@ export default class Evaluator {
     });
   }
 
-  private evaluateSumCondition(
-    record: Hash,
-    sum_field: string,
-    condition: { [key: string]: any },
-  ): boolean {
+  private evaluateSumCondition(record: Hash, sum_field: string, condition: Hash): boolean {
     // Extract base field name and sum field (e.g., 'orders_price_sum' -> 'orders' and 'price')
     const match = sum_field.match(/^(.+?)_(.+?)_sum$/);
     if (!match) return false;
@@ -148,15 +122,15 @@ export default class Evaluator {
   }
 
   private matchFieldValue(actual: any, expected: any): boolean {
-    if (typeof expected === "object" && expected !== null && !Array.isArray(expected)) {
+    if (Array.isArray(expected)) return expected.includes(actual);
+
+    if (isObject(expected)) {
       return Object.entries(expected).every(([op, value]) => {
         return this.evaluateOperator(actual, op as ConditionOperator, value);
       });
-    } else if (Array.isArray(expected)) {
-      return expected.includes(actual);
-    } else {
-      return actual === expected;
     }
+
+    return actual === expected;
   }
 
   private evaluateOperator(actual: any, operator: ConditionOperator, expected: any): boolean {
@@ -196,8 +170,7 @@ export default class Evaluator {
         );
       case "like":
         if (actual == null || expected == null) return false;
-        let strPattern = String(expected).replace(/%/g, "");
-        return String(actual).includes(strPattern);
+        return String(actual).includes(String(expected).replace(/%/g, ""));
       case "exists":
         return actual != null;
       case "not_exists":

@@ -1,4 +1,4 @@
-export type Hash = Record<string, unknown>;
+export type Hash = Record<string, any>;
 export type ConditionHash = Hash | Array<Hash>;
 
 export type Operator = "and" | "or";
