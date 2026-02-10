@@ -57,7 +57,7 @@ export function append(element: HTMLElement, ...children: HTMLElement[]): void {
 }
 
 export function prepend(element: HTMLElement, ...children: HTMLElement[]): void {
-  for (const child of children) element.prepend(child);
+  element.prepend(...children);
 }
 
 export function createSelect<T>(

@@ -324,7 +324,6 @@ export default class Conditions {
           const nextType = fieldType(fieldSchemaItem(schema, nextField)?.type);
 
           field.key = value;
-          this.onChange();
 
           // clear conditions when type changes
           if (prevType !== nextType) {
@@ -339,6 +338,8 @@ export default class Conditions {
             field.where = [];
             nestedGroupsElement.innerHTML = "";
           }
+
+          this.onChange();
 
           visible(
             addNestedGroupBtn,
