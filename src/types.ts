@@ -118,6 +118,5 @@ export type Settings = {
   };
   operators: Record<Operator, string>;
   conditionOperators: Partial<Record<ConditionOperator, string>>;
-  hideInput: boolean;
   schema?: Schema;
 };

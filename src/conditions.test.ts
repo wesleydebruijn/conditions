@@ -43,18 +43,6 @@ describe("Conditions", () => {
       c.destroy();
     });
 
-    it("hides input by default", () => {
-      const c = new Conditions(input);
-      expect(input.style.display).toBe("none");
-      c.destroy();
-    });
-
-    it("keeps input visible when hideInput is false", () => {
-      const c = new Conditions(input, { hideInput: false });
-      expect(input.style.display).not.toBe("none");
-      c.destroy();
-    });
-
     it("merges custom classNames", () => {
       const c = new Conditions(input, {
         classNames: { wrapper: "custom-wrapper" },
@@ -99,19 +87,6 @@ describe("Conditions", () => {
       c.destroy();
       expect(wrapper?.parentNode).toBeNull();
       expect(input.conditions).toBeNull();
-    });
-
-    it("shows input again when hideInput was true", () => {
-      const c = new Conditions(input, { hideInput: true });
-      expect(input.style.display).toBe("none");
-      c.destroy();
-      expect(input.style.display).toBe("");
-    });
-
-    it("leaves input visible when hideInput was false", () => {
-      const c = new Conditions(input, { hideInput: false });
-      c.destroy();
-      expect(input.style.display).not.toBe("none");
     });
   });
 

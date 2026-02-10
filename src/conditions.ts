@@ -42,7 +42,6 @@ declare global {
 
 export default class Conditions {
   private settings: Settings = {
-    hideInput: true,
     classNames: {
       wrapper: "conditions-wrapper",
       groupsContainer: "conditions-groups-container",
@@ -137,7 +136,6 @@ export default class Conditions {
     this.input.conditions = this;
     this.groups = deserialize(this.input.value);
     this.wrapperElement = create("div", this.className("wrapper"));
-    if (this.settings.hideInput) visible(this.input, false);
 
     this.render();
   }
@@ -145,8 +143,6 @@ export default class Conditions {
   public destroy() {
     this.input.conditions = null;
     this.wrapperElement.remove();
-
-    if (this.settings.hideInput) visible(this.input, true);
   }
 
   private render() {

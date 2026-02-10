@@ -57,17 +57,6 @@
       flex-direction: column;
     }
 
-    .panel.record {
-      flex: 6;
-      position: sticky;
-      align-self: flex-start;
-      top: 16px;
-    }
-
-    .panel.condition {
-      flex: 8;
-    }
-
     .panel label {
       display: block;
       font-size: 11px;
@@ -83,7 +72,7 @@
       min-height: 240px;
       resize: vertical;
       padding: 8px 10px;
-      font-size: 12px;
+      font-size: 8px;
       border-radius: calc(var(--radius) - 2px);
       border: 1px solid hsl(var(--input));
       background: hsl(var(--background));
@@ -92,11 +81,6 @@
       line-height: 1.45;
       font-family: 'JetBrains Mono', 'Fira Mono', 'Consolas', 'Menlo', monospace;
       field-sizing: content;
-    }
-
-    .panel.condition textarea {
-      min-height: 280px;
-      font-size: 13px;
     }
 
     .panel.record textarea.record-input--match {
@@ -161,20 +145,6 @@
         width: 100%;
       }
     }
-
-    @media (max-width: 600px) {
-      .panel.record {
-        position: relative;
-      }
-
-      .panel textarea {
-        font-size: 11px;
-        min-height: 160px;
-      }
-      .panel.condition textarea {
-        min-height: 160px;
-      }
-    }
   </style>
 </head>
 <body>
@@ -183,9 +153,6 @@
       <div class="builder-header-content">
         <h2>Conditions</h2>
         <p>Create complex queries in JSON format that can be evaluated in front- and backend</p>
-      </div>
-      <div class="btn-group">
-        <button id="toggle-btn" class="btn" type="button">🛠️</button>
       </div>
     </div>
 
@@ -201,11 +168,11 @@
       <div class="panel condition">
         <label for="condition-input">Conditions</label>
         <textarea id="condition-input" spellcheck="false"></textarea>
+      </div>
 
-        <div id="config-container">
-          <label for="config-input">Config</label>
-          <textarea id="config-input" spellcheck="false"></textarea>
-        </div>
+      <div class="panel config">
+        <label for="config-input">Config (optional)</label>
+        <textarea id="config-input" spellcheck="false"></textarea>
       </div>
     </div>
   </div>
@@ -215,89 +182,9 @@
     import Conditions from '/src/conditions.ts';
     import Evaluator from '/src/evaluator.ts';
 
-    const initialConfig = {
-      hideInput: true,
-      schema: {
-        active: { label: 'Active', type: 'boolean' },
-        coupons: { label: 'Coupons', type: 'text[]' },
-        items: {
-          label: 'Items',
-          type: 'object[]',
-          schema: {
-            name: { label: 'Naam', type: 'text' },
-            type: { label: 'Type', type: 'text' },
-            slug: { label: 'Slug', type: 'text' },
-            price: { label: 'Price', type: 'number' },
-            provider: { label: 'Provider', type: 'text' },
-            monthly_fee: { label: 'Monthly Fee', type: 'number' },
-            contract_term: { label: 'Contract Duration', type: 'number' },
-            promotions: {
-              label: 'Promotions',
-              type: 'object[]',
-              schema: {
-                name: { label: 'Name', type: 'text' },
-                discount: { label: 'Discount', type: 'number' },
-              },
-            },
-            content: { 
-              label: 'Content',
-              type: 'object', 
-              schema: {
-                data: { label: 'Data', type: 'number' },
-                minutes: { label: 'Minutes', type: 'number' },
-                sms: { label: 'SMS', type: 'number' },
-              },
-            },
-          },
-        },
-      },
-    };
+    const initialConfig = {};
 
-    const initialRecord = {
-      active: true,
-      coupons: ['FREE_AIRPODS'],
-      items: [
-        {
-          name: 'Vodafone 10GB + Apple iPhone 15',
-          type: 'proposition',
-          slug: 'vodafone-10gb-iphone-15',
-          provider: 'vodafone',
-          price: 200,
-          monthly_fee: 10,
-          contract_term: 24,
-          promotions: [
-            {
-              name: 'Discount 10 euro',
-              discount: 10,
-            },
-          ],
-          content: {
-            data: 10000,
-            minutes: 500,
-            sms: 100,
-          },
-        },
-        {
-          name: 'Apple iPhone 16',
-          type: 'phone',
-          slug: 'iphone-16',
-          price: 100,
-        },
-        {
-          name: 'Apple AirPods Pro',
-          type: 'accessory',
-          slug: 'airpods-pro',
-          price: 20,
-        },
-        {
-          name: 'Apple Watch Series 10',
-          type: 'accessory',
-          slug: 'watch-series-10',
-          price: 200,
-        },
-      ],
-    };
-
+    const initialRecord = {};
     const initialCondition = {};
 
     let conditions;
@@ -305,14 +192,16 @@
     const conditionInput = document.getElementById('condition-input');
     const configContainer = document.getElementById('config-container');
     const configInput = document.getElementById('config-input');
-    const toggleBtn = document.getElementById('toggle-btn');
     const resultRow = document.getElementById('result-row');
 
     function toggle(enable) {
-      if (enable) {
-        if (conditions) return;
-        let config;
+      if(conditions) {
+        conditions.destroy();
+        conditions = null;
+      }
 
+      if (enable) {
+        let config;
         try {
           config = JSON.parse(configInput.value);
         } catch {
@@ -320,16 +209,6 @@
         }
 
         conditions = new Conditions(conditionInput, config);
-
-        configContainer.style.display = 'none';
-        toggleBtn.innerHTML = '❌';
-      } else {
-        if (!conditions) return;
-        conditions.destroy();
-        conditions = null;
-
-        configContainer.style.display = '';
-        toggleBtn.innerHTML = '🛠️';
       }
     }
 
@@ -360,10 +239,11 @@
       recordInput.value = JSON.stringify(initialRecord, null, 2);
 
       recordInput.addEventListener('input', () => evaluate());
+      recordInput.addEventListener('change', () => evaluate());
       conditionInput.addEventListener('input', () => evaluate());
       conditionInput.addEventListener('change', () => evaluate());
-
-      toggleBtn.addEventListener('click', () => toggle(!conditions));
+      configInput.addEventListener('input', () => toggle(true));
+      configInput.addEventListener('change', () => toggle(true));
 
       toggle(true);
       evaluate();

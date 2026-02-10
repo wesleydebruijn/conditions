@@ -82,7 +82,6 @@ The `Settings` configures the Conditions UI builder (labels and schema). It is p
 
 ```ts
 type Settings = {
-  hideInput: boolean; // hide original form input
   items: {
     group: string; // e.g. "Group" — label for top-level groups
     fieldset: string; // e.g. "Fieldset" — label for field-set blocks
