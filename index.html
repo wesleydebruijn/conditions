@@ -16,33 +16,130 @@
       background: hsl(var(--background));
       color: hsl(var(--foreground));
       min-height: 100vh;
-      padding: 16px 12px;
       font-size: 13px;
       line-height: 1.4;
+      display: flex;
+      flex-direction: column;
     }
- 
-    .filter-builder {
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      flex-shrink: 0;
+      border-bottom: 1px solid hsl(var(--border, 220 13% 91%));
+      background: hsl(var(--card, 0 0% 100%));
+    }
+
+    .site-header-inner {
       max-width: 1200px;
       margin: 0 auto;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .site-header .brand {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    .site-header .brand-name {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: hsl(var(--foreground));
+    }
+
+    .site-header .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .site-header .github-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: calc(var(--radius) - 2px);
+      color: hsl(var(--muted-foreground, 220 9% 46%));
+      transition: color 0.15s ease, background 0.15s ease;
+    }
+
+    .site-header .github-link:hover {
+      color: hsl(var(--foreground));
+      background: hsl(var(--foreground) / 0.06);
+    }
+
+    .site-header .github-link svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .main {
+      flex: 1;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 40px;
+      margin-top: 40px;
+      padding: 0 16px;
+    }
+
+    .hero h1 {
+      font-size: clamp(1.75rem, 4vw, 2.25rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: hsl(var(--foreground));
+      margin-bottom: 10px;
+      line-height: 1.2;
+    }
+
+    .hero p {
+      font-size: 1rem;
+      color: hsl(var(--muted-foreground, 220 9% 46%));
+      max-width: 520px;
+      margin: 0 auto;
+      line-height: 1.5;
+    }
+
+    .filter-builder {
+      margin-top: 0;
+      background: hsl(220 14% 96%);
+      padding: 32px 0 40px;
+    }
+
+    .filter-builder-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .filter-builder {
+        background: hsl(222 20% 8%);
+      }
     }
 
     .builder-header {
-      margin-bottom: 22px;
+      margin-bottom: 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
 
-    .builder-header h2 {
-      font-size: 24px;
+    .builder-header .section-title {
+      font-size: 0.8125rem;
       font-weight: 600;
-      color: hsl(var(--foreground));
-      margin-bottom: 2px;
-    }
-
-    .builder-header p {
-      color: hsl(var(--muted-foreground));
-      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: hsl(var(--muted-foreground, 220 9% 46%));
     }
 
     .builder-main-row {
@@ -72,7 +169,7 @@
       min-height: 240px;
       resize: vertical;
       padding: 8px 10px;
-      font-size: 8px;
+      font-size: 10px;
       border-radius: calc(var(--radius) - 2px);
       border: 1px solid hsl(var(--input));
       background: hsl(var(--background));
@@ -148,55 +245,89 @@
   </style>
 </head>
 <body>
-  <div class="filter-builder">
-    <div class="builder-header">
-      <div class="builder-header-content">
-        <h2>Conditions</h2>
-        <p>Create complex queries in JSON format that can be evaluated in front- and backend</p>
+  <header class="site-header">
+    <div class="site-header-inner">
+      <div class="brand">
+        <span class="brand-name">conditions</span>
+      </div>
+      <div class="header-actions">
+        <a href="https://github.com/wesleydebruijn/conditions" class="github-link" target="_blank" rel="noopener noreferrer" aria-label="View source on GitHub">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+          </svg>
+        </a>
       </div>
     </div>
+  </header>
 
-    <div class="builder-main-row">
-      <div class="panel record">
-        <div class="panel-header">
-          <label for="record-input">Test</label>
-          <div id="result-row"><b>evaluating...</b></div>
+  <main class="main">
+    <section class="hero" aria-labelledby="hero-title">
+      <h1 id="hero-title">Define once, run anywhere</h1>
+      <p>A language-agnostic, zero-dependency way to build complex queries that can be evaluated in the front- and backend.</p>
+    </section>
+
+    <section class="filter-builder" aria-labelledby="builder-title">
+      <div class="filter-builder-inner">
+        <div class="builder-header">
+          <h2 id="builder-title" class="section-title">Try it</h2>
         </div>
-        <textarea id="record-input" spellcheck="false"></textarea>
+        <div class="builder-main-row">
+          <div class="panel record">
+            <div class="panel-header">
+              <label for="record-input">Test</label>
+              <div id="result-row"><b>evaluating...</b></div>
+            </div>
+            <textarea id="record-input" spellcheck="false"></textarea>
+            <label for="config-input">Config</label>
+            <textarea id="config-input" spellcheck="false"></textarea>
+          </div>
+          <div class="panel condition">
+            <label for="condition-input">Conditions</label>
+            <textarea id="condition-input" spellcheck="false"></textarea>
+          </div>
+        </div>
       </div>
-
-      <div class="panel condition">
-        <label for="condition-input">Conditions</label>
-        <textarea id="condition-input" spellcheck="false"></textarea>
-      </div>
-
-      <div class="panel config">
-        <label for="config-input">Config (optional)</label>
-        <textarea id="config-input" spellcheck="false"></textarea>
-      </div>
-    </div>
-  </div>
+    </section>
+  </main>
 
   <script type="module">
     import '/src/style.css';
     import Conditions from '/src/conditions.ts';
     import Evaluator from '/src/evaluator.ts';
 
-    const initialConfig = {};
-    const initialRecord = {};
-    const initialCondition = {};
+    const initialConfig = {
+      schema: {
+        name: { label: 'Name', type: 'text' },
+        age: { label: 'Age', type: 'number' },
+      }
+    };
+    const initialRecord = {
+      name: 'John Doe',
+      age: 30,
+    };
+    const initialCondition = {
+      name: { match: 'John' },
+      age: { gte: 18, lte: 90 },
+    };
 
-    let conditions;
     const recordInput = document.getElementById('record-input');
     const conditionInput = document.getElementById('condition-input');
     const configContainer = document.getElementById('config-container');
     const configInput = document.getElementById('config-input');
     const resultRow = document.getElementById('result-row');
 
+    function debounce(fn, ms) {
+      let timeoutId;
+      return function (...args) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => fn.apply(this, args), ms);
+      };
+    }
+
     function build() {
-      if(conditions) {
-        conditions.destroy();
-        conditions = null;
+      if(conditionInput.conditions) {
+        conditionInput.conditions.destroy();
+        conditionInput.conditions = null;
       }
 
       let config;
@@ -206,12 +337,13 @@
         config = {};
       }
 
-      conditions = new Conditions(conditionInput, config);
+      new Conditions(conditionInput, config);
     }
 
     function evaluate() {
       recordInput.classList.remove('record-input--match', 'record-input--no-match');
       try {
+        const config = JSON.parse(configInput.value);
         const condition = JSON.parse(conditionInput.value);
         const record = JSON.parse(recordInput.value);
 
@@ -235,12 +367,17 @@
       conditionInput.value = JSON.stringify(initialCondition, null, 2);
       recordInput.value = JSON.stringify(initialRecord, null, 2);
 
-      recordInput.addEventListener('input', () => evaluate());
-      recordInput.addEventListener('change', () => evaluate());
-      conditionInput.addEventListener('input', () => evaluate());
-      conditionInput.addEventListener('change', () => evaluate());
-      configInput.addEventListener('input', () => build());
-      configInput.addEventListener('change', () => build());
+      const debouncedEvaluate = debounce(evaluate, 100);
+      const debouncedBuild = debounce(build, 100);
+
+      recordInput.addEventListener('input', debouncedEvaluate);
+      recordInput.addEventListener('change', debouncedEvaluate);
+      conditionInput.addEventListener('input', debouncedEvaluate);
+      conditionInput.addEventListener('change', debouncedEvaluate);
+      configInput.addEventListener('input', debouncedEvaluate);
+      configInput.addEventListener('change', debouncedEvaluate);
+      configInput.addEventListener('input', debouncedBuild);
+      configInput.addEventListener('change', debouncedBuild);
 
       build();
       evaluate();

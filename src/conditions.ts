@@ -124,15 +124,8 @@ export default class Conditions {
     this.settings = { ...this.settings, ...settings };
 
     this.input = find<HTMLInputElement | HTMLTextAreaElement>(input);
-    this.input.addEventListener("change", (event) => {
-      if (!event.isTrusted) return; // ignore programmatic events
-
-      this.groups = deserialize(this.input.value);
-      this.wrapperElement.remove();
-      this.wrapperElement = create("div", this.className("wrapper"));
-
-      this.render();
-    });
+    this.input.addEventListener("change", this.onInputChange.bind(this));
+    this.input.addEventListener("input", this.onInputChange.bind(this));
     this.input.conditions = this;
     this.groups = deserialize(this.input.value);
     this.wrapperElement = create("div", this.className("wrapper"));
@@ -141,8 +134,10 @@ export default class Conditions {
   }
 
   public destroy() {
-    this.input.conditions = null;
     this.wrapperElement.remove();
+    this.input.removeEventListener("change", this.onInputChange.bind(this));
+    this.input.removeEventListener("input", this.onInputChange.bind(this));
+    this.input.conditions = null;
   }
 
   private render() {
@@ -472,6 +467,16 @@ export default class Conditions {
 
     const event = new Event("change", { bubbles: true });
     this.input.dispatchEvent(event);
+  }
+
+  private onInputChange(event: Event) {
+    if (!event.isTrusted) return; // ignore programmatic events
+
+    this.groups = deserialize(this.input.value);
+    this.wrapperElement.remove();
+    this.wrapperElement = create("div", this.className("wrapper"));
+
+    this.render();
   }
 
   private className(className: keyof Settings["classNames"]) {
