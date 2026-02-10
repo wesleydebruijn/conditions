@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Conditions</title>
   <style>
+    @import url('https://cdn.rawgit.com/lonekorean/gist-syntax-themes/d49b91b3/stylesheets/twilight.css');
+
     * {
       margin: 0;
       padding: 0;
@@ -115,7 +117,7 @@
       padding: 32px 0 40px;
     }
 
-    .filter-builder-inner {
+    .inner {
       max-width: 1200px;
       margin: 0 auto;
       padding: 0 20px;
@@ -234,6 +236,59 @@
       }
     }
 
+    .usage-section {
+      margin-top: 40px;
+    }
+
+    .gist-tabs {
+      display: flex;
+      gap: 2px;
+      margin-bottom: 0;
+      border-bottom: 1px solid hsl(var(--border));
+    }
+
+    .gist-tab {
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      color: hsl(var(--muted-foreground, 220 9% 46%));
+      cursor: pointer;
+      transition: color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .gist-tab:hover {
+      color: hsl(var(--foreground));
+    }
+
+    .gist-tab.active {
+      color: hsl(var(--foreground));
+      border-bottom-color: hsl(var(--foreground));
+    }
+
+    .gist-tab-panel {
+      display: none;
+      border: 1px solid hsl(var(--border));
+      border-top: none;
+      border-radius: 0 0 var(--radius) var(--radius);
+      background: hsl(var(--card));
+      overflow: hidden;
+    }
+
+    .gist-tab-panel.active {
+      display: block;
+    }
+
+    .gist-tab-panel iframe {
+      display: block;
+      width: 100%;
+      min-height: 400px;
+      border: none;
+    }
+
     @media (max-width: 1000px) {
       .builder-main-row {
         flex-direction: column;
@@ -267,7 +322,7 @@
     </section>
 
     <section class="filter-builder" aria-labelledby="builder-title">
-      <div class="filter-builder-inner">
+      <div class="inner">
         <div class="builder-header">
           <h2 id="builder-title" class="section-title">Try it</h2>
         </div>
@@ -285,6 +340,24 @@
             <label for="condition-input">Conditions</label>
             <textarea id="condition-input" spellcheck="false"></textarea>
           </div>
+        </div>
+      </div>
+    </section>
+    <section class="usage-section" aria-labelledby="usage-title">
+      <div class="inner">
+        <div class="gist-tabs" role="tablist" aria-label="Code language">
+          <button type="button" class="gist-tab active" role="tab" aria-selected="false" aria-controls="gist-panel-typescript" id="gist-tab-typescript" data-panel="gist-panel-typescript">TypeScript</button>
+          <button type="button" class="gist-tab" role="tab" aria-selected="false" aria-controls="gist-panel-javascript" id="gist-tab-javascript" data-panel="gist-panel-javascript">JavaScript</button>
+          <button type="button" class="gist-tab" role="tab" aria-selected="true" aria-controls="gist-panel-ruby" id="gist-tab-ruby" data-panel="gist-panel-ruby">Ruby</button>
+        </div>
+        <div id="gist-panel-typescript" class="gist-tab-panel active" role="tabpanel" aria-labelledby="gist-tab-typescript">
+          <script src="https://gist.github.com/wesleydebruijn/99f303d583b39062d05e539c877fb304.js"></script>
+        </div>
+        <div id="gist-panel-javascript" class="gist-tab-panel" role="tabpanel" aria-labelledby="gist-tab-javascript">
+          <script src="https://gist.github.com/wesleydebruijn/d18553411a42a22869a6ec5cca544de8.js"></script>
+        </div>
+        <div id="gist-panel-ruby" class="gist-tab-panel" role="tabpanel" aria-labelledby="gist-tab-ruby">
+          <script src="https://gist.github.com/wesleydebruijn/0c164ea2a7116fd5ee870bfe04a90cb6.js"></script>
         </div>
       </div>
     </section>
@@ -378,6 +451,22 @@
       configInput.addEventListener('change', debouncedEvaluate);
       configInput.addEventListener('input', debouncedBuild);
       configInput.addEventListener('change', debouncedBuild);
+
+      document.querySelectorAll('.gist-tab').forEach((tab) => {
+        tab.addEventListener('click', () => {
+          const panelId = tab.getAttribute('data-panel');
+          if (!panelId) return;
+          document.querySelectorAll('.gist-tab').forEach((t) => {
+            t.classList.remove('active');
+            t.setAttribute('aria-selected', 'false');
+          });
+          document.querySelectorAll('.gist-tab-panel').forEach((p) => p.classList.remove('active'));
+          tab.classList.add('active');
+          tab.setAttribute('aria-selected', 'true');
+          const panel = document.getElementById(panelId);
+          if (panel) panel.classList.add('active');
+        });
+      });
 
       build();
       evaluate();
