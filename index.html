@@ -183,7 +183,6 @@
     import Evaluator from '/src/evaluator.ts';
 
     const initialConfig = {};
-
     const initialRecord = {};
     const initialCondition = {};
 
@@ -194,22 +193,20 @@
     const configInput = document.getElementById('config-input');
     const resultRow = document.getElementById('result-row');
 
-    function toggle(enable) {
+    function build() {
       if(conditions) {
         conditions.destroy();
         conditions = null;
       }
 
-      if (enable) {
-        let config;
-        try {
-          config = JSON.parse(configInput.value);
-        } catch {
-          config = {};
-        }
-
-        conditions = new Conditions(conditionInput, config);
+      let config;
+      try {
+        config = JSON.parse(configInput.value);
+      } catch {
+        config = {};
       }
+
+      conditions = new Conditions(conditionInput, config);
     }
 
     function evaluate() {
@@ -242,10 +239,10 @@
       recordInput.addEventListener('change', () => evaluate());
       conditionInput.addEventListener('input', () => evaluate());
       conditionInput.addEventListener('change', () => evaluate());
-      configInput.addEventListener('input', () => toggle(true));
-      configInput.addEventListener('change', () => toggle(true));
+      configInput.addEventListener('input', () => build());
+      configInput.addEventListener('change', () => build());
 
-      toggle(true);
+      build();
       evaluate();
     }
 
