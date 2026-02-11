@@ -16,23 +16,6 @@
   --section-condition: 200 3.5% 48%;
 }
 
-html.dark {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --muted-foreground: 215 16% 57%;
-  --card: 222.2 84% 4.9%;
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --ring: 224.3 76.3% 48%;
-  --destructive: 0 62.8% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-  --secondary-bg: 222.2 54% 10%;
-  --section-group: 210 3% 66%;
-  --section-fieldset: 195 2.5% 68%;
-  --section-field: 185 2.5% 70%;
-  --section-condition: 200 3% 72%;
-}
-
 @media (prefers-color-scheme: dark) {
   html:not(.light):not(.dark) {
     --background: 222.2 84% 4.9%;
@@ -50,6 +33,23 @@ html.dark {
     --section-field: 185 2.5% 70%;
     --section-condition: 200 3% 72%;
   }
+}
+
+html.dark {
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --muted-foreground: 215 16% 57%;
+  --card: 222.2 84% 4.9%;
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 224.3 76.3% 48%;
+  --destructive: 0 62.8% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --secondary-bg: 222.2 54% 10%;
+  --section-group: 210 3% 66%;
+  --section-fieldset: 195 2.5% 68%;
+  --section-field: 185 2.5% 70%;
+  --section-condition: 200 3% 72%;
 }
 
 .conditions-group-section {

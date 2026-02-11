@@ -107,14 +107,13 @@
       height: 20px;
     }
     .theme-toggle .icon-sun { display: none; }
-    .theme-toggle .icon-moon { display: none; }
-    .theme-toggle .icon-auto { display: block; }
+    .theme-toggle .icon-moon { display: block; }
     html.dark .theme-toggle .icon-sun { display: block; }
-    html.dark .theme-toggle .icon-moon,
-    html.dark .theme-toggle .icon-auto { display: none; }
-    html.light .theme-toggle .icon-moon { display: block; }
-    html.light .theme-toggle .icon-sun,
-    html.light .theme-toggle .icon-auto { display: none; }
+    html.dark .theme-toggle .icon-moon { display: none; }
+    @media (prefers-color-scheme: dark) {
+      html:not(.light):not(.dark) .theme-toggle .icon-sun { display: block; }
+      html:not(.light):not(.dark) .theme-toggle .icon-moon { display: none; }
+    }
 
     .main { flex: 1; }
 
@@ -273,7 +272,7 @@
   </style>
   <script>
     (function() {
-      var t = localStorage.getItem('theme') || 'auto';
+      var t = localStorage.getItem('theme');
       if (t === 'dark' || t === 'light') document.documentElement.classList.add(t);
     })();
   </script>
@@ -285,8 +284,7 @@
         <span class="brand-name">conditions</span>
       </div>
       <div class="header-actions">
-        <button type="button" class="theme-toggle" aria-label="Toggle theme" title="Theme: auto (follow system)">
-          <svg class="icon-auto" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        <button type="button" class="theme-toggle" aria-label="Toggle theme" title="Theme: system">
           <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
           <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
         </button>
@@ -434,22 +432,18 @@
       var html = document.documentElement;
       var btn = document.querySelector('.theme-toggle');
       if (!btn) return;
-      function getTheme() {
-        return localStorage.getItem('theme') || 'auto';
-      }
-      function setTheme(theme) {
+      function apply(theme) {
         html.classList.remove('light', 'dark');
-        if (theme === 'dark') html.classList.add('dark');
-        else if (theme === 'light') html.classList.add('light');
-        localStorage.setItem('theme', theme);
-        btn.title = 'Theme: ' + (theme === 'auto' ? 'auto (follow system)' : theme);
+        if (theme) html.classList.add(theme);
+        localStorage.setItem('theme', theme || '');
+        btn.title = 'Theme: ' + (theme || 'system');
       }
-      function cycleTheme() {
-        var theme = getTheme();
-        setTheme(theme === 'auto' ? 'dark' : theme === 'dark' ? 'light' : 'auto');
-      }
-      setTheme(getTheme());
-      btn.addEventListener('click', cycleTheme);
+      btn.addEventListener('click', function() {
+        var t = localStorage.getItem('theme');
+        var dark = t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        apply(dark ? 'light' : 'dark');
+      });
+      apply(localStorage.getItem('theme'));
     })();
   </script>
 </body>
