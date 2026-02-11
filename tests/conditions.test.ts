@@ -2,8 +2,8 @@
  * @jest-environment jsdom
  */
 
-import Conditions from "./conditions";
-import type { Schema, Settings } from "./types";
+import Conditions from "../src/conditions";
+import type { Schema, Settings } from "../src/types";
 
 describe("Conditions", () => {
   let input: HTMLInputElement;

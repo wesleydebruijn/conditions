@@ -6,8 +6,8 @@ import {
   fieldIsArray,
   operatorHasValue,
   fieldOperatorValid,
-} from "./schema";
-import type { Schema } from "./types";
+} from "../src/schema";
+import type { Schema } from "../src/types";
 
 describe("fieldKey", () => {
   it("returns empty string for null/undefined", () => {

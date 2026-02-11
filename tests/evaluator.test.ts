@@ -1,4 +1,4 @@
-import Evaluator from "./evaluator";
+import Evaluator from "../src/evaluator";
 
 describe("Evaluator", () => {
   describe("match", () => {
@@ -441,19 +441,13 @@ describe("Evaluator", () => {
 
       expect(
         evaluator.match({
-          orders: [
-            { price: 50 },
-            { price: 60 },
-          ],
+          orders: [{ price: 50 }, { price: 60 }],
         }),
       ).toBe(true);
 
       expect(
         evaluator.match({
-          orders: [
-            { price: 30 },
-            { price: 40 },
-          ],
+          orders: [{ price: 30 }, { price: 40 }],
         }),
       ).toBe(false);
     });
@@ -493,10 +487,7 @@ describe("Evaluator", () => {
       const evaluator = new Evaluator({ orders_price_sum: { eq: 50 } });
       expect(
         evaluator.match({
-          orders: [
-            { price: 50 },
-            { name: "no price" },
-          ],
+          orders: [{ price: 50 }, { name: "no price" }],
         }),
       ).toBe(true);
     });

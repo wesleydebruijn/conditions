@@ -13,7 +13,7 @@ import {
   createSelect,
   createButton,
   createBadge,
-} from "./dom";
+} from "../src/dom";
 
 describe("dom", () => {
   describe("className", () => {
@@ -192,12 +192,7 @@ describe("dom", () => {
     });
 
     it("adds empty option when allowEmpty is true", () => {
-      const el = createSelect(
-        "sel",
-        [["a", "A"]],
-        () => {},
-        { allowEmpty: true },
-      );
+      const el = createSelect("sel", [["a", "A"]], () => {}, { allowEmpty: true });
       expect(el.options.length).toBe(2);
       expect(el.options[0].value).toBe("");
       expect(el.options[0].textContent).toContain("select an option");
@@ -205,12 +200,7 @@ describe("dom", () => {
     });
 
     it("uses allowEmpty with selected", () => {
-      const el = createSelect(
-        "sel",
-        [["x", "X"]],
-        () => {},
-        { allowEmpty: true, selected: "x" },
-      );
+      const el = createSelect("sel", [["x", "X"]], () => {}, { allowEmpty: true, selected: "x" });
       expect(el.value).toBe("x");
     });
   });

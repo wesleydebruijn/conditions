@@ -6,8 +6,8 @@ import {
   serializeField,
   serializeGroup,
   deserializeGroup,
-} from "./serializer";
-import type { Group, Field } from "./types";
+} from "../src/serializer";
+import type { Group, Field } from "../src/types";
 
 describe("isNumber", () => {
   it("returns true for numeric strings", () => {
@@ -26,10 +26,7 @@ describe("isNumber", () => {
 
 describe("serialize / deserialize", () => {
   it("deserializes array of groups", () => {
-    const json = JSON.stringify([
-      { fieldKey: { eq: "value" } },
-      { fieldKey2: { gt: 5 } },
-    ]);
+    const json = JSON.stringify([{ fieldKey: { eq: "value" } }, { fieldKey2: { gt: 5 } }]);
 
     const deserialized = deserialize(json);
     expect(deserialized).toHaveLength(2);
@@ -85,10 +82,7 @@ describe("serialize / deserialize", () => {
     const json = JSON.stringify({
       fieldKey: {
         eq: "value",
-        where: [
-          { a: { gt: 1 } },
-          { b: { lt: 5 } },
-        ],
+        where: [{ a: { gt: 1 } }, { b: { lt: 5 } }],
       },
     });
 
@@ -379,8 +373,20 @@ describe("deserializeGroup", () => {
     const expected = {
       operator: "and",
       fieldSets: [
-        { fields: [{ key: "fieldKey", conditions: [{ operator: "eq", value: "value" }], where: undefined }] },
-        { fields: [{ key: "fieldKey2", conditions: [{ operator: "eq", value: "value2" }], where: undefined }] },
+        {
+          fields: [
+            { key: "fieldKey", conditions: [{ operator: "eq", value: "value" }], where: undefined },
+          ],
+        },
+        {
+          fields: [
+            {
+              key: "fieldKey2",
+              conditions: [{ operator: "eq", value: "value2" }],
+              where: undefined,
+            },
+          ],
+        },
       ],
     };
 
