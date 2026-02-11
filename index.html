@@ -9,15 +9,9 @@
       --max-width: 1200px;
       --panel-padding: 20px;
       --main-padding: 16px;
-      --input-bg: hsl(var(--background));
-      --input-border: hsl(var(--input));
       --input-radius: calc(var(--radius) - 2px);
       --shadow-success: 0 0 0 2px hsl(142 71% 45% / 0.2);
       --shadow-error: 0 0 0 2px hsl(0 72% 51% / 0.2);
-      --fg: hsl(var(--foreground));
-      --muted-fg: hsl(var(--muted-foreground, 220 9% 46%));
-      --header-border: hsl(var(--border, 220 13% 91%));
-      --header-bg: hsl(var(--card, 0 0% 100%));
     }
 
     * {
@@ -28,8 +22,8 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: var(--input-bg);
-      color: var(--fg);
+      background: hsl(var(--background));
+      color: hsl(var(--foreground));
       min-height: 100vh;
       font-size: 13px;
       line-height: 1.4;
@@ -42,8 +36,8 @@
       top: 0;
       z-index: 100;
       flex-shrink: 0;
-      border-bottom: 1px solid var(--header-border);
-      background: var(--header-bg);
+      border-bottom: 1px solid hsl(var(--border));
+      background: hsl(var(--card));
     }
 
     .site-header-inner {
@@ -65,7 +59,7 @@
       font-size: 1.5rem;
       font-weight: 700;
       letter-spacing: -0.02em;
-      color: var(--fg);
+      color: hsl(var(--foreground));
     }
     .header-actions {
       display: flex;
@@ -79,11 +73,11 @@
       width: 36px;
       height: 36px;
       border-radius: var(--input-radius);
-      color: var(--muted-fg);
+      color: hsl(var(--muted-foreground));
       transition: color 0.15s, background 0.15s;
     }
     .github-link:hover {
-      color: var(--fg);
+      color: hsl(var(--foreground));
       background: hsl(var(--foreground) / 0.06);
     }
     .github-link svg {
@@ -91,12 +85,43 @@
       height: 20px;
     }
 
+    .theme-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: var(--input-radius);
+      background: transparent;
+      color: hsl(var(--muted-foreground));
+      cursor: pointer;
+      transition: color 0.15s, background 0.15s;
+    }
+    .theme-toggle:hover {
+      color: hsl(var(--foreground));
+      background: hsl(var(--foreground) / 0.06);
+    }
+    .theme-toggle svg {
+      width: 20px;
+      height: 20px;
+    }
+    .theme-toggle .icon-sun { display: none; }
+    .theme-toggle .icon-moon { display: none; }
+    .theme-toggle .icon-auto { display: block; }
+    html.dark .theme-toggle .icon-sun { display: block; }
+    html.dark .theme-toggle .icon-moon,
+    html.dark .theme-toggle .icon-auto { display: none; }
+    html.light .theme-toggle .icon-moon { display: block; }
+    html.light .theme-toggle .icon-sun,
+    html.light .theme-toggle .icon-auto { display: none; }
+
     .main { flex: 1; }
 
     .site-footer {
       flex-shrink: 0;
-      border-top: 1px solid var(--header-border);
-      background: var(--header-bg);
+      border-top: 1px solid hsl(var(--border));
+      background: hsl(var(--card));
       padding: 16px var(--panel-padding);
       text-align: center;
     }
@@ -104,15 +129,15 @@
       max-width: var(--max-width);
       margin: 0 auto;
       font-size: 0.813rem;
-      color: var(--muted-fg);
+      color: hsl(var(--muted-foreground));
     }
     .site-footer a {
-      color: var(--muted-fg);
+      color: hsl(var(--muted-foreground));
       text-decoration: none;
       transition: color 0.15s;
     }
     .site-footer a:hover {
-      color: var(--fg);
+      color: hsl(var(--foreground));
     }
 
     .hero {
@@ -124,13 +149,13 @@
       font-size: clamp(1.75rem, 4vw, 2.25rem);
       font-weight: 700;
       letter-spacing: -0.03em;
-      color: var(--fg);
+      color: hsl(var(--foreground));
       margin-bottom: 10px;
       line-height: 1.2;
     }
     .hero p {
       font-size: 1rem;
-      color: var(--muted-fg);
+      color: hsl(var(--muted-foreground));
       max-width: 520px;
       margin: 0 auto;
       line-height: 1.5;
@@ -138,11 +163,8 @@
 
     .filter-builder {
       margin-top: 0;
-      background: hsl(220 14% 96%);
+      background: hsl(var(--secondary-bg));
       padding: 32px 0 40px;
-    }
-    @media (prefers-color-scheme: dark) {
-      .filter-builder { background: hsl(222 20% 8%); }
     }
 
     .inner {
@@ -162,7 +184,7 @@
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      color: var(--muted-fg);
+      color: hsl(var(--muted-foreground));
     }
 
     .builder-main-row {
@@ -188,7 +210,7 @@
       display: block;
       font-size: 11px;
       font-weight: 600;
-      color: var(--muted-fg);
+      color: hsl(var(--muted-foreground));
       margin-bottom: 4px;
       text-transform: uppercase;
       letter-spacing: 0.4px;
@@ -200,9 +222,9 @@
       padding: 8px 10px;
       font-size: 10px;
       border-radius: var(--input-radius);
-      border: 1px solid var(--input-border);
-      background: var(--input-bg);
-      color: var(--fg);
+      border: 1px solid hsl(var(--input));
+      background: hsl(var(--background));
+      color: hsl(var(--foreground));
       margin-bottom: 6px;
       line-height: 1.45;
       font-family: 'JetBrains Mono', 'Fira Mono', 'Consolas', 'Menlo', monospace;
@@ -249,6 +271,12 @@
       }
     }
   </style>
+  <script>
+    (function() {
+      var t = localStorage.getItem('theme') || 'auto';
+      if (t === 'dark' || t === 'light') document.documentElement.classList.add(t);
+    })();
+  </script>
 </head>
 <body>
   <header class="site-header">
@@ -257,6 +285,11 @@
         <span class="brand-name">conditions</span>
       </div>
       <div class="header-actions">
+        <button type="button" class="theme-toggle" aria-label="Toggle theme" title="Theme: auto (follow system)">
+          <svg class="icon-auto" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        </button>
         <a href="https://github.com/wesleydebruijn/conditions" class="github-link" target="_blank" rel="noopener noreferrer" aria-label="View source on GitHub">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
@@ -396,6 +429,28 @@
     }
 
     init();
+
+    (function() {
+      var html = document.documentElement;
+      var btn = document.querySelector('.theme-toggle');
+      if (!btn) return;
+      function getTheme() {
+        return localStorage.getItem('theme') || 'auto';
+      }
+      function setTheme(theme) {
+        html.classList.remove('light', 'dark');
+        if (theme === 'dark') html.classList.add('dark');
+        else if (theme === 'light') html.classList.add('light');
+        localStorage.setItem('theme', theme);
+        btn.title = 'Theme: ' + (theme === 'auto' ? 'auto (follow system)' : theme);
+      }
+      function cycleTheme() {
+        var theme = getTheme();
+        setTheme(theme === 'auto' ? 'dark' : theme === 'dark' ? 'light' : 'auto');
+      }
+      setTheme(getTheme());
+      btn.addEventListener('click', cycleTheme);
+    })();
   </script>
 </body>
 </html>
