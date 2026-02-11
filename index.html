@@ -92,6 +92,29 @@
     }
 
     .main { flex: 1; }
+
+    .site-footer {
+      flex-shrink: 0;
+      border-top: 1px solid var(--header-border);
+      background: var(--header-bg);
+      padding: 16px var(--panel-padding);
+      text-align: center;
+    }
+    .site-footer-inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      font-size: 0.813rem;
+      color: var(--muted-fg);
+    }
+    .site-footer a {
+      color: var(--muted-fg);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .site-footer a:hover {
+      color: var(--fg);
+    }
+
     .hero {
       text-align: center;
       margin: 40px 0;
@@ -272,6 +295,12 @@
       </div>
     </section>
   </main>
+
+  <footer class="site-footer">
+    <div class="site-footer-inner">
+      created by <a href="https://github.com/wesleydebruijn" target="_blank" rel="noopener noreferrer">wesley de bruijn</a>
+    </div>
+  </footer>
 
   <script type="module">
     import '/src/style.css';
