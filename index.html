@@ -299,7 +299,7 @@
 
   <main class="main">
     <section class="hero" aria-labelledby="hero-title">
-      <h1 id="hero-title">JSON condition evaluator</h1>
+      <h1 id="hero-title">JSON Condition Evaluator</h1>
       <p>A language-agnostic, zero-dependency way to build complex queries that can be evaluated in the front- and backend.</p>
     </section>
 
@@ -342,15 +342,33 @@
       schema: {
         name: { label: 'Name', type: 'text' },
         age: { label: 'Age', type: 'number' },
+        jobs: { 
+          label: 'Jobs', 
+          type: 'object[]',
+          schema: {
+            title: { label: 'Title', type: 'text' },
+            level: { label: 'Level', type: 'text' },
+          },
+        },
       }
     };
     const initialRecord = {
       name: 'John Doe',
       age: 30,
+      jobs: [
+        { title: 'Developer', level: 'Senior' },
+        { title: 'Designer', level: 'Junior' },
+      ],
     };
     const initialCondition = {
       name: { match: 'John' },
       age: { gte: 18, lte: 90 },
+      jobs_count: { 
+        gte: 1,
+        where: {
+          title: { eq: 'Developer' },
+        },
+      },
     };
 
     const recordInput = document.getElementById('record-input');
