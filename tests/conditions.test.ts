@@ -14,10 +14,33 @@ describe("Conditions", () => {
   const $$ = <T extends Element = HTMLElement>(selector: string, root: ParentNode = document) =>
     Array.from(root.querySelectorAll(selector)) as T[];
   const json = () => JSON.parse(input.value);
+  const pills = () => $$(".conditions-rule-pill").map((pill) => pill.textContent);
+  const isShown = (element: HTMLElement) => element.style.display !== "none";
+  const openEditors = () => $$(".conditions-rule-editor").filter(isShown);
 
   const change = (element: HTMLInputElement | HTMLSelectElement, value: string) => {
     element.value = value;
     element.dispatchEvent(new Event(element.tagName === "SELECT" ? "change" : "input"));
+  };
+
+  const load = (condition: unknown, options = {}) => {
+    input.value = JSON.stringify(condition);
+    return new Conditions(input, options);
+  };
+
+  const schema: Schema = {
+    name: { label: "Name", type: "text" },
+    age: { label: "Age", type: "number" },
+    active: { label: "Active", type: "boolean" },
+    tags: { label: "Tags", type: "text[]" },
+    items: {
+      label: "Items",
+      type: "object[]",
+      schema: {
+        type: { label: "Type", type: "text" },
+        price: { label: "Price", type: "number" },
+      },
+    },
   };
 
   beforeEach(() => {
@@ -51,22 +74,22 @@ describe("Conditions", () => {
     it("merges custom classNames with the defaults", () => {
       new Conditions(input, { classNames: { wrapper: "custom-wrapper" } });
       expect($(".custom-wrapper")).not.toBeNull();
-      expect($(".conditions-group-section")).not.toBeNull();
+      expect($(".conditions-group")).not.toBeNull();
     });
 
     it("merges custom labels with the defaults", () => {
-      new Conditions(input, { labels: { match: "Zoek" } });
-      const labels = $$(".conditions-group-label").map((el) => el.textContent);
-      expect(labels).toEqual(["Zoek", "of the following"]);
+      new Conditions(input, { labels: { addRule: "Filter toevoegen" } });
+      expect($(".conditions-btn-add-rule").textContent).toBe("Filter toevoegen");
+      expect($(".conditions-btn-add-group").textContent).toBe("Add group");
     });
 
     it("re-renders on trusted change event", () => {
       let changeListener: ((event: Event) => void) | undefined;
       const origAdd = input.addEventListener.bind(input);
-      (input as any).addEventListener = (type: string, listener: any, ...args: any[]) => {
+      input.addEventListener = ((type: string, listener: EventListener) => {
         if (type === "change") changeListener = listener;
-        return origAdd(type, listener, ...args);
-      };
+        return origAdd(type, listener);
+      }) as typeof input.addEventListener;
       new Conditions(input);
       input.addEventListener = origAdd;
 
@@ -74,6 +97,7 @@ describe("Conditions", () => {
       input.value = '{"name":"x"}';
       changeListener?.({ isTrusted: true } as unknown as Event);
       expect($(".conditions-wrapper")).not.toBe(wrapper);
+      expect(pills()).toEqual(["name is x"]);
     });
 
     it("ignores programmatic (untrusted) change events", () => {
@@ -96,118 +120,330 @@ describe("Conditions", () => {
   });
 
   describe("groups", () => {
-    it("adds a group with a ready-to-fill rule", () => {
-      input.value = "[]";
-      new Conditions(input);
-      $(".conditions-btn-add-group").click();
-      expect($$(".conditions-group-section")).toHaveLength(1);
-      expect($$(".conditions-condition-section")).toHaveLength(1);
-      expect(json()).toEqual({ "": { eq: "" } });
-    });
-
-    it("labels the add group button", () => {
-      new Conditions(input);
-      expect($(".conditions-btn-add-group").textContent).toBe("Add group");
-    });
-
     it("explains that an empty group matches everything", () => {
       new Conditions(input);
-      expect($(".conditions-group-body").children).toHaveLength(0);
-      expect($(".conditions-group-empty").textContent).toBe("No rules yet, so everything matches.");
+      expect($(".conditions-group-empty").textContent).toBe(
+        "No filters yet, so everything matches.",
+      );
     });
 
-    it("removes a group", () => {
-      input.value = JSON.stringify({ a: { eq: 1 } });
-      new Conditions(input);
-      $(".conditions-group-header .conditions-btn-remove").click();
-      expect($$(".conditions-group-section")).toHaveLength(0);
-      expect(input.value).toBe("[]");
+    it("only shows the AND/OR bracket with two or more filters", () => {
+      load({ a: { eq: 1 } });
+      expect($(".conditions-group-rail").style.visibility).toBe("hidden");
+
+      load({ a: { eq: 1 }, b: { eq: 2 } });
+      expect($(".conditions-group-rail").style.visibility).toBe("");
     });
 
-    it("defaults the operator to 'all'", () => {
-      new Conditions(input);
-      const select = $<HTMLSelectElement>(".conditions-group-operator-select");
-      expect(select.value).toBe("and");
-      expect(select.selectedOptions[0].textContent).toBe("all");
-    });
+    it("switches between AND and OR when the operator is clicked", () => {
+      load({ a: { eq: 1 }, b: { eq: 2 } });
+      const operator = () => $(".conditions-group-operator");
+      expect(operator().textContent).toBe("AND");
+      expect(operator().title).toContain("All of these must match");
 
-    it("changes operator and updates the connector between rule groups", () => {
-      input.value = JSON.stringify({ and: [{ a: { eq: 1 } }, { b: { eq: 2 } }] });
-      new Conditions(input);
-      const group = $(".conditions-group-section");
-      expect(group.style.getPropertyValue("--conditions-connector")).toBe('"and"');
-
-      change($<HTMLSelectElement>(".conditions-group-operator-select"), "or");
+      operator().click();
 
       expect(json()).toEqual({ or: [{ a: { eq: 1 } }, { b: { eq: 2 } }] });
-      expect(group.style.getPropertyValue("--conditions-connector")).toBe('"or"');
+      expect(operator().textContent).toBe("OR");
+      expect($(".conditions-group").dataset.operator).toBe("or");
+    });
+
+    it("renders inner groups at any depth", () => {
+      load({ and: [{ a: { eq: 1 } }, { or: [{ b: { eq: 2 } }, { c: { eq: 3 }, d: { eq: 4 } }] }] });
+      const operators = $$<HTMLElement>(".conditions-group").map((group) => group.dataset.operator);
+      expect(operators).toEqual(["and", "or", "and"]);
+      expect(pills()).toEqual(["a is 1", "b is 2", "c is 3", "d is 4"]);
+    });
+
+    it("adds an inner group with the opposite operator and an open filter", () => {
+      load({ a: { eq: 1 } });
+      $(".conditions-btn-add-group").click();
+
+      const inner = $(".conditions-group.is-nested");
+      expect(inner.dataset.operator).toBe("or");
+      expect(openEditors()).toHaveLength(1);
+      expect($(".conditions-btn-add-group", inner).textContent).toBe("Add inner group");
+      expect(json()).toEqual({ and: [{ a: { eq: 1 } }, { "": { eq: "" } }] });
+    });
+
+    it("only nested groups can be removed", () => {
+      load({ and: [{ a: { eq: 1 } }, { or: [{ b: { eq: 2 } }, { c: { eq: 3 } }] }] });
+      expect(
+        $(".conditions-group.is-root > .conditions-group-actions > .conditions-btn-remove"),
+      ).toBeNull();
+
+      $(".conditions-group.is-nested > .conditions-group-actions > .conditions-btn-remove").click();
+      expect(json()).toEqual({ a: { eq: 1 } });
+    });
+
+    it("removes an inner group once its last filter is removed", () => {
+      load({ and: [{ a: { eq: 1 } }, { or: [{ b: { eq: 2 } }, { c: { eq: 3 } }] }] });
+      const inner = $(".conditions-group.is-nested");
+      for (const button of $$(".conditions-rule-row > .conditions-btn-remove", inner)) {
+        button.click();
+      }
+      expect($(".conditions-group.is-nested")).toBeNull();
+      expect(json()).toEqual({ a: { eq: 1 } });
+    });
+
+    it("keeps the JSON unchanged when nothing is edited", () => {
+      const condition = {
+        and: [{ a: { eq: 1 } }, { or: [{ b: { eq: 2 } }, { c: { eq: 3 }, d: { eq: 4 } }] }],
+      };
+      load(condition);
+      const inner = $(".conditions-group.is-nested .conditions-group-operator");
+      inner.click();
+      $(".conditions-group.is-nested .conditions-group-operator").click();
+      expect(json()).toEqual(condition);
     });
   });
 
-  describe("match any", () => {
-    const joinButtons = () => $$(".conditions-btn-join-field");
-
-    it("makes every rule its own alternative when switching to 'any'", () => {
-      input.value = JSON.stringify({ a: { eq: 1 }, b: { eq: 2 } });
-      new Conditions(input);
-      change($<HTMLSelectElement>(".conditions-group-operator-select"), "or");
-      expect(json()).toEqual({ or: [{ a: { eq: 1 } }, { b: { eq: 2 } }] });
-      expect($$(".conditions-fieldset-section")).toHaveLength(2);
+  describe("filters", () => {
+    it("summarizes each filter as a sentence", () => {
+      load(
+        { age: { gte: 18, lte: 65 }, active: { eq: true }, tags: { not_empty: true } },
+        { schema },
+      );
+      expect(pills()).toEqual([
+        "Age is at least 18 and is at most 65",
+        "Active is Yes",
+        "Tags is not empty",
+      ]);
     });
 
-    it("combines all alternatives when switching back to 'all'", () => {
-      input.value = JSON.stringify({ or: [{ a: { eq: 1 } }, { b: { eq: 2 }, c: { eq: 3 } }] });
-      new Conditions(input);
-      change($<HTMLSelectElement>(".conditions-group-operator-select"), "and");
-      expect(json()).toEqual({ a: { eq: 1 }, b: { eq: 2 }, c: { eq: 3 } });
-      expect($$(".conditions-fieldset-section")).toHaveLength(1);
+    it("shows parent fields as a path", () => {
+      load({ items_price_sum: { gt: 10 } }, { schema });
+      expect($(".conditions-summary-path").textContent).toBe("Items");
+      expect(pills()).toEqual(["Items Price (sum) is greater than 10"]);
     });
 
-    it("adds a new alternative with 'Add rule'", () => {
-      input.value = JSON.stringify({ or: [{ a: { eq: 1 } }, { b: { eq: 2 } }] });
-      new Conditions(input);
-      $(".conditions-btn-add-field").click();
-      expect(json().or).toHaveLength(3);
+    it("formats ranges, lists and missing values", () => {
+      load({ age: { between: [18, 65] }, name: { in: ["a", "b"] }, x: { eq: "" } }, { schema });
+      expect(pills()).toEqual(["Age is between 18 and 65", "Name is one of a, b", "x is …"]);
     });
 
-    it("offers 'And' only on the last rule of each alternative", () => {
-      input.value = JSON.stringify({ or: [{ a: { eq: 1 } }, { b: { eq: 2 }, c: { eq: 3 } }] });
-      new Conditions(input);
-      expect(joinButtons().map((button) => button.style.display)).toEqual(["", "none", ""]);
+    it("adds a filter in edit mode and focuses its field", async () => {
+      load({ a: { eq: 1 } });
+      $(".conditions-btn-add-rule").click();
+      expect(json()).toEqual({ a: { eq: 1 }, "": { eq: "" } });
+      expect(openEditors()).toHaveLength(1);
+
+      await Promise.resolve();
+      expect(document.activeElement).toBe($$(".conditions-field-input")[1]);
     });
 
-    it("does not offer 'And' when matching all", () => {
-      input.value = JSON.stringify({ a: { eq: 1 }, b: { eq: 2 } });
-      new Conditions(input);
-      expect(joinButtons().every((button) => button.style.display === "none")).toBe(true);
+    it("opens the editor when the pill is clicked, one at a time", () => {
+      load({ a: { eq: 1 }, b: { eq: 2 } });
+      const [first, second] = $$(".conditions-rule-pill");
+
+      first.click();
+      expect(openEditors()).toHaveLength(1);
+
+      second.click();
+      expect(openEditors()).toHaveLength(1);
+      expect($$(".conditions-rule")[1].classList.contains("is-open")).toBe(true);
     });
 
-    it("joins a rule into an alternative with 'And'", () => {
-      input.value = JSON.stringify({ or: [{ a: { eq: 1 } }, { b: { eq: 2 } }] });
-      new Conditions(input);
-      joinButtons()[0].click();
-      expect(json()).toEqual({ or: [{ a: { eq: 1 }, "": { eq: "" } }, { b: { eq: 2 } }] });
+    it("updates the sentence when the editor is closed", () => {
+      load({ a: { eq: 1 } });
+      $(".conditions-rule-pill").click();
+      change($<HTMLInputElement>(".conditions-condition-value-input"), "5");
+      $(".conditions-btn-done").click();
 
-      const [joined, single] = $$(".conditions-fieldset-section");
-      expect(joined.classList.contains("is-boxed")).toBe(true);
-      expect($(".conditions-fieldset-label", joined).textContent).toBe("All of these");
-      expect(single.classList.contains("is-boxed")).toBe(false);
+      expect(openEditors()).toHaveLength(0);
+      expect(pills()).toEqual(["a is 5"]);
+      expect(json()).toEqual({ a: { eq: 5 } });
     });
 
-    it("drops an alternative once its last rule is removed", () => {
-      input.value = JSON.stringify({ or: [{ a: { eq: 1 } }, { b: { eq: 2 } }] });
-      new Conditions(input);
+    it("closes the editor with Escape or Enter", () => {
+      load({ a: { eq: 1 } });
+      const press = (target: HTMLElement, key: string) =>
+        target.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
+
+      $(".conditions-rule-pill").click();
+      press($(".conditions-condition-value-input"), "Enter");
+      expect(openEditors()).toHaveLength(0);
+
+      $(".conditions-rule-pill").click();
+      press($(".conditions-condition-operator-select"), "Escape");
+      expect(openEditors()).toHaveLength(0);
+    });
+
+    it("removes a filter from its pill or from the editor", () => {
+      load({ a: { eq: 1 }, b: { eq: 2 }, c: { eq: 3 } });
+      $(".conditions-rule-row > .conditions-btn-remove").click();
+      expect(json()).toEqual({ b: { eq: 2 }, c: { eq: 3 } });
+
+      $(".conditions-rule-pill").click();
+      $(".conditions-rule-editor-footer > .conditions-btn-remove").click();
+      expect(json()).toEqual({ c: { eq: 3 } });
+    });
+
+    it("updates the field name while typing when there is no schema", () => {
+      load({ old: { eq: 1 } });
+      const fieldInput = $<HTMLInputElement>(".conditions-field-input");
+      expect(fieldInput.placeholder).toBe("Field name");
+      change(fieldInput, "new");
+      expect(json()).toEqual({ new: { eq: 1 } });
+    });
+
+    it("labels controls for assistive technology", () => {
+      load({ a: { eq: 1 } });
+      expect($(".conditions-field-input").getAttribute("aria-label")).toBe("Field");
+      expect($(".conditions-condition-operator-select").getAttribute("aria-label")).toBe(
+        "Comparison",
+      );
+      expect($(".conditions-condition-value-input").getAttribute("aria-label")).toBe("Value");
+      expect($(".conditions-rule-row > .conditions-btn-remove").getAttribute("aria-label")).toBe(
+        "Remove filter",
+      );
+    });
+  });
+
+  describe("conditions on one field", () => {
+    const addButtons = () => $$(".conditions-condition-section .conditions-btn-add-condition");
+
+    it("adds a condition with an operator the field is not using yet and focuses it", () => {
+      load({ age: { gte: 18 } });
+      $(".conditions-rule-pill").click();
+      addButtons()[0].click();
+
+      expect(json()).toEqual({ age: { gte: 18, eq: "" } });
+      const operators = $$(".conditions-condition-operator-select");
+      expect(document.activeElement).toBe(operators[1]);
+    });
+
+    it("keeps the filter when its last condition is removed and offers to add one", () => {
+      load({ a: { eq: 1 } });
       $(".conditions-condition-section .conditions-btn-remove").click();
-      expect(json()).toEqual({ b: { eq: 2 } });
-      expect($$(".conditions-fieldset-section")).toHaveLength(1);
+
+      expect(json()).toEqual({ a: {} });
+      const addFirst = $(".conditions-rule-editor-footer > .conditions-btn-add-condition");
+      expect(isShown(addFirst)).toBe(true);
+
+      addFirst.click();
+      expect(json()).toEqual({ a: { eq: "" } });
+      expect(isShown(addFirst)).toBe(false);
+    });
+  });
+
+  describe("values", () => {
+    const valueInputs = () => $$<HTMLInputElement>(".conditions-condition-value-input");
+
+    it("hides the value when the operator needs none and restores it after", () => {
+      load({ name: { eq: "v" } }, { schema });
+      const operator = $<HTMLSelectElement>(".conditions-condition-operator-select");
+
+      change(operator, "exists");
+      expect(valueInputs()).toHaveLength(0);
+      expect(json()).toEqual({ name: { exists: true } });
+
+      change(operator, "eq");
+      change(valueInputs()[0], "new");
+      expect(json()).toEqual({ name: { eq: "new" } });
     });
 
-    it("shows rule sets combined with 'all' as one list of rules", () => {
-      input.value = JSON.stringify({ and: [{ a: { eq: 1 } }, { b: { eq: 2 } }] });
-      new Conditions(input);
-      expect($$(".conditions-fieldset-section")).toHaveLength(1);
-      expect($(".is-boxed")).toBeNull();
-      expect($$(".conditions-field-section")).toHaveLength(2);
+    it("keeps the value when switching between operators of the same kind", () => {
+      load({ name: { eq: "v" } }, { schema });
+      change($<HTMLSelectElement>(".conditions-condition-operator-select"), "starts_with");
+      expect(json()).toEqual({ name: { starts_with: "v" } });
+    });
+
+    it("uses a number input for number fields", () => {
+      load({ age: { gt: 18 } }, { schema });
+      expect(valueInputs()[0].type).toBe("number");
+    });
+
+    it("uses two inputs for 'between'", () => {
+      load({ age: { between: [18, 65] } }, { schema });
+      const [from, to] = valueInputs();
+      expect([from.value, to.value]).toEqual(["18", "65"]);
+
+      change(to, "70");
+      expect(json()).toEqual({ age: { between: [18, 70] } });
+    });
+
+    it("uses a comma separated input for lists", () => {
+      load({ name: { in: ["a", "b"] } }, { schema });
+      const [list] = valueInputs();
+      expect(list.placeholder).toBe("Values, separated by commas");
+      change(list, "a, b, c");
+      expect(json()).toEqual({ name: { in: ["a", "b", "c"] } });
+    });
+
+    it("uses a yes/no select for boolean fields", () => {
+      load({ active: { eq: true } }, { schema });
+      const [select] = valueInputs() as unknown as HTMLSelectElement[];
+      expect(select.tagName).toBe("SELECT");
+      change(select, "false");
+      expect(json()).toEqual({ active: { eq: false } });
+    });
+  });
+
+  describe("schema", () => {
+    it("disables the comparison until a field is chosen", () => {
+      new Conditions(input, { schema });
+      $(".conditions-btn-add-rule").click();
+      const operator = () => $<HTMLSelectElement>(".conditions-condition-operator-select");
+      expect(operator().disabled).toBe(true);
+      expect($<HTMLSelectElement>(".conditions-field-select").options[0].textContent).toBe(
+        "Choose a field…",
+      );
+
+      change($<HTMLSelectElement>(".conditions-field-select"), "name");
+      expect(operator().disabled).toBe(false);
+    });
+
+    it("resets conditions to the type's default when the field type changes", () => {
+      load({ name: { eq: "x" } }, { schema });
+      change($<HTMLSelectElement>(".conditions-field-select"), "tags");
+      expect(json()).toEqual({ tags: { contains: "" } });
+    });
+
+    it("only offers operators that fit the field type", () => {
+      load({ age: { eq: 1 } }, { schema });
+      const options = Array.from(
+        $<HTMLSelectElement>(".conditions-condition-operator-select").options,
+      ).map((option) => option.value);
+      expect(options).toContain("gte");
+      expect(options).not.toContain("starts_with");
+    });
+
+    it("offers item filters only for object fields", () => {
+      load({ name: { eq: "x" }, items_count: { gte: 1 } }, { schema });
+      const [nameWhere, itemsWhere] = $$(".conditions-btn-add-where");
+      expect(isShown(nameWhere)).toBe(false);
+      expect(isShown(itemsWhere)).toBe(true);
+    });
+
+    it("adds item filters with the nested schema's fields", () => {
+      load({ items_count: { gte: 1 } }, { schema });
+      $(".conditions-btn-add-where").click();
+
+      const where = $(".conditions-rule-where");
+      expect($(".conditions-rule-where-label", where).textContent).toBe("Only items where");
+      const options = Array.from(
+        $<HTMLSelectElement>(".conditions-field-select", where).options,
+      ).map((option) => option.value);
+      expect(options).toEqual(["", "type", "price"]);
+
+      change($<HTMLSelectElement>(".conditions-field-select", where), "type");
+      change($<HTMLInputElement>(".conditions-condition-value-input", where), "product");
+      expect(json()).toEqual({ items_count: { gte: 1, where: { type: { eq: "product" } } } });
+      expect(isShown($(".conditions-btn-add-where"))).toBe(false);
+    });
+
+    it("removes item filters once their last filter is removed", () => {
+      load({ items_count: { gte: 1, where: { type: { eq: "x" } } } }, { schema });
+      $(".conditions-rule-where .conditions-rule-row > .conditions-btn-remove").click();
+      expect(json()).toEqual({ items_count: { gte: 1 } });
+      expect(isShown($(".conditions-rule-where"))).toBe(false);
+    });
+
+    it("clears item filters when the field changes", () => {
+      load({ items_count: { gte: 1, where: { type: { eq: "x" } } } }, { schema });
+      change($<HTMLSelectElement>(".conditions-field-select"), "age");
+      expect(input.value).not.toContain("where");
     });
 
     it("keeps several item filters on the same field", () => {
@@ -217,341 +453,17 @@ describe("Conditions", () => {
           { items_count: { gte: 1, where: { type: { eq: "product" } } } },
         ],
       };
-      input.value = JSON.stringify(condition);
-      new Conditions(input);
-      const topLevelRules = $$(".conditions-field-section").filter(
-        (rule) => !rule.closest(".conditions-field-nested-groups"),
-      );
-      expect(topLevelRules).toHaveLength(2);
+      load(condition, { schema });
+      expect(pills()).toEqual([
+        "Items (count) is at least 1",
+        "Type is proposition",
+        "Items (count) is at least 1",
+        "Type is product",
+      ]);
 
       change($$<HTMLInputElement>(".conditions-condition-value-input")[0], "2");
       expect(json().and[0].items_count.gte).toBe(2);
       expect(json().and[1]).toEqual(condition.and[1]);
-    });
-  });
-
-  describe("multiple conditions on one field", () => {
-    const addButtons = () => $$(".conditions-btn-add-condition");
-
-    it("adds another condition to the same field", () => {
-      input.value = JSON.stringify({ age: { gte: 18 } });
-      new Conditions(input);
-      addButtons()[0].click();
-      expect($$(".conditions-field-section")).toHaveLength(1);
-      expect($$(".conditions-condition-section")).toHaveLength(2);
-      expect(Object.keys(json().age)).toEqual(["gte", "eq"]);
-    });
-
-    it("picks an operator the field is not using yet", () => {
-      input.value = JSON.stringify({ age: { eq: 1, ne: 2 } });
-      new Conditions(input);
-      addButtons()[1].click();
-      expect(Object.keys(json().age)).toEqual(["eq", "ne", "gt"]);
-    });
-
-    it("works in 'any' mode without creating a new alternative", () => {
-      input.value = JSON.stringify({ or: [{ age: { gte: 18 } }, { name: { eq: "x" } }] });
-      new Conditions(input);
-      addButtons()[0].click();
-      expect(json().or).toHaveLength(2);
-      expect(Object.keys(json().or[0].age)).toEqual(["gte", "eq"]);
-    });
-
-    it("adds a first condition to a field that has none", () => {
-      input.value = JSON.stringify({ items_count: { where: { a: { eq: 1 } } } });
-      new Conditions(input);
-      const fieldSection = $(".conditions-field-section");
-      const button = $(
-        ":scope > .conditions-field-body .conditions-btn-add-condition",
-        fieldSection,
-      );
-      expect(button.textContent).toBe("Add condition");
-      button.click();
-      expect(json()).toEqual({ items_count: { eq: "", where: { a: { eq: 1 } } } });
-      expect(button.style.display).toBe("none");
-    });
-
-    it("labels the add button and focuses the new comparison", async () => {
-      input.value = JSON.stringify({ age: { gte: 18 } });
-      new Conditions(input);
-      const [button] = addButtons();
-      expect(button.getAttribute("aria-label")).toBe("Add condition");
-      button.click();
-      const operators = $$(".conditions-condition-operator-select");
-      expect(document.activeElement).toBe(operators[1]);
-    });
-  });
-
-  describe("rules", () => {
-    it("renders rules in the same order as the JSON", () => {
-      input.value = JSON.stringify({ a: { gte: 1, lte: 9 }, b: { eq: 2 } });
-      new Conditions(input);
-      const keys = $$<HTMLInputElement>(".conditions-field-input").map((el) => el.value);
-      const operators = $$<HTMLSelectElement>(".conditions-condition-operator-select").map(
-        (el) => el.value,
-      );
-      expect(keys).toEqual(["a", "b"]);
-      expect(operators).toEqual(["gte", "lte", "eq"]);
-    });
-
-    it("appends a new rule with a default condition", () => {
-      input.value = JSON.stringify({ a: { eq: 1 } });
-      new Conditions(input);
-      $(".conditions-btn-add-field").click();
-      expect($$(".conditions-field-section")).toHaveLength(2);
-      expect(Object.keys(json())).toEqual(["a", ""]);
-    });
-
-    it("updates the field name while typing when there is no schema", () => {
-      input.value = JSON.stringify({ old: { eq: 1 } });
-      new Conditions(input);
-      const fieldInput = $<HTMLInputElement>(".conditions-field-input");
-      expect(fieldInput.placeholder).toBe("Field name");
-      change(fieldInput, "new");
-      expect(json()).toEqual({ new: { eq: 1 } });
-    });
-
-    it("removes the rule when its last condition is removed", () => {
-      input.value = JSON.stringify({ a: { eq: 1 }, b: { eq: 2 } });
-      new Conditions(input);
-      $(".conditions-condition-section .conditions-btn-remove").click();
-      expect($$(".conditions-field-section")).toHaveLength(1);
-      expect(json()).toEqual({ b: { eq: 2 } });
-    });
-
-    it("keeps the rule when other conditions remain", () => {
-      input.value = JSON.stringify({ a: { gt: 1, lt: 5 } });
-      new Conditions(input);
-      $(".conditions-condition-section .conditions-btn-remove").click();
-      expect($$(".conditions-condition-section")).toHaveLength(1);
-      expect(json()).toEqual({ a: { lt: 5 } });
-    });
-
-    it("keeps the rule when it still has item filters", () => {
-      input.value = JSON.stringify({ a: { gt: 1, where: { b: { eq: 2 } } } });
-      new Conditions(input);
-      const fieldSection = $(".conditions-field-section");
-      $(".conditions-condition-section .conditions-btn-remove", fieldSection).click();
-      expect($$(".conditions-field-section")).toHaveLength(2);
-      expect(json()).toEqual({ a: { where: { b: { eq: 2 } } } });
-    });
-
-    it("only shows the rule remove button when it has no conditions", () => {
-      input.value = JSON.stringify({ a: { eq: 1 }, b: {} });
-      new Conditions(input);
-      const [withCondition, withoutCondition] = $$(
-        ".conditions-field-actions .conditions-btn-remove",
-      );
-      expect(withCondition.style.display).toBe("none");
-      expect(withoutCondition.style.display).toBe("");
-      withoutCondition.click();
-      expect(json()).toEqual({ a: { eq: 1 } });
-    });
-
-    it("drops empty rule sets when loading", () => {
-      input.value = JSON.stringify({ or: [{}, { a: { eq: 1 } }] });
-      new Conditions(input);
-      $(".conditions-btn-add-field").click();
-      expect(json().or).toEqual([{ a: { eq: 1 } }, { "": { eq: "" } }]);
-    });
-
-    it("moves focus to the field of a new rule", async () => {
-      input.value = JSON.stringify({ a: { eq: 1 } });
-      new Conditions(input);
-      $(".conditions-btn-add-field").click();
-      await Promise.resolve();
-      expect(document.activeElement).toBe($$(".conditions-field-input")[1]);
-    });
-
-    it("labels controls for assistive technology", () => {
-      input.value = JSON.stringify({ a: { eq: 1 } });
-      new Conditions(input);
-      expect($(".conditions-field-input").getAttribute("aria-label")).toBe("Field");
-      expect($(".conditions-condition-operator-select").getAttribute("aria-label")).toBe(
-        "Comparison",
-      );
-      expect($(".conditions-condition-value-input").getAttribute("aria-label")).toBe("Value");
-    });
-  });
-
-  describe("schema", () => {
-    const schema: Schema = {
-      name: { label: "Name", type: "text" },
-      age: { label: "Age", type: "number" },
-      active: { label: "Active", type: "boolean" },
-      tags: { label: "Tags", type: "text[]" },
-      jobs: {
-        label: "Jobs",
-        type: "object[]",
-        schema: { title: { label: "Title", type: "text" } },
-      },
-    };
-
-    it("disables the comparison until a field is chosen", () => {
-      input.value = "[]";
-      new Conditions(input, { schema });
-      $(".conditions-btn-add-group").click();
-      const operator = () => $<HTMLSelectElement>(".conditions-condition-operator-select");
-      expect(operator().disabled).toBe(true);
-      expect($<HTMLInputElement>(".conditions-condition-value-input").disabled).toBe(true);
-
-      change($<HTMLSelectElement>(".conditions-field-select"), "name");
-      expect(operator().disabled).toBe(false);
-    });
-
-    it("shows a field placeholder for new rules", () => {
-      input.value = "[]";
-      new Conditions(input, { schema });
-      $(".conditions-btn-add-group").click();
-      const select = $<HTMLSelectElement>(".conditions-field-select");
-      expect(select.value).toBe("");
-      expect(select.options[0].textContent).toBe("Choose a field…");
-    });
-
-    it("resets conditions to the type's default when the field type changes", () => {
-      input.value = JSON.stringify({ name: { eq: "x" } });
-      new Conditions(input, { schema });
-      change($<HTMLSelectElement>(".conditions-field-select"), "tags");
-      expect(json()).toEqual({ tags: { contains: "" } });
-      expect($$(".conditions-condition-section")).toHaveLength(1);
-    });
-
-    it("clears item filters when the field changes", () => {
-      input.value = JSON.stringify({ jobs_count: { gte: 1, where: { title: { eq: "x" } } } });
-      new Conditions(input, { schema });
-      change($<HTMLSelectElement>(".conditions-field-select"), "name");
-      expect(input.value).not.toContain("where");
-      expect($$(".conditions-group-section")).toHaveLength(1);
-    });
-
-    it("only offers operators that fit the field type", () => {
-      input.value = JSON.stringify({ age: { eq: 1 } });
-      new Conditions(input, { schema });
-      const options = Array.from(
-        $<HTMLSelectElement>(".conditions-condition-operator-select").options,
-      ).map((o) => o.value);
-      expect(options).toContain("gte");
-      expect(options).not.toContain("starts_with");
-    });
-
-    it("uses friendly operator labels", () => {
-      input.value = JSON.stringify({ age: { gte: 1 } });
-      new Conditions(input, { schema });
-      const select = $<HTMLSelectElement>(".conditions-condition-operator-select");
-      expect(select.selectedOptions[0].textContent).toBe("is at least");
-    });
-
-    it("shows item filters only for object fields", () => {
-      input.value = JSON.stringify({ name: { eq: "x" }, jobs_count: { gte: 1 } });
-      new Conditions(input, { schema });
-      const [nameFilter, jobsFilter] = $$(".conditions-btn-add-filter");
-      expect(nameFilter.style.display).toBe("none");
-      expect(jobsFilter.style.display).toBe("");
-    });
-
-    it("adds item filters to object fields", () => {
-      input.value = JSON.stringify({ jobs_count: { gte: 1 } });
-      new Conditions(input, { schema });
-      $(".conditions-btn-add-filter").click();
-      expect($$(".conditions-group-section")).toHaveLength(2);
-      expect(json()).toEqual({ jobs_count: { gte: 1, where: { "": { eq: "" } } } });
-    });
-
-    it("offers the nested schema's fields inside item filters", () => {
-      input.value = JSON.stringify({ jobs_count: { gte: 1, where: { title: { eq: "x" } } } });
-      new Conditions(input, { schema });
-      const nested = $(".conditions-field-nested-groups");
-      const options = Array.from(
-        $<HTMLSelectElement>(".conditions-field-select", nested).options,
-      ).map((o) => o.value);
-      expect(options).toEqual(["", "title"]);
-    });
-  });
-
-  describe("values", () => {
-    const schema: Schema = {
-      age: { label: "Age", type: "number" },
-      active: { label: "Active", type: "boolean" },
-      name: { label: "Name", type: "text" },
-    };
-
-    const valueInputs = () => $$<HTMLInputElement>(".conditions-condition-value-input");
-
-    it("hides the value when the operator needs none and restores it after", () => {
-      input.value = JSON.stringify({ name: { eq: "v" } });
-      new Conditions(input, { schema });
-      const operator = $<HTMLSelectElement>(".conditions-condition-operator-select");
-
-      change(operator, "exists");
-      expect(valueInputs()).toHaveLength(0);
-      expect(json()).toEqual({ name: { exists: true } });
-
-      change(operator, "eq");
-      expect(valueInputs()).toHaveLength(1);
-      change(valueInputs()[0], "newval");
-      expect(json()).toEqual({ name: { eq: "newval" } });
-    });
-
-    it("keeps the value when switching between operators of the same kind", () => {
-      input.value = JSON.stringify({ name: { eq: "v" } });
-      new Conditions(input, { schema });
-      change($<HTMLSelectElement>(".conditions-condition-operator-select"), "starts_with");
-      expect(json()).toEqual({ name: { starts_with: "v" } });
-    });
-
-    it("uses a number input for number fields", () => {
-      input.value = JSON.stringify({ age: { gt: 18 } });
-      new Conditions(input, { schema });
-      expect(valueInputs()[0].type).toBe("number");
-    });
-
-    it("uses two inputs for 'between'", () => {
-      input.value = JSON.stringify({ age: { between: [18, 65] } });
-      new Conditions(input, { schema });
-      const [from, to] = valueInputs();
-      expect([from.value, to.value]).toEqual(["18", "65"]);
-      expect($(".conditions-condition-value-separator").textContent).toBe("and");
-
-      change(to, "70");
-      expect(json()).toEqual({ age: { between: [18, 70] } });
-    });
-
-    it("uses a comma separated input for lists", () => {
-      input.value = JSON.stringify({ name: { in: ["a", "b"] } });
-      new Conditions(input, { schema });
-      const [list] = valueInputs();
-      expect(list.placeholder).toBe("Values, separated by commas");
-      change(list, "a, b, c");
-      expect(json()).toEqual({ name: { in: ["a", "b", "c"] } });
-    });
-
-    it("uses a yes/no select for boolean fields", () => {
-      input.value = JSON.stringify({ active: { eq: true } });
-      new Conditions(input, { schema });
-      const select = $<HTMLSelectElement>(
-        ".conditions-condition-value .conditions-condition-value-input",
-      );
-      expect(select.tagName).toBe("SELECT");
-      expect(select.selectedOptions[0].textContent).toBe("Yes");
-      change(select, "false");
-      expect(json()).toEqual({ active: { eq: false } });
-    });
-  });
-
-  describe("nested groups", () => {
-    it("renders existing item filters with their own label", () => {
-      input.value = JSON.stringify({ a: { where: { b: { eq: 1 } } } });
-      new Conditions(input);
-      expect($$(".conditions-group-section")).toHaveLength(2);
-      const nestedLabel = $(".conditions-field-nested-groups .conditions-group-label");
-      expect(nestedLabel.textContent).toBe("Only items where");
-    });
-
-    it("appends item filters to a field without any yet", () => {
-      input.value = JSON.stringify({ a: { eq: 1 } });
-      new Conditions(input);
-      $(".conditions-btn-add-filter").click();
-      expect(json()).toEqual({ a: { eq: 1, where: { "": { eq: "" } } } });
     });
   });
 });

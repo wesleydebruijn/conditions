@@ -1,13 +1,4 @@
-import {
-  append,
-  create,
-  createButton,
-  createIconButton,
-  createSelect,
-  createText,
-  find,
-  visible,
-} from "./dom";
+import { deserialize, serialize } from "./serializer";
 import {
   defaultOperator,
   fieldIsNumeric,
@@ -18,19 +9,28 @@ import {
   fieldType,
   valueKind,
 } from "./schema";
-import { deserialize, serialize } from "./serializer";
+import {
+  append,
+  className,
+  create,
+  createButton,
+  createIconButton,
+  createSelect,
+  createText,
+  find,
+  visible,
+} from "./dom";
 
 import type {
   Condition,
   ConditionOperator,
-  Field,
-  FieldSet,
   Group,
-  Operator,
   Options,
+  Rule,
   Schema,
   SchemaItem,
   Settings,
+  ValueKind,
 } from "./types";
 
 declare global {
@@ -46,27 +46,32 @@ declare global {
 const DEFAULT_SETTINGS: Settings = {
   classNames: {
     wrapper: "conditions-wrapper",
-    groupsContainer: "conditions-groups-container",
 
-    groupSection: "conditions-group-section",
-    groupHeader: "conditions-group-header",
-    groupLabel: "conditions-group-label",
+    group: "conditions-group",
     groupBody: "conditions-group-body",
+    groupRail: "conditions-group-rail",
+    groupOperator: "conditions-group-operator",
+    groupChildren: "conditions-group-children",
     groupEmpty: "conditions-group-empty",
-    groupFooter: "conditions-group-footer",
-    groupSelect: "conditions-group-operator-select",
+    groupActions: "conditions-group-actions",
 
-    fieldsetSection: "conditions-fieldset-section",
-    fieldsetLabel: "conditions-fieldset-label",
-    fieldsetBody: "conditions-fieldset-body",
+    rule: "conditions-rule",
+    ruleRow: "conditions-rule-row",
+    rulePill: "conditions-rule-pill",
+    ruleEditor: "conditions-rule-editor",
+    ruleEditorFooter: "conditions-rule-editor-footer",
+    ruleWhere: "conditions-rule-where",
+    ruleWhereLabel: "conditions-rule-where-label",
 
-    fieldSection: "conditions-field-section",
-    fieldBody: "conditions-field-body",
-    fieldActions: "conditions-field-actions",
-    fieldConditions: "conditions-field-conditions",
-    fieldNestedGroups: "conditions-field-nested-groups",
+    summaryPath: "conditions-summary-path",
+    summaryField: "conditions-summary-field",
+    summaryOperator: "conditions-summary-operator",
+    summaryValue: "conditions-summary-value",
+    summaryMuted: "conditions-summary-muted",
+
     fieldInput: "conditions-field-input",
     fieldSelect: "conditions-field-select",
+    fieldConditions: "conditions-field-conditions",
 
     conditionSection: "conditions-condition-section",
     conditionSelect: "conditions-condition-operator-select",
@@ -74,31 +79,34 @@ const DEFAULT_SETTINGS: Settings = {
     conditionValueInput: "conditions-condition-value-input",
     conditionValueSeparator: "conditions-condition-value-separator",
 
-    isBoxed: "is-boxed",
+    isRoot: "is-root",
+    isNested: "is-nested",
+    isOpen: "is-open",
 
+    buttonAddRule: "conditions-btn-add-rule",
     buttonAddGroup: "conditions-btn-add-group",
-    buttonAddField: "conditions-btn-add-field",
-    buttonJoinField: "conditions-btn-join-field",
     buttonAddCondition: "conditions-btn-add-condition",
-    buttonAddFilter: "conditions-btn-add-filter",
+    buttonAddWhere: "conditions-btn-add-where",
+    buttonDone: "conditions-btn-done",
     buttonRemove: "conditions-btn-remove",
   },
   labels: {
-    match: "Match",
+    and: "AND",
+    or: "OR",
+    andTitle: "All of these must match. Click to switch to OR.",
+    orTitle: "At least one of these must match. Click to switch to AND.",
     where: "Only items where",
-    ofTheFollowing: "of the following",
-    and: "and",
-    or: "or",
-    all: "all",
-    any: "any",
-    allOf: "All of these",
-    empty: "No rules yet, so everything matches.",
+    empty: "No filters yet, so everything matches.",
+    addRule: "Add filter",
     addGroup: "Add group",
-    addField: "Add rule",
-    joinField: "And",
+    addInnerGroup: "Add inner group",
     addCondition: "Add condition",
-    addFilter: "Filter items",
+    addWhere: "Only items where…",
+    edit: "Click to edit",
+    done: "Done",
     remove: "Remove",
+    removeRule: "Remove filter",
+    removeGroup: "Remove group",
     choose: "Choose…",
     fieldPlaceholder: "Choose a field…",
     fieldNamePlaceholder: "Field name",
@@ -107,6 +115,8 @@ const DEFAULT_SETTINGS: Settings = {
     valueLabel: "Value",
     valuePlaceholder: "Enter a value",
     listPlaceholder: "Values, separated by commas",
+    rangeSeparator: "and",
+    conditionSeparator: "and",
     yes: "Yes",
     no: "No",
   },
@@ -132,16 +142,19 @@ const DEFAULT_SETTINGS: Settings = {
   },
 };
 
+type GroupContext = { schema?: Schema; isRoot?: boolean; onRemove?: () => void };
+type RuleContext = { schema?: Schema; onRemove: () => void };
+
 function removeFrom<T>(array: T[], item: T) {
   array.splice(array.indexOf(item), 1);
 }
 
-type Renderer<T, S> = (element: HTMLElement, array: T[], item: T, schema?: S) => void;
-
 export default class Conditions {
   private settings: Settings;
-  private groups: Group[] = [];
-  private focusField?: Field;
+  private root: Group;
+  private openRule?: Rule;
+  private closeOpenRule?: () => void;
+  private focusRule?: Rule;
 
   private input: HTMLInputElement | HTMLTextAreaElement;
   private wrapperElement: HTMLElement;
@@ -158,7 +171,7 @@ export default class Conditions {
     this.input.addEventListener("change", this.boundOnInputChange);
     this.input.addEventListener("input", this.boundOnInputChange);
     this.input.conditions = this;
-    this.groups = deserialize(this.input.value);
+    this.root = deserialize(this.input.value);
     this.wrapperElement = create("div", this.className("wrapper"));
 
     this.render();
@@ -172,229 +185,190 @@ export default class Conditions {
   }
 
   private render() {
-    const container = create("div", this.className("groupsContainer"));
-    const schema = this.settings.schema;
-
-    this.setConnector(this.wrapperElement, "--conditions-and", this.settings.labels.and);
-
-    for (const group of this.groups) {
-      this.renderGroup(container, this.groups, group, schema);
-    }
-
-    const addGroupBtn = createButton(
-      this.className("buttonAddGroup"),
-      "plus",
-      this.settings.labels.addGroup,
-      () => {
-        const group = this.newGroup();
-        this.focusField = group.fieldSets[0].fields[0];
-        this.addItem(container, this.groups, group, schema, this.renderGroup.bind(this));
-      },
+    append(
+      this.wrapperElement,
+      this.renderGroup(this.root, { schema: this.settings.schema, isRoot: true }),
     );
-
-    append(this.wrapperElement, container, addGroupBtn);
 
     this.input.after(this.wrapperElement);
   }
 
-  private renderGroup(
-    element: HTMLElement,
-    groups: Group[],
-    group: Group,
-    schema?: Schema,
-    nested = false,
-  ) {
+  private renderGroup(group: Group, context: GroupContext): HTMLElement {
     const { labels } = this.settings;
-    const groupSection = create("div", this.className("groupSection"));
-    const groupHeader = create("div", this.className("groupHeader"));
-    const groupBody = create("div", this.className("groupBody"));
-    const groupFooter = create("div", this.className("groupFooter"));
-
-    this.normalizeFieldSets(group);
-
-    const renderBody = () => {
-      groupBody.replaceChildren();
-      this.setConnector(groupSection, "--conditions-connector", labels[group.operator]);
-
-      for (const fieldset of group.fieldSets) {
-        this.renderFieldSet(groupBody, group, fieldset, schema, renderBody);
-      }
-    };
-
-    const operatorSelect = createSelect(
-      this.className("groupSelect"),
-      [
-        ["and", labels.all],
-        ["or", labels.any],
-      ],
-      (value: Operator) => {
-        this.changeOperator(group, value);
-        this.onChange();
-        renderBody();
-      },
-      { selected: group.operator },
-    );
-
-    const addFieldBtn = createButton(
-      this.className("buttonAddField"),
-      "plus",
-      labels.addField,
-      () => {
-        const field = this.newField();
-        const lastFieldSet = group.fieldSets[group.fieldSets.length - 1];
-
-        if (group.operator === "and" && lastFieldSet) {
-          lastFieldSet.fields.push(field);
-        } else {
-          group.fieldSets.push({ fields: [field] });
-        }
-
-        this.focusField = field;
-        this.onChange();
-        renderBody();
-      },
-    );
-
-    const removeGroupBtn = createIconButton(
-      this.className("buttonRemove"),
-      "close",
-      labels.remove,
-      () => this.removeItem(groupSection, groups, group),
-    );
-
-    renderBody();
-
-    append(
-      groupHeader,
-      createText(this.className("groupLabel"), nested ? labels.where : labels.match),
-      operatorSelect,
-      createText(this.className("groupLabel"), labels.ofTheFollowing),
-      removeGroupBtn,
-    );
-    append(groupFooter, addFieldBtn);
-    append(
-      groupSection,
-      groupHeader,
-      groupBody,
-      createText(this.className("groupEmpty"), labels.empty),
-      groupFooter,
-    );
-    append(element, groupSection);
-  }
-
-  private renderFieldSet(
-    element: HTMLElement,
-    group: Group,
-    fieldset: FieldSet,
-    schema: Schema | undefined,
-    renderGroupBody: () => void,
-  ) {
-    const isAlternative = group.operator === "or";
-    const isBoxed = isAlternative && fieldset.fields.length > 1;
-    const fieldSetSection = create("div", this.className("fieldsetSection"));
-    const fieldSetBody = create("div", this.className("fieldsetBody"));
+    const element = create("div", this.className("group"));
+    const body = create("div", this.className("groupBody"));
+    const rail = create("div", this.className("groupRail"));
+    const children = create("div", this.className("groupChildren"));
+    const actions = create("div", this.className("groupActions"));
 
     const update = () => {
       this.onChange();
-      renderGroupBody();
+      element.replaceWith(this.renderGroup(group, context));
     };
 
-    const join = () => {
-      const field = this.newField();
-      fieldset.fields.push(field);
-      this.focusField = field;
+    const removeChild = (child: Group["children"][number]) => {
+      removeFrom(group.children, child);
+
+      if (group.children.length === 0 && context.onRemove) {
+        context.onRemove();
+      } else {
+        update();
+      }
+    };
+
+    const operatorBtn = create("button", this.className("groupOperator"));
+    operatorBtn.type = "button";
+    operatorBtn.textContent = labels[group.operator];
+    operatorBtn.title = group.operator === "and" ? labels.andTitle : labels.orTitle;
+    operatorBtn.addEventListener("click", () => {
+      group.operator = group.operator === "and" ? "or" : "and";
       update();
-    };
-
-    const remove = (field: Field) => {
-      removeFrom(fieldset.fields, field);
-      if (fieldset.fields.length === 0) removeFrom(group.fieldSets, fieldset);
-      update();
-    };
-
-    fieldset.fields.forEach((field, index) => {
-      this.renderField(fieldSetBody, field, schema, {
-        canJoin: isAlternative && index === fieldset.fields.length - 1,
-        join,
-        remove: () => remove(field),
-      });
     });
 
-    if (isBoxed) {
-      fieldSetSection.classList.add(this.className("isBoxed"));
+    for (const child of group.children) {
+      const childContext = { schema: context.schema, onRemove: () => removeChild(child) };
+
       append(
-        fieldSetSection,
-        createText(this.className("fieldsetLabel"), this.settings.labels.allOf),
+        children,
+        child.type === "group"
+          ? this.renderGroup(child, childContext)
+          : this.renderRule(child, childContext),
       );
     }
 
-    append(fieldSetSection, fieldSetBody);
-    append(element, fieldSetSection);
+    if (group.children.length === 0) {
+      append(children, createText(this.className("groupEmpty"), labels.empty));
+    }
+
+    const addRuleBtn = createButton(this.className("buttonAddRule"), "plus", labels.addRule, () => {
+      const rule = this.newRule();
+      group.children.push(rule);
+      this.edit(rule);
+      update();
+    });
+
+    const addGroupBtn = createButton(
+      this.className("buttonAddGroup"),
+      "group",
+      context.isRoot ? labels.addGroup : labels.addInnerGroup,
+      () => {
+        const rule = this.newRule();
+        const operator = group.operator === "and" ? "or" : "and";
+        group.children.push({ type: "group", operator, children: [rule] });
+        this.edit(rule);
+        update();
+      },
+    );
+
+    element.dataset.operator = group.operator;
+    className(element, this.className(context.isRoot ? "isRoot" : "isNested"));
+    if (group.children.length < 2) rail.style.visibility = "hidden";
+
+    append(rail, operatorBtn);
+    append(body, rail, children);
+    append(actions, addRuleBtn, addGroupBtn);
+    append(element, body, actions);
+
+    if (context.onRemove) {
+      append(
+        actions,
+        createButton(this.className("buttonRemove"), "close", labels.removeGroup, context.onRemove),
+      );
+    }
+
+    return element;
   }
 
-  private renderField(
-    element: HTMLElement,
-    field: Field,
-    schema: Schema | undefined,
-    context: { canJoin: boolean; join: () => void; remove: () => void },
-  ) {
+  private renderRule(rule: Rule, context: RuleContext): HTMLElement {
     const { labels } = this.settings;
-    const fieldSection = create("div", this.className("fieldSection"));
-    const fieldBody = create("div", this.className("fieldBody"));
+    const schema = context.schema;
+    const element = create("div", this.className("rule"));
+    const row = create("div", this.className("ruleRow"));
+    const pill = create("button", this.className("rulePill"));
+    const editor = create("div", this.className("ruleEditor"));
     const conditionsElement = create("div", this.className("fieldConditions"));
-    const actionsElement = create("div", this.className("fieldActions"));
-    const nestedGroupsElement = create("div", this.className("fieldNestedGroups"));
+    const footer = create("div", this.className("ruleEditorFooter"));
+    const whereElement = create("div", this.className("ruleWhere"));
 
-    const schemaItem = () => fieldSchemaItem(schema, fieldKey(field.key));
+    const schemaItem = () => fieldSchemaItem(schema, fieldKey(rule.key));
+
+    const setOpen = (open: boolean) => {
+      element.classList.toggle(this.className("isOpen"), open);
+      visible(row, !open);
+      visible(editor, open);
+    };
+
+    const close = () => {
+      if (this.openRule === rule) {
+        this.openRule = undefined;
+        this.closeOpenRule = undefined;
+      }
+
+      this.renderSummary(pill, rule, schema);
+      setOpen(false);
+    };
+
+    const open = () => {
+      this.edit(rule);
+      this.focusRule = undefined;
+      this.closeOpenRule = close;
+      setOpen(true);
+      editor.querySelector<HTMLElement>("select, input")?.focus();
+    };
 
     const refresh = () => {
-      const canFilter = !schema || fieldType(schemaItem()?.type) === "object";
-      const hasConditions = field.conditions.length > 0;
+      const canFilterItems = !schema || fieldType(schemaItem()?.type) === "object";
       const awaitingField = !!schema && !schemaItem();
 
-      visible(joinFieldBtn, context.canJoin);
-      visible(addNestedGroupBtn, canFilter);
-      visible(addFirstConditionBtn, !hasConditions);
-      visible(removeFieldBtn, !hasConditions);
-      visible(actionsElement, context.canJoin || canFilter || !hasConditions);
+      visible(addWhereBtn, canFilterItems && !rule.where);
+      visible(addFirstConditionBtn, rule.conditions.length === 0);
 
       for (const control of conditionsElement.querySelectorAll("input, select")) {
         (control as HTMLInputElement | HTMLSelectElement).disabled = awaitingField;
       }
     };
 
-    const onConditionRemoved = () => {
-      if (field.conditions.length === 0 && !field.where?.length) {
-        context.remove();
-      } else {
-        refresh();
-      }
-    };
-
-    const renderNestedGroup: Renderer<Group, Schema> = (el, groups, group, nestedSchema) =>
-      this.renderGroup(el, groups, group, nestedSchema, true);
-
-    const renderCondition: Renderer<Condition, SchemaItem> = (el, conditions, condition, item) =>
-      this.renderCondition(el, conditions, condition, item, {
-        add: addCondition,
-        remove: onConditionRemoved,
-      });
-
     const addCondition = () => {
-      const usedOperators = field.conditions.map((condition) => condition.operator);
+      const usedOperators = rule.conditions.map((condition) => condition.operator);
       const condition = this.newCondition(schemaItem(), usedOperators);
 
-      this.addItem(conditionsElement, field.conditions, condition, schemaItem(), renderCondition);
+      rule.conditions.push(condition);
+      this.onChange();
+      renderCondition(condition);
       refresh();
       conditionsElement.lastElementChild?.querySelector("select")?.focus();
     };
 
+    const renderCondition = (condition: Condition) =>
+      this.renderCondition(conditionsElement, rule.conditions, condition, schemaItem(), {
+        add: addCondition,
+        remove: refresh,
+      });
+
     const renderConditions = () => {
       conditionsElement.replaceChildren();
+      for (const condition of rule.conditions) renderCondition(condition);
+    };
 
-      for (const condition of field.conditions) {
-        renderCondition(conditionsElement, field.conditions, condition, schemaItem());
-      }
+    const renderWhere = () => {
+      whereElement.replaceChildren();
+      visible(whereElement, !!rule.where);
+
+      if (!rule.where) return;
+
+      append(
+        whereElement,
+        createText(this.className("ruleWhereLabel"), labels.where),
+        this.renderGroup(rule.where, {
+          schema: schemaItem()?.schema,
+          onRemove: () => {
+            rule.where = undefined;
+            this.onChange();
+            renderWhere();
+            refresh();
+          },
+        }),
+      );
     };
 
     const fieldInput = schema
@@ -402,54 +376,29 @@ export default class Conditions {
           this.className("fieldSelect"),
           fieldList(schema).map(({ key, label }) => [key, label]),
           (value: string) => {
-            const previousKey = fieldKey(field.key);
+            const previousKey = fieldKey(rule.key);
             const previousType = schemaItem()?.type;
 
-            field.key = value;
+            rule.key = value;
 
             if (schemaItem()?.type !== previousType) {
-              field.conditions = [this.newCondition(schemaItem())];
+              rule.conditions = [this.newCondition(schemaItem())];
               renderConditions();
             }
 
             if (fieldKey(value) !== previousKey) {
-              field.where = [];
-              nestedGroupsElement.replaceChildren();
+              rule.where = undefined;
+              renderWhere();
             }
 
             this.onChange();
             refresh();
           },
-          { selected: field.key, placeholder: labels.fieldPlaceholder },
+          { selected: rule.key, placeholder: labels.fieldPlaceholder },
         )
-      : this.createFieldInput(field);
+      : this.createFieldInput(rule);
 
     fieldInput.setAttribute("aria-label", labels.fieldLabel);
-
-    const joinFieldBtn = createButton(
-      this.className("buttonJoinField"),
-      "plus",
-      labels.joinField,
-      context.join,
-    );
-
-    const addNestedGroupBtn = createButton(
-      this.className("buttonAddFilter"),
-      "filter",
-      labels.addFilter,
-      () => {
-        const group = this.newGroup();
-        field.where ??= [];
-        this.focusField = group.fieldSets[0].fields[0];
-        this.addItem(
-          nestedGroupsElement,
-          field.where,
-          group,
-          schemaItem()?.schema,
-          renderNestedGroup,
-        );
-      },
-    );
 
     const addFirstConditionBtn = createButton(
       this.className("buttonAddCondition"),
@@ -458,30 +407,136 @@ export default class Conditions {
       addCondition,
     );
 
-    const removeFieldBtn = createIconButton(
-      this.className("buttonRemove"),
-      "close",
-      labels.remove,
-      context.remove,
+    const addWhereBtn = createButton(
+      this.className("buttonAddWhere"),
+      "filter",
+      labels.addWhere,
+      () => {
+        const first = this.newRule();
+        rule.where = { type: "group", operator: "and", children: [first] };
+        this.edit(first);
+        this.onChange();
+        renderWhere();
+        refresh();
+      },
     );
 
+    const removeBtn = createButton(
+      this.className("buttonRemove"),
+      "close",
+      labels.removeRule,
+      context.onRemove,
+    );
+
+    const doneBtn = createButton(this.className("buttonDone"), "check", labels.done, () => {
+      close();
+      pill.focus();
+    });
+
+    editor.addEventListener("keydown", (event) => {
+      const isTextInput = event.target instanceof HTMLInputElement;
+
+      if (event.key === "Escape" || (event.key === "Enter" && isTextInput)) {
+        event.preventDefault();
+        doneBtn.click();
+      }
+    });
+
+    pill.type = "button";
+    pill.title = labels.edit;
+    pill.addEventListener("click", open);
+    this.renderSummary(pill, rule, schema);
+
     renderConditions();
-
-    for (const group of field.where ?? []) {
-      renderNestedGroup(nestedGroupsElement, field.where ?? [], group, schemaItem()?.schema);
-    }
-
+    renderWhere();
     refresh();
 
-    append(actionsElement, addFirstConditionBtn, joinFieldBtn, addNestedGroupBtn, removeFieldBtn);
-    append(fieldBody, conditionsElement, actionsElement);
-    append(fieldSection, fieldInput, fieldBody, nestedGroupsElement);
-    append(element, fieldSection);
+    append(
+      row,
+      pill,
+      createIconButton(
+        this.className("buttonRemove"),
+        "close",
+        labels.removeRule,
+        context.onRemove,
+      ),
+    );
+    append(footer, addFirstConditionBtn, addWhereBtn, removeBtn, doneBtn);
+    append(editor, fieldInput, conditionsElement, footer);
+    append(element, row, editor, whereElement);
 
-    if (this.focusField === field) {
-      this.focusField = undefined;
+    if (this.openRule === rule) {
+      this.closeOpenRule = close;
+      setOpen(true);
+    } else {
+      setOpen(false);
+    }
+
+    if (this.focusRule === rule) {
+      this.focusRule = undefined;
       queueMicrotask(() => fieldInput.focus());
     }
+
+    return element;
+  }
+
+  private renderSummary(pill: HTMLElement, rule: Rule, schema?: Schema) {
+    const parts = this.summarize(rule, schema);
+
+    pill.replaceChildren(...parts.flatMap((part, index) => (index > 0 ? [" ", part] : [part])));
+  }
+
+  private summarize(rule: Rule, schema?: Schema): HTMLElement[] {
+    const { labels, conditionOperators } = this.settings;
+
+    if (!rule.key) {
+      const placeholder = schema ? labels.fieldPlaceholder : labels.fieldNamePlaceholder;
+      return [createText(this.className("summaryMuted"), placeholder)];
+    }
+
+    const label = schema ? fieldList(schema).find(({ key }) => key === rule.key)?.label : undefined;
+    const path = (label ?? rule.key).split(" → ");
+    const name = path.pop() ?? rule.key;
+    const schemaItem = fieldSchemaItem(schema, fieldKey(rule.key));
+
+    const parts = [
+      ...path.map((segment) => createText(this.className("summaryPath"), segment)),
+      createText(this.className("summaryField"), name),
+    ];
+
+    rule.conditions.forEach((condition, index) => {
+      if (index > 0) {
+        parts.push(createText(this.className("summaryMuted"), labels.conditionSeparator));
+      }
+
+      const operator = conditionOperators[condition.operator] ?? condition.operator;
+      const kind = valueKind(condition.operator, schemaItem);
+
+      parts.push(createText(this.className("summaryOperator"), operator));
+      if (kind !== "none") parts.push(this.summarizeValue(condition.value, kind));
+    });
+
+    return parts;
+  }
+
+  private summarizeValue(value: string, kind: ValueKind): HTMLElement {
+    const { labels } = this.settings;
+    const items = value.split(",").map((item) => item.trim());
+
+    if (items.every((item) => item === "")) {
+      return createText(this.className("summaryMuted"), "…");
+    }
+
+    const text =
+      kind === "boolean"
+        ? ({ true: labels.yes, false: labels.no }[value] ?? value)
+        : kind === "range"
+          ? items.join(` ${labels.rangeSeparator} `)
+          : kind === "list"
+            ? items.filter(Boolean).join(", ")
+            : value;
+
+    return createText(this.className("summaryValue"), text);
   }
 
   private renderCondition(
@@ -522,7 +577,9 @@ export default class Conditions {
       "close",
       this.settings.labels.remove,
       () => {
-        this.removeItem(conditionElement, conditions, condition);
+        removeFrom(conditions, condition);
+        this.onChange();
+        conditionElement.remove();
         context.remove();
       },
     );
@@ -578,7 +635,7 @@ export default class Conditions {
       append(
         element,
         fromInput,
-        createText(this.className("conditionValueSeparator"), labels.and),
+        createText(this.className("conditionValueSeparator"), labels.rangeSeparator),
         toInput,
       );
     } else if (kind === "list") {
@@ -594,12 +651,12 @@ export default class Conditions {
     }
   }
 
-  private createFieldInput(field: Field): HTMLInputElement {
+  private createFieldInput(rule: Rule): HTMLInputElement {
     const input = create("input", this.className("fieldInput"));
-    input.value = field.key;
+    input.value = rule.key;
     input.placeholder = this.settings.labels.fieldNamePlaceholder;
     input.addEventListener("input", () => {
-      field.key = input.value;
+      rule.key = input.value;
       this.onChange();
     });
 
@@ -622,16 +679,15 @@ export default class Conditions {
     return input;
   }
 
-  private newGroup(): Group {
-    return { operator: "and", fieldSets: [this.newFieldSet()] };
+  private edit(rule: Rule) {
+    if (this.openRule !== rule) this.closeOpenRule?.();
+
+    this.openRule = rule;
+    this.focusRule = rule;
   }
 
-  private newFieldSet(): FieldSet {
-    return { fields: [this.newField()] };
-  }
-
-  private newField(): Field {
-    return { key: "", conditions: [this.newCondition()] };
+  private newRule(): Rule {
+    return { type: "rule", key: "", conditions: [this.newCondition()] };
   }
 
   private newCondition(schema?: SchemaItem, usedOperators: ConditionOperator[] = []): Condition {
@@ -641,53 +697,8 @@ export default class Conditions {
     return { operator: defaultOperator(unused.length > 0 ? unused : operators, schema), value: "" };
   }
 
-  private normalizeFieldSets(group: Group) {
-    const fieldSets = group.fieldSets.filter((fieldset) => fieldset.fields.length > 0);
-    const fields = fieldSets.flatMap((fieldset) => fieldset.fields);
-
-    group.fieldSets = group.operator === "and" && fieldSets.length > 1 ? [{ fields }] : fieldSets;
-  }
-
-  private changeOperator(group: Group, operator: Operator) {
-    const fields = group.fieldSets.flatMap((fieldset) => fieldset.fields);
-
-    if (operator === "or" && group.fieldSets.length === 1) {
-      group.fieldSets = fields.map((field) => ({ fields: [field] }));
-    } else if (operator === "and") {
-      group.fieldSets = fields.length > 0 ? [{ fields }] : [];
-    }
-
-    group.operator = operator;
-  }
-
-  private setConnector(element: HTMLElement, property: string, label: string) {
-    element.style.setProperty(property, JSON.stringify(label));
-  }
-
-  private addItem<T, S>(
-    element: HTMLElement,
-    array: T[],
-    item: T,
-    schema: S | undefined,
-    renderItem: Renderer<T, S>,
-  ) {
-    array.push(item);
-
-    this.onChange();
-
-    renderItem(element, array, item, schema);
-  }
-
-  private removeItem<T>(element: HTMLElement, array: T[], item: T) {
-    removeFrom(array, item);
-
-    this.onChange();
-
-    element.remove();
-  }
-
   private onChange() {
-    this.input.value = serialize(this.groups);
+    this.input.value = serialize(this.root);
 
     const event = new Event("change", { bubbles: true });
     this.input.dispatchEvent(event);
@@ -698,7 +709,9 @@ export default class Conditions {
   private onInputChange(event: Event) {
     if (!event.isTrusted) return; // ignore programmatic events
 
-    this.groups = deserialize(this.input.value);
+    this.root = deserialize(this.input.value);
+    this.openRule = undefined;
+    this.closeOpenRule = undefined;
     this.wrapperElement.remove();
     this.wrapperElement = create("div", this.className("wrapper"));
 

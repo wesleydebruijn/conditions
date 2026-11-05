@@ -1,4 +1,12 @@
-import type { Condition, ConditionOperator, Field, FieldSet, Group, Hash, Operator } from "./types";
+import type {
+  Condition,
+  ConditionNode,
+  ConditionOperator,
+  Group,
+  Hash,
+  Operator,
+  Rule,
+} from "./types";
 
 const ALIAS_CONDITIONS: Record<string, ConditionOperator> = {
   "=": "eq",
@@ -14,16 +22,12 @@ const ALIAS_CONDITIONS: Record<string, ConditionOperator> = {
   null: "not_exists",
 };
 
-export function deserialize(string: string): Group[] {
-  const json: JSON = JSON.parse(string);
-
-  return Array.isArray(json) ? json.map(deserializeGroup) : [deserializeGroup(json)];
+export function deserialize(string: string): Group {
+  return deserializeGroup(JSON.parse(string));
 }
 
-export function serialize(groups: Group[]): string {
-  const result = groups.length === 1 ? serializeGroup(groups[0]) : groups.map(serializeGroup);
-
-  return JSON.stringify(result, null, 2);
+export function serialize(group: Group): string {
+  return JSON.stringify(serializeGroup(group), null, 2);
 }
 
 export function isNumber(value: string): boolean {
@@ -48,19 +52,58 @@ export function serializeValue(
   return value;
 }
 
-export function serializeField(field: Field): Hash {
-  const fieldObj: Hash = {};
+export function serializeRule(rule: Rule): Hash {
+  const ruleObj: Hash = {};
 
-  for (const cond of field.conditions) {
-    fieldObj[cond.operator] = serializeValue(cond.operator, cond.value);
+  for (const condition of rule.conditions) {
+    ruleObj[condition.operator] = serializeValue(condition.operator, condition.value);
   }
 
-  if (field.where && field.where.length > 0) {
-    const where = field.where.map(serializeGroup);
-    fieldObj.where = where.length === 1 ? where[0] : where;
+  if (rule.where && rule.where.children.length > 0) ruleObj.where = serializeGroup(rule.where);
+
+  return ruleObj;
+}
+
+export function serializeGroup(group: Group): Hash {
+  const children = group.children.filter(
+    (child) => child.type === "rule" || child.children.length > 0,
+  );
+  const parts =
+    group.operator === "and" ? serializeAndParts(children) : children.map(serializeNode);
+
+  if (parts.length === 0) return {};
+  if (parts.length === 1) return parts[0];
+
+  return { [group.operator]: parts };
+}
+
+function serializeNode(node: ConditionNode): Hash {
+  return node.type === "group" ? serializeGroup(node) : { [node.key]: serializeRule(node) };
+}
+
+function serializeAndParts(children: ConditionNode[]): Hash[] {
+  const parts: Hash[] = [];
+  const ruleParts: Hash[] = [];
+
+  for (const child of children) {
+    if (child.type === "group") {
+      parts.push(serializeGroup(child));
+      continue;
+    }
+
+    const value = serializeRule(child);
+    const part = ruleParts.find((candidate) => canMerge(candidate[child.key], value));
+
+    if (part) {
+      part[child.key] = { ...part[child.key], ...value };
+    } else {
+      const newPart = { [child.key]: value };
+      parts.push(newPart);
+      ruleParts.push(newPart);
+    }
   }
 
-  return fieldObj;
+  return parts;
 }
 
 function canMerge(existing: Hash | undefined, next: Hash): boolean {
@@ -68,37 +111,6 @@ function canMerge(existing: Hash | undefined, next: Hash): boolean {
   if ("where" in existing || "where" in next) return false;
 
   return Object.keys(next).every((operator) => !(operator in existing));
-}
-
-function combine(parts: Hash[]): Hash {
-  if (parts.length === 0) return {};
-
-  return parts.length === 1 ? parts[0] : { and: parts };
-}
-
-export function serializeFieldSet(fieldset: FieldSet): Hash[] {
-  const parts: Hash[] = [];
-
-  for (const field of fieldset.fields) {
-    const value = serializeField(field);
-    const part = parts.find((candidate) => canMerge(candidate[field.key], value));
-
-    if (part) {
-      part[field.key] = { ...part[field.key], ...value };
-    } else {
-      parts.push({ [field.key]: value });
-    }
-  }
-
-  return parts;
-}
-
-export function serializeGroup(group: Group): Hash {
-  if (group.fieldSets.length === 0) return {};
-  if (group.fieldSets.length === 1) return combine(serializeFieldSet(group.fieldSets[0]));
-  if (group.operator === "and") return combine(group.fieldSets.flatMap(serializeFieldSet));
-
-  return { or: group.fieldSets.map((fieldset) => combine(serializeFieldSet(fieldset))) };
 }
 
 export function deserializeConditions(value: unknown): Condition[] {
@@ -116,36 +128,46 @@ export function deserializeConditions(value: unknown): Condition[] {
     });
 }
 
-export function deserializeFieldSet(record: Record<string, any>): FieldSet {
-  if (Array.isArray(record.and)) {
-    return { fields: record.and.flatMap((item: Hash) => deserializeFieldSet(item).fields) };
-  }
+export function deserializeGroup(json: unknown): Group {
+  if (Array.isArray(json)) return deserializeItems("and", json);
 
-  return { fields: deserializeFields(record) };
+  const record: Hash = typeof json === "object" && json !== null ? json : {};
+  const operator = logicOperator(record);
+
+  if (!operator) return { type: "group", operator: "and", children: deserializeRules(record) };
+
+  const value = record[operator];
+
+  return deserializeItems(operator, Array.isArray(value) ? value : [value]);
 }
 
-export function deserializeFields(record: Record<string, any>): Field[] {
-  return Object.entries(record).map(([key, value]) => {
-    const conditions = deserializeConditions(value);
-    const where = value?.where
-      ? Array.isArray(value.where)
-        ? value.where.map(deserializeGroup)
-        : [deserializeGroup(value.where)]
-      : undefined;
+function deserializeItems(operator: Operator, items: unknown[]): Group {
+  return {
+    type: "group",
+    operator,
+    children: items.flatMap((item) => deserializeChild(operator, item)),
+  };
+}
 
-    return { key, conditions, where };
+function deserializeChild(parentOperator: Operator, json: unknown): ConditionNode[] {
+  const group = deserializeGroup(json);
+
+  if (group.children.length === 1 || group.operator === parentOperator) return group.children;
+
+  return [group];
+}
+
+function deserializeRules(record: Hash): Rule[] {
+  return Object.entries(record).map(([key, value]) => {
+    const rule: Rule = { type: "rule", key, conditions: deserializeConditions(value) };
+
+    if (value?.where) rule.where = deserializeGroup(value.where);
+
+    return rule;
   });
 }
 
-export function deserializeGroup(record: Record<string, any>): Group {
-  if ("and" in record || "or" in record) {
-    const operator: Operator = "and" in record ? "and" : "or";
-    const fieldSets = Array.isArray(record[operator])
-      ? record[operator].map(deserializeFieldSet)
-      : [deserializeFieldSet(record[operator])];
-
-    return { operator, fieldSets };
-  }
-
-  return { operator: "and", fieldSets: [deserializeFieldSet(record)] };
+function logicOperator(record: Hash): Operator | undefined {
+  if ("and" in record) return "and";
+  if ("or" in record) return "or";
 }

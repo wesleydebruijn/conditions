@@ -9,7 +9,7 @@ Conditions lets you define filter rules in a structured JSON format, build them 
 ### Key features
 
 - **JSON format** — Conditions are plain JSON, making them easy to store, transmit, and reimplement in other languages
-- **Visual builder** — Plain-language UI ("Match all of the following…") that non-technical users can edit
+- **Visual builder** — Filters read as sentences ("Age is at least 18"), grouped with AND/OR brackets that can be nested to any depth; non-technical users can edit them
 - **Evaluator** — Match records against conditions in memory, or translate to SQL/API filters
 - **Schema support** — Optional schema for typed fields, nested objects, and automatic operator validation
 - **Zero dependencies** — No runtime dependencies
@@ -161,7 +161,7 @@ const conditions = new Conditions(input, settings);
 - **input** — `HTMLInputElement`, `HTMLTextAreaElement`, or CSS selector
 - **settings** — Optional:
   - `schema` — available fields (see [Schema](#schema))
-  - `labels` — UI text, e.g. `{ match: 'Zoek', addField: 'Regel toevoegen' }`; merged with the defaults
+  - `labels` — UI text, e.g. `{ addRule: 'Filter toevoegen', addGroup: 'Groep toevoegen' }`; merged with the defaults
   - `classNames` — CSS class overrides; merged with the defaults
   - `conditionOperators` — operators to offer and their labels, e.g. `{ eq: 'is', gte: 'is at least' }`; replaces the defaults
 
@@ -187,9 +187,11 @@ Methods:
 ```javascript
 import { serialize, deserialize } from './src/serializer';
 
-const json = serialize(groups);   // Group[] → JSON string
-const groups = deserialize(json); // JSON string → Group[]
+const json = serialize(group);   // Group → JSON string
+const group = deserialize(json); // JSON string → Group
 ```
+
+`Group` is the tree the builder edits: `{ type: 'group', operator: 'and' | 'or', children }`, where each child is a nested group or a rule `{ type: 'rule', key, conditions, where? }`. The JSON format is unchanged.
 
 ## Development
 

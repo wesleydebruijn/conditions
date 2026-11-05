@@ -34,19 +34,19 @@ export type ConditionOperator =
   | "not_empty";
 
 export type Group = {
+  type: "group";
   operator: Operator;
-  fieldSets: FieldSet[];
+  children: ConditionNode[];
 };
 
-export type FieldSet = {
-  fields: Field[];
-};
-
-export type Field = {
+export type Rule = {
+  type: "rule";
   key: string;
   conditions: Condition[];
-  where?: Group[];
+  where?: Group;
 };
+
+export type ConditionNode = Group | Rule;
 
 export type Condition = {
   operator: ConditionOperator;
@@ -75,27 +75,32 @@ export type ValueKind = "none" | "text" | "number" | "boolean" | "list" | "range
 export type Settings = {
   classNames: {
     wrapper: string;
-    groupsContainer: string;
 
-    groupSection: string;
-    groupHeader: string;
-    groupLabel: string;
+    group: string;
     groupBody: string;
+    groupRail: string;
+    groupOperator: string;
+    groupChildren: string;
     groupEmpty: string;
-    groupFooter: string;
-    groupSelect: string;
+    groupActions: string;
 
-    fieldsetSection: string;
-    fieldsetLabel: string;
-    fieldsetBody: string;
+    rule: string;
+    ruleRow: string;
+    rulePill: string;
+    ruleEditor: string;
+    ruleEditorFooter: string;
+    ruleWhere: string;
+    ruleWhereLabel: string;
 
-    fieldSection: string;
-    fieldBody: string;
-    fieldActions: string;
-    fieldConditions: string;
-    fieldNestedGroups: string;
+    summaryPath: string;
+    summaryField: string;
+    summaryOperator: string;
+    summaryValue: string;
+    summaryMuted: string;
+
     fieldInput: string;
     fieldSelect: string;
+    fieldConditions: string;
 
     conditionSection: string;
     conditionSelect: string;
@@ -103,31 +108,34 @@ export type Settings = {
     conditionValueInput: string;
     conditionValueSeparator: string;
 
-    isBoxed: string;
+    isRoot: string;
+    isNested: string;
+    isOpen: string;
 
+    buttonAddRule: string;
     buttonAddGroup: string;
-    buttonAddField: string;
-    buttonJoinField: string;
     buttonAddCondition: string;
-    buttonAddFilter: string;
+    buttonAddWhere: string;
+    buttonDone: string;
     buttonRemove: string;
   };
   labels: {
-    match: string;
-    where: string;
-    ofTheFollowing: string;
     and: string;
     or: string;
-    all: string;
-    any: string;
-    allOf: string;
+    andTitle: string;
+    orTitle: string;
+    where: string;
     empty: string;
+    addRule: string;
     addGroup: string;
-    addField: string;
-    joinField: string;
+    addInnerGroup: string;
     addCondition: string;
-    addFilter: string;
+    addWhere: string;
+    edit: string;
+    done: string;
     remove: string;
+    removeRule: string;
+    removeGroup: string;
     choose: string;
     fieldPlaceholder: string;
     fieldNamePlaceholder: string;
@@ -136,6 +144,8 @@ export type Settings = {
     valueLabel: string;
     valuePlaceholder: string;
     listPlaceholder: string;
+    rangeSeparator: string;
+    conditionSeparator: string;
     yes: string;
     no: string;
   };

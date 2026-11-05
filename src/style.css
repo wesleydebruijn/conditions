@@ -11,6 +11,10 @@
   --destructive: 0 72% 51%;
   --destructive-foreground: 210 40% 98%;
   --secondary-bg: 220 14% 97%;
+  --and: 226 70% 62%;
+  --and-soft: 226 90% 95%;
+  --or: 32 90% 58%;
+  --or-soft: 36 100% 91%;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -26,6 +30,10 @@
     --destructive: 0 72% 62%;
     --destructive-foreground: 210 40% 98%;
     --secondary-bg: 222 47% 5%;
+    --and: 226 80% 70%;
+    --and-soft: 226 45% 22%;
+    --or: 32 90% 62%;
+    --or-soft: 30 50% 20%;
   }
 }
 
@@ -41,9 +49,11 @@ html.dark {
   --destructive: 0 72% 62%;
   --destructive-foreground: 210 40% 98%;
   --secondary-bg: 222 47% 5%;
+  --and: 226 80% 70%;
+  --and-soft: 226 45% 22%;
+  --or: 32 90% 62%;
+  --or-soft: 30 50% 20%;
 }
-
-/* Layout */
 
 .conditions-wrapper,
 .conditions-wrapper * {
@@ -51,177 +61,218 @@ html.dark {
 }
 
 .conditions-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 12px;
   font-size: 14px;
   line-height: 1.4;
   color: hsl(var(--foreground));
 }
 
-.conditions-groups-container {
+/* Group: a bracket with AND/OR on the left, its filters on the right */
+
+.conditions-group {
+  --bracket: var(--and);
+  --bracket-soft: var(--and-soft);
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 32px;
-  width: 100%;
+  gap: 10px;
+  min-width: 0;
 }
 
-.conditions-groups-container:empty {
-  display: none;
+.conditions-group[data-operator="or"] {
+  --bracket: var(--or);
+  --bracket-soft: var(--or-soft);
 }
 
-/* Group: "Match [all] of the following" */
-
-.conditions-group-section {
-  position: relative;
-  background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
-  border-radius: calc(var(--radius) + 4px);
-  padding: 12px 14px 10px;
-  box-shadow: 0 1px 2px hsl(var(--foreground) / 0.04);
-}
-
-.conditions-group-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 12px;
-  color: hsl(var(--muted-foreground));
-}
-
-.conditions-group-header .conditions-btn-remove {
-  margin-left: auto;
+.conditions-group.is-nested {
+  padding: 12px 12px 10px 0;
+  border-radius: 16px;
+  background: hsl(var(--foreground) / 0.035);
 }
 
 .conditions-group-body {
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
 }
 
-.conditions-group-empty {
-  display: block;
-  padding: 2px 0 4px;
-  color: hsl(var(--muted-foreground));
-}
-
-.conditions-group-body:not(:empty) + .conditions-group-empty {
-  display: none;
-}
-
-.conditions-group-footer {
-  display: flex;
-  margin: 6px 0 0 -8px;
-}
-
-/* Nested group: "Only items where [all] of the following" */
-
-.conditions-field-nested-groups {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-  margin-left: 12px;
-}
-
-.conditions-field-nested-groups:empty {
-  display: none;
-}
-
-.conditions-field-nested-groups .conditions-group-section {
-  background: transparent;
-  border: none;
-  border-left: 2px solid hsl(var(--border));
-  border-radius: 0;
-  box-shadow: none;
-  padding: 2px 0 6px 14px;
-}
-
-.conditions-field-nested-groups .conditions-group-header {
-  margin-bottom: 8px;
-}
-
-/* Rules that must match together inside an "any" list */
-
-.conditions-fieldset-section {
+.conditions-group-rail {
   position: relative;
 }
 
-.conditions-fieldset-section.is-boxed {
-  background: hsl(var(--muted) / 0.5);
-  border: 1px solid hsl(var(--border));
-  border-radius: var(--radius);
-  padding: 8px 10px 4px;
+.conditions-group-rail::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 50%;
+  width: 10px;
+  border: 2px solid hsl(var(--bracket));
+  border-right: none;
+  border-radius: 2px 0 0 2px;
 }
 
-.conditions-fieldset-label {
-  display: block;
-  margin-bottom: 6px;
-  color: hsl(var(--muted-foreground));
-  font-size: 11px;
+.conditions-wrapper .conditions-group-operator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: hsl(var(--bracket-soft));
+  color: hsl(var(--foreground));
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
-.conditions-fieldset-body {
+.conditions-wrapper .conditions-group-operator:hover {
+  background: hsl(var(--bracket-soft));
+  box-shadow: 0 0 0 2px hsl(var(--bracket) / 0.5);
+}
+
+.conditions-group-children {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-}
-
-/* Connectors between siblings: "and" / "or" */
-
-.conditions-group-section + .conditions-group-section::before,
-.conditions-fieldset-section + .conditions-fieldset-section::before {
-  position: absolute;
-  top: -25px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 1px 10px;
-  border-radius: 999px;
-  border: 1px solid hsl(var(--border));
-  background: hsl(var(--card));
-  color: hsl(var(--muted-foreground));
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.conditions-group-section + .conditions-group-section::before {
-  content: var(--conditions-and);
-}
-
-.conditions-fieldset-section + .conditions-fieldset-section::before {
-  content: var(--conditions-connector);
-}
-
-.conditions-field-nested-groups .conditions-group-section + .conditions-group-section::before {
-  left: 0;
-  transform: translateX(-50%);
-}
-
-/* Rule: [Field] [operator] [value] [×] */
-
-.conditions-field-section {
-  display: grid;
-  grid-template-columns: minmax(120px, 1fr) minmax(0, 2fr);
-  column-gap: 8px;
-  align-items: start;
-}
-
-.conditions-field-body {
+  gap: 10px;
   min-width: 0;
+}
+
+.conditions-group-empty {
+  padding: 6px 0;
+  color: hsl(var(--muted-foreground));
+}
+
+.conditions-group-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding-left: 48px;
+}
+
+.conditions-group-actions > .conditions-btn-remove {
+  margin-left: auto;
+  opacity: 0;
+}
+
+.conditions-group:is(:hover, :focus-within) > .conditions-group-actions > .conditions-btn-remove {
+  opacity: 1;
+}
+
+/* Filter: a sentence pill that opens an inline editor */
+
+.conditions-rule-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.conditions-wrapper .conditions-rule-pill {
+  display: inline-block;
+  height: auto;
+  min-height: 40px;
+  max-width: 100%;
+  padding: 9px 18px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 999px;
+  background: hsl(var(--card));
+  color: hsl(var(--foreground));
+  font-size: 14px;
+  font-weight: 400;
+  text-align: left;
+  white-space: normal;
+  box-shadow: 0 1px 2px hsl(var(--foreground) / 0.04);
+}
+
+.conditions-wrapper .conditions-rule-pill:hover {
+  background: hsl(var(--card));
+  border-color: hsl(var(--muted-foreground) / 0.5);
+  color: hsl(var(--foreground));
+}
+
+.conditions-summary-path {
+  color: hsl(var(--muted-foreground));
+}
+
+.conditions-summary-path::after {
+  content: "›";
+  margin-left: 6px;
+}
+
+.conditions-summary-operator {
+  font-weight: 600;
+}
+
+.conditions-summary-value {
+  font-weight: 500;
+}
+
+.conditions-summary-muted {
+  color: hsl(var(--muted-foreground));
+}
+
+.conditions-rule-row > .conditions-btn-remove {
+  opacity: 0;
+}
+
+.conditions-rule-row:is(:hover, :focus-within) > .conditions-btn-remove {
+  opacity: 1;
+}
+
+.conditions-rule-editor {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(0, 2fr);
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid hsl(var(--ring) / 0.6);
+  border-radius: 16px;
+  background: hsl(var(--card));
+  box-shadow: 0 0 0 4px hsl(var(--ring) / 0.1);
 }
 
 .conditions-field-conditions {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+  min-width: 0;
 }
+
+.conditions-field-conditions:empty {
+  display: none;
+}
+
+.conditions-rule-editor-footer {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding-top: 4px;
+}
+
+.conditions-rule-editor-footer > .conditions-btn-remove {
+  margin-left: auto;
+}
+
+.conditions-rule-where {
+  margin: 6px 0 2px 20px;
+  padding-left: 12px;
+  border-left: 2px dotted hsl(var(--border));
+}
+
+.conditions-rule-where-label {
+  display: block;
+  margin: 2px 0 8px;
+  color: hsl(var(--muted-foreground));
+  font-size: 13px;
+}
+
+.conditions-rule-where > .conditions-group.is-nested {
+  padding: 0;
+  background: transparent;
+}
+
+/* Condition row inside the editor: [comparison] [value] [+] [×] */
 
 .conditions-condition-section {
   display: grid;
@@ -237,66 +288,28 @@ html.dark {
   min-width: 0;
 }
 
-/* "+" on the last condition adds another one for the same field */
+.conditions-condition-value-separator {
+  color: hsl(var(--muted-foreground));
+}
 
 .conditions-condition-section .conditions-btn-add-condition {
   opacity: 0;
-  transition: opacity 0.15s ease;
+}
+
+.conditions-condition-section:last-child .conditions-btn-add-condition,
+.conditions-condition-section:is(:hover, :focus-within) .conditions-btn-add-condition {
+  opacity: 1;
 }
 
 .conditions-condition-section:not(:last-child) .conditions-btn-add-condition {
   visibility: hidden;
 }
 
-.conditions-field-section:is(:hover, :focus-within)
-  > .conditions-field-body
-  .conditions-condition-section
-  .conditions-btn-add-condition {
-  opacity: 1;
-}
-
 @media (hover: none) {
-  .conditions-condition-section .conditions-btn-add-condition {
+  .conditions-group-actions > .conditions-btn-remove,
+  .conditions-rule-row > .conditions-btn-remove {
     opacity: 1;
   }
-}
-
-.conditions-condition-value-separator {
-  color: hsl(var(--muted-foreground));
-}
-
-/* Field actions: "And" is always shown, the rest appears on hover or focus */
-
-.conditions-field-actions {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  height: 24px;
-  margin: 2px 0;
-}
-
-.conditions-field-actions > * {
-  opacity: 0;
-  transition: opacity 0.15s ease;
-}
-
-.conditions-field-actions > .conditions-btn-join-field,
-.conditions-field-section:is(:hover, :focus-within)
-  > .conditions-field-body
-  > .conditions-field-actions
-  > *,
-.conditions-field-conditions:empty + .conditions-field-actions > * {
-  opacity: 1;
-}
-
-@media (hover: none) {
-  .conditions-field-actions > * {
-    opacity: 1;
-  }
-}
-
-.conditions-field-actions .conditions-btn-remove {
-  margin-left: auto;
 }
 
 /* Inputs */
@@ -304,7 +317,7 @@ html.dark {
 .conditions-wrapper :is(input, select) {
   width: 100%;
   min-width: 0;
-  height: 34px;
+  height: 36px;
   padding: 0 10px;
   border: 1px solid hsl(var(--input));
   border-radius: var(--radius);
@@ -362,19 +375,6 @@ html.dark {
   font-weight: 500;
 }
 
-/* "all / any" reads as part of the sentence */
-
-.conditions-wrapper .conditions-group-operator-select {
-  width: auto;
-  height: 28px;
-  padding: 0 26px 0 10px;
-  border-color: transparent;
-  background-color: hsl(var(--muted));
-  background-position: right 8px center;
-  color: hsl(var(--foreground));
-  font-weight: 600;
-}
-
 /* Buttons */
 
 .conditions-wrapper button {
@@ -382,18 +382,19 @@ html.dark {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  height: 28px;
-  padding: 0 8px;
+  height: 32px;
+  padding: 0 10px;
   border: none;
-  border-radius: calc(var(--radius) - 2px);
+  border-radius: var(--radius);
   background: transparent;
   color: hsl(var(--muted-foreground));
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s
+    ease;
 }
 
 .conditions-wrapper button:hover {
@@ -410,24 +411,39 @@ html.dark {
   flex-shrink: 0;
 }
 
-.conditions-wrapper .conditions-btn-add-field {
+.conditions-wrapper :is(.conditions-btn-add-rule, .conditions-btn-add-group) {
   color: hsl(var(--ring));
 }
 
-.conditions-wrapper .conditions-btn-add-field:hover {
+.conditions-wrapper :is(.conditions-btn-add-rule, .conditions-btn-add-group):hover {
   background: hsl(var(--ring) / 0.1);
   color: hsl(var(--ring));
 }
 
-.conditions-wrapper .conditions-btn-add-group {
-  height: 34px;
-  padding: 0 14px;
-  border: 1px dashed hsl(var(--input));
-  border-radius: var(--radius);
+.conditions-group.is-root > .conditions-group-actions {
+  gap: 10px;
+  padding-top: 10px;
 }
 
-.conditions-wrapper .conditions-btn-add-group:hover {
-  border-color: hsl(var(--muted-foreground) / 0.6);
+.conditions-group.is-root > .conditions-group-actions > button {
+  height: 40px;
+  padding: 0 18px;
+  background: hsl(var(--foreground) / 0.05);
+}
+
+.conditions-group.is-root > .conditions-group-actions > button:hover {
+  background: hsl(var(--ring) / 0.12);
+}
+
+.conditions-wrapper .conditions-btn-done {
+  padding: 0 14px;
+  background: hsl(var(--ring));
+  color: hsl(0 0% 100%);
+}
+
+.conditions-wrapper .conditions-btn-done:hover {
+  background: hsl(var(--ring) / 0.9);
+  color: hsl(0 0% 100%);
 }
 
 .conditions-wrapper .conditions-btn-remove:hover {
@@ -438,27 +454,39 @@ html.dark {
 .conditions-wrapper .conditions-btn-remove[aria-label],
 .conditions-wrapper .conditions-condition-section .conditions-btn-add-condition {
   width: 30px;
+  height: 30px;
   padding: 0;
 }
 
-/* Small screens: stack field above its conditions */
+/* Small screens */
 
 @media (max-width: 640px) {
-  .conditions-field-section {
+  .conditions-group-body {
+    grid-template-columns: 44px minmax(0, 1fr);
+  }
+
+  .conditions-group-actions {
+    padding-left: 36px;
+  }
+
+  .conditions-group-actions > .conditions-btn-remove > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .conditions-rule-editor {
     grid-template-columns: 1fr;
-    row-gap: 6px;
-  }
-
-  .conditions-field-nested-groups {
-    margin-left: 0;
-  }
-
-  .conditions-field-section:not(:first-child) {
-    padding-top: 8px;
-    border-top: 1px solid hsl(var(--border));
   }
 
   .conditions-condition-section {
     grid-template-columns: 1fr 1fr 30px 30px;
+  }
+
+  .conditions-rule-where {
+    margin-left: 12px;
   }
 }
