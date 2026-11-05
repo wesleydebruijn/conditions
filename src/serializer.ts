@@ -59,15 +59,17 @@ export function serializeRule(rule: Rule): Hash {
     ruleObj[condition.operator] = serializeValue(condition.operator, condition.value);
   }
 
-  if (rule.where && rule.where.children.length > 0) ruleObj.where = serializeGroup(rule.where);
+  if (rule.where && !isEmpty(rule.where)) ruleObj.where = serializeGroup(rule.where);
 
   return ruleObj;
 }
 
+function isEmpty(node: ConditionNode): boolean {
+  return node.type === "rule" ? !node.key : node.children.every(isEmpty);
+}
+
 export function serializeGroup(group: Group): Hash {
-  const children = group.children.filter(
-    (child) => child.type === "rule" || child.children.length > 0,
-  );
+  const children = group.children.filter((child) => !isEmpty(child));
   const parts =
     group.operator === "and" ? serializeAndParts(children) : children.map(serializeNode);
 

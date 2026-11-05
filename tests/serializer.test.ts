@@ -164,6 +164,15 @@ describe("serializeGroup", () => {
     });
   });
 
+  it("skips rules without a field and groups holding only those", () => {
+    const tree = group("or", rule("a", eq("1")), rule("", eq("")), group("and", rule("", eq(""))));
+
+    expect(serializeGroup(tree)).toEqual({ a: { eq: 1 } });
+    expect(serializeRule(rule("items_count", eq("1"), group("and", rule(""))))).toEqual({
+      eq: 1,
+    });
+  });
+
   it("merges conditions of rules that use the same field", () => {
     const tree = group(
       "and",

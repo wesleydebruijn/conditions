@@ -27,13 +27,15 @@ describe("Conditions", () => {
     target.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
 
   const picker = () =>
-    $<HTMLSelectElement | HTMLInputElement>(".conditions-field-select, .conditions-field-input");
+    (openEditors()
+      .at(-1)
+      ?.querySelector<HTMLSelectElement | HTMLInputElement>(
+        ".conditions-field-select, .conditions-field-input",
+      ) ?? null) as HTMLSelectElement | HTMLInputElement;
 
   const pick = (button: HTMLElement, key: string) => {
     button.click();
-    const field = picker();
-    change(field, key);
-    if (field.tagName === "INPUT") press(field, "Enter");
+    change(picker(), key);
   };
 
   const load = (condition: unknown, options = {}) => {
@@ -177,7 +179,7 @@ describe("Conditions", () => {
       expect(inner.dataset.operator).toBe("or");
       expect(openEditors()).toHaveLength(0);
       expect($(".conditions-group-empty", inner)).not.toBeNull();
-      expect($(".conditions-btn-add-group", inner).textContent).toBe("Add inner group");
+      expect($(".conditions-btn-add-group", inner).textContent).toBe("Add group");
       expect(json()).toEqual({ a: { eq: 1 } });
 
       await Promise.resolve();
@@ -249,7 +251,7 @@ describe("Conditions", () => {
       expect(pills()).toEqual(["Age is between 18 and 65", "Name is one of a, b", "x is …"]);
     });
 
-    it("asks for the field in the new filter's place before adding it", async () => {
+    it("adds a filter in edit mode that asks for its field first", async () => {
       load({ a: { eq: 1 } });
       $(".conditions-btn-add-rule").click();
 
@@ -266,50 +268,30 @@ describe("Conditions", () => {
       expect(document.activeElement).toBe(picker());
     });
 
-    it("hides the empty message while picking the first field", () => {
+    it("replaces the empty message with the new filter", () => {
       new Conditions(input);
-      const empty = $(".conditions-group-empty");
       $(".conditions-btn-add-rule").click();
-      expect(isShown(empty)).toBe(false);
-
-      press(picker(), "Escape");
-      expect(isShown(empty)).toBe(true);
+      expect($(".conditions-group-empty")).toBeNull();
     });
 
-    it("adds the picked field in edit mode and focuses its value", async () => {
+    it("enables the comparison and value once a field is typed", () => {
       load({ a: { eq: 1 } });
-      pick($(".conditions-btn-add-rule"), "b");
+      pick($(".conditions-btn-add-rule"), "  b ");
 
-      expect(picker()).toBeNull();
-      expect(isShown($(".conditions-btn-add-rule"))).toBe(true);
+      const operators = $$<HTMLSelectElement>(".conditions-condition-operator-select");
+      expect(operators[1].disabled).toBe(false);
       expect(json()).toEqual({ a: { eq: 1 }, b: { eq: "" } });
       expect(openEditors()).toHaveLength(1);
-
-      await Promise.resolve();
-      expect(document.activeElement).toBe($$(".conditions-condition-value-input")[1]);
     });
 
-    it("adds nothing when picking a field is cancelled", () => {
+    it("keeps a filter without a field out of the JSON", () => {
       load({ a: { eq: 1 } });
-      const addRule = $(".conditions-btn-add-rule");
-
-      addRule.click();
-      press(picker(), "Escape");
-      expect(picker()).toBeNull();
-      expect(document.activeElement).toBe(addRule);
-
-      addRule.click();
-      picker().dispatchEvent(new Event("blur"));
-      expect(picker()).toBeNull();
-      expect(json()).toEqual({ a: { eq: 1 } });
-    });
-
-    it("adds the typed field when the picker loses focus", () => {
-      new Conditions(input);
       $(".conditions-btn-add-rule").click();
-      change(picker(), "  name ");
-      picker().dispatchEvent(new Event("blur"));
-      expect(json()).toEqual({ name: { eq: "" } });
+      press(picker(), "Escape");
+
+      expect(openEditors()).toHaveLength(0);
+      expect(pills()).toEqual(["a is 1", "Field name"]);
+      expect(json()).toEqual({ a: { eq: 1 } });
     });
 
     it("opens the editor when the pill is clicked, one at a time", () => {
@@ -347,23 +329,25 @@ describe("Conditions", () => {
       expect(openEditors()).toHaveLength(0);
     });
 
-    it("removes a filter from its pill or from the editor", () => {
-      load({ a: { eq: 1 }, b: { eq: 2 }, c: { eq: 3 } });
+    it("removes a filter from its pill but not from the editor", () => {
+      load({ a: { eq: 1 }, b: { eq: 2 } });
       $(".conditions-rule-row > .conditions-btn-remove").click();
-      expect(json()).toEqual({ b: { eq: 2 }, c: { eq: 3 } });
+      expect(json()).toEqual({ b: { eq: 2 } });
 
       $(".conditions-rule-pill").click();
-      $(".conditions-rule-editor-footer > .conditions-btn-remove").click();
-      expect(json()).toEqual({ c: { eq: 3 } });
+      expect($(".conditions-rule-editor-footer > .conditions-btn-remove")).toBeNull();
     });
 
-    it("shows the field as fixed text in the editor", () => {
-      load({ items_price_sum: { gt: 10 } }, { schema });
+    it("changes the field in the editor, keeping conditions that still fit", () => {
+      load({ age: { gte: 18, eq: 20 } }, { schema });
       $(".conditions-rule-pill").click();
+      expect(picker().value).toBe("age");
 
-      const field = $(".conditions-rule-editor .conditions-rule-field");
-      expect(field.textContent).toBe("ItemsPrice (sum)");
-      expect($("input, select", field)).toBeNull();
+      change(picker(), "items_count");
+      expect(json()).toEqual({ items_count: { gte: 18, eq: 20 } });
+
+      change(picker(), "name");
+      expect(json()).toEqual({ name: { ne: "", eq: "" } });
     });
 
     it("labels controls for assistive technology", () => {
@@ -393,11 +377,22 @@ describe("Conditions", () => {
       expect(document.activeElement).toBe(operators[1]);
     });
 
-    it("keeps the filter when its last condition is removed and offers to add one", () => {
-      load({ a: { eq: 1 } });
-      $(".conditions-condition-section .conditions-btn-remove").click();
+    const removeButtons = () => $$(".conditions-condition-section .conditions-btn-remove");
 
-      expect(json()).toEqual({ a: {} });
+    it("does not allow removing the last condition", () => {
+      load({ a: { eq: 1, gt: 0 } });
+      expect(removeButtons().map(isShown)).toEqual([true, true]);
+
+      removeButtons()[0].click();
+      expect(json()).toEqual({ a: { gt: 0 } });
+      expect(removeButtons().map(isShown)).toEqual([false]);
+
+      addButtons()[0].click();
+      expect(removeButtons().map(isShown)).toEqual([true, true]);
+    });
+
+    it("offers to add a condition to a filter without any", () => {
+      load({ a: {} });
       const addFirst = $(".conditions-rule-editor-footer > .conditions-btn-add-condition");
       expect(isShown(addFirst)).toBe(true);
 
@@ -524,29 +519,64 @@ describe("Conditions", () => {
 
       change(picker(), "type");
       const where = $(".conditions-rule-where");
-      expect($(".conditions-rule-where-label", where).textContent).toBe("Only items where");
+      expect($(".conditions-rule-where-label", where).textContent).toBe("WHERE");
       change($<HTMLInputElement>(".conditions-condition-value-input", where), "product");
       expect(json()).toEqual({ items_count: { gte: 1, where: { type: { eq: "product" } } } });
       expect(isShown($(".conditions-btn-add-where"))).toBe(false);
     });
 
-    it("removes item filters once their last filter is removed", () => {
+    it("keeps item filters open to new filters once their last filter is removed", () => {
       load({ items_count: { gte: 1, where: { type: { eq: "x" } } } }, { schema });
       $(".conditions-rule-where .conditions-rule-row > .conditions-btn-remove").click();
+
+      const where = $(".conditions-rule-where");
       expect(json()).toEqual({ items_count: { gte: 1 } });
-      expect(isShown($(".conditions-rule-where"))).toBe(false);
+      expect(isShown(where)).toBe(true);
+      expect($(".conditions-btn-add-rule", where)).not.toBeNull();
+      expect($(".conditions-btn-add-group", where)).not.toBeNull();
     });
 
-    it("cancels the item filter picker without closing the editor", () => {
+    it("removes item filters with their WHERE button", () => {
+      load({ items_count: { gte: 1, where: { type: { eq: "x" } } } }, { schema });
+      expect(
+        $(".conditions-rule-where .conditions-group-actions > .conditions-btn-remove"),
+      ).toBeNull();
+
+      const whereBtn = $<HTMLButtonElement>(".conditions-rule-where-label");
+      expect(whereBtn.tagName).toBe("BUTTON");
+      expect(whereBtn.title).toBe("Remove these item filters");
+      whereBtn.click();
+
+      expect(json()).toEqual({ items_count: { gte: 1 } });
+      expect(isShown($(".conditions-rule-where"))).toBe(false);
+      expect(isShown($(".conditions-btn-add-where"))).toBe(true);
+    });
+
+    it("adds a group to empty item filters", () => {
+      load({ items_count: { gte: 1 } }, { schema });
+      $(".conditions-rule-pill").click();
+      $(".conditions-btn-add-where").click();
+      press(picker(), "Escape");
+      $(".conditions-rule-where .conditions-btn-add-group").click();
+
+      expect(
+        $(".conditions-rule-where .conditions-group.is-nested .conditions-group"),
+      ).not.toBeNull();
+    });
+
+    it("starts item filters with a new filter and keeps them once it is closed", () => {
       load({ items_count: { gte: 1 } }, { schema });
       $(".conditions-rule-pill").click();
       $(".conditions-btn-add-where").click();
 
+      const where = $(".conditions-rule-where");
+      expect(openEditors()).toEqual([$(".conditions-rule-editor", where)]);
+
       press(picker(), "Escape");
-      expect(picker()).toBeNull();
-      expect(isShown($(".conditions-rule-where"))).toBe(false);
-      expect(isShown($(".conditions-btn-add-where"))).toBe(true);
-      expect(openEditors()).toHaveLength(1);
+      expect(openEditors()).toHaveLength(0);
+      expect(isShown(where)).toBe(true);
+      expect($(".conditions-btn-add-rule", where)).not.toBeNull();
+      expect($(".conditions-btn-add-group", where)).not.toBeNull();
       expect(json()).toEqual({ items_count: { gte: 1 } });
     });
 

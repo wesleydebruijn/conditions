@@ -60,7 +60,6 @@ const DEFAULT_SETTINGS: Settings = {
     rulePill: "conditions-rule-pill",
     ruleEditor: "conditions-rule-editor",
     ruleEditorFooter: "conditions-rule-editor-footer",
-    ruleField: "conditions-rule-field",
     ruleWhere: "conditions-rule-where",
     ruleWhereLabel: "conditions-rule-where-label",
 
@@ -96,11 +95,12 @@ const DEFAULT_SETTINGS: Settings = {
     or: "OR",
     andTitle: "All of these must match. Click to switch to OR.",
     orTitle: "At least one of these must match. Click to switch to AND.",
-    where: "Only items where",
+    where: "WHERE",
+    whereTitle: "Remove these item filters",
     empty: "No filters yet, so everything matches.",
     addRule: "Add filter",
     addGroup: "Add group",
-    addInnerGroup: "Add inner group",
+    addInnerGroup: "Add group",
     addCondition: "Add condition",
     addWhere: "Only items where…",
     edit: "Click to edit",
@@ -147,7 +147,6 @@ type GroupContext = {
   schema?: Schema;
   isRoot?: boolean;
   onRemove?: () => void;
-  removeWhenEmpty?: boolean;
 };
 type RuleContext = { schema?: Schema; onRemove: () => void };
 
@@ -162,7 +161,6 @@ export default class Conditions {
   private closeOpenRule?: () => void;
   private focusRule?: Rule;
   private focusGroup?: Group;
-  private draftGroup?: Group;
 
   private input: HTMLInputElement | HTMLTextAreaElement;
   private wrapperElement: HTMLElement;
@@ -244,39 +242,15 @@ export default class Conditions {
       );
     }
 
-    const empty = createText(this.className("groupEmpty"), labels.empty);
-    visible(empty, group.children.length === 0);
-    append(children, empty);
-
-    let draft: HTMLElement | undefined;
-
-    const startDraft = () => {
-      if (draft) return;
-
-      draft = this.renderDraft(context.schema, (key) => {
-        draft?.remove();
-        draft = undefined;
-
-        if (key) {
-          const rule = this.newRule(key, context.schema);
-          group.children.push(rule);
-          this.edit(rule);
-          update();
-        } else if (group.children.length === 0 && context.removeWhenEmpty) {
-          context.onRemove?.();
-        } else {
-          visible(empty, group.children.length === 0);
-          addRuleBtn.focus();
-        }
-      });
-
-      visible(empty, false);
-      append(children, draft);
-    };
+    if (group.children.length === 0) {
+      append(children, createText(this.className("groupEmpty"), labels.empty));
+    }
 
     const addRuleBtn = createButton(this.className("buttonAddRule"), "plus", labels.addRule, () => {
-      this.closeOpenRule?.();
-      startDraft();
+      const rule = this.newRule();
+      group.children.push(rule);
+      this.edit(rule);
+      update();
     });
 
     const addGroupBtn = createButton(
@@ -312,54 +286,6 @@ export default class Conditions {
       this.focusGroup = undefined;
       queueMicrotask(() => addRuleBtn.focus());
     }
-
-    if (this.draftGroup === group) {
-      this.draftGroup = undefined;
-      startDraft();
-    }
-
-    return element;
-  }
-
-  private renderDraft(schema: Schema | undefined, onDone: (key: string) => void): HTMLElement {
-    const { labels } = this.settings;
-    const element = create("div", this.className("rule"));
-    const editor = create("div", this.className("ruleEditor"));
-    const conditionsElement = create("div", this.className("fieldConditions"));
-    const conditionElement = create("div", this.className("conditionSection"));
-    const valueElement = create("div", this.className("conditionValue"));
-    const footer = create("div", this.className("ruleEditorFooter"));
-
-    const picker = this.createFieldPicker(schema, onDone);
-    const operatorSelect = createSelect(this.className("conditionSelect"), [], () => {}, {
-      placeholder: labels.operatorLabel,
-    });
-    const valueInput = this.createValueInput("text", "", labels.valuePlaceholder, () => {});
-
-    operatorSelect.disabled = true;
-    valueInput.disabled = true;
-
-    const cancelBtn = createButton(this.className("buttonRemove"), "close", labels.remove, () =>
-      onDone(""),
-    );
-
-    className(element, this.className("isOpen"));
-    append(valueElement, valueInput);
-    append(conditionElement, operatorSelect, valueElement);
-    append(conditionsElement, conditionElement);
-    append(footer, cancelBtn);
-    append(editor, picker, conditionsElement, footer);
-    append(element, editor);
-
-    queueMicrotask(() => {
-      picker.focus();
-
-      if (picker instanceof HTMLSelectElement) {
-        try {
-          picker.showPicker();
-        } catch {}
-      }
-    });
 
     return element;
   }
@@ -402,10 +328,21 @@ export default class Conditions {
     };
 
     const refresh = () => {
+      const awaitingField = !rule.key || (!!schema && !schemaItem());
       const canFilterItems = !schema || fieldType(schemaItem()?.type) === "object";
 
-      visible(addWhereBtn, canFilterItems && !rule.where);
+      visible(addWhereBtn, !awaitingField && canFilterItems && !rule.where);
       visible(addFirstConditionBtn, rule.conditions.length === 0);
+
+      for (const control of conditionsElement.querySelectorAll<HTMLInputElement>("input, select")) {
+        control.disabled = awaitingField;
+      }
+
+      for (const button of conditionsElement.querySelectorAll<HTMLElement>(
+        `.${this.className("buttonRemove")}`,
+      )) {
+        visible(button, rule.conditions.length > 1);
+      }
     };
 
     const addCondition = () => {
@@ -436,24 +373,47 @@ export default class Conditions {
 
       if (!rule.where) return;
 
+      const whereBtn = create("button", this.className("ruleWhereLabel"));
+      whereBtn.type = "button";
+      whereBtn.textContent = labels.where;
+      whereBtn.title = labels.whereTitle;
+      whereBtn.addEventListener("click", () => {
+        rule.where = undefined;
+        this.onChange();
+        renderWhere();
+        refresh();
+      });
+
       append(
         whereElement,
-        createText(this.className("ruleWhereLabel"), labels.where),
-        this.renderGroup(rule.where, {
-          schema: schemaItem()?.schema,
-          removeWhenEmpty: true,
-          onRemove: () => {
-            rule.where = undefined;
-            this.onChange();
-            renderWhere();
-            refresh();
-          },
-        }),
+        whereBtn,
+        this.renderGroup(rule.where, { schema: schemaItem()?.schema }),
       );
     };
 
-    const field = create("div", this.className("ruleField"));
-    append(field, ...this.fieldName(rule.key, schema));
+    const changeField = (key: string) => {
+      const previousKey = rule.key;
+      const previousSchema = schemaItem();
+
+      rule.key = key;
+
+      if (schema) {
+        rule.conditions = previousKey
+          ? this.fitConditions(rule.conditions, previousSchema, schemaItem())
+          : [this.newCondition(schemaItem())];
+        renderConditions();
+
+        if (rule.where && fieldKey(key) !== fieldKey(previousKey)) {
+          rule.where = undefined;
+          renderWhere();
+        }
+      }
+
+      this.onChange();
+      refresh();
+    };
+
+    const fieldControl = this.createFieldControl(rule.key, schema, changeField);
 
     const addFirstConditionBtn = createButton(
       this.className("buttonAddCondition"),
@@ -467,18 +427,12 @@ export default class Conditions {
       "filter",
       labels.addWhere,
       () => {
-        rule.where = { type: "group", operator: "and", children: [] };
-        this.draftGroup = rule.where;
+        const first = this.newRule();
+        rule.where = { type: "group", operator: "and", children: [first] };
+        this.edit(first);
         renderWhere();
         refresh();
       },
-    );
-
-    const removeBtn = createButton(
-      this.className("buttonRemove"),
-      "close",
-      labels.removeRule,
-      context.onRemove,
     );
 
     const doneBtn = createButton(this.className("buttonDone"), "check", labels.done, () => {
@@ -514,8 +468,8 @@ export default class Conditions {
         context.onRemove,
       ),
     );
-    append(footer, addFirstConditionBtn, addWhereBtn, removeBtn, doneBtn);
-    append(editor, field, conditionsElement, footer);
+    append(footer, addFirstConditionBtn, addWhereBtn, doneBtn);
+    append(editor, fieldControl, conditionsElement, footer);
     append(element, row, editor, whereElement);
 
     if (this.openRule === rule) {
@@ -527,7 +481,9 @@ export default class Conditions {
 
     if (this.focusRule === rule) {
       this.focusRule = undefined;
-      queueMicrotask(() => this.focusFirstValue(conditionsElement));
+      queueMicrotask(() =>
+        rule.key ? this.focusFirstValue(conditionsElement) : fieldControl.focus(),
+      );
     }
 
     return element;
@@ -553,6 +509,12 @@ export default class Conditions {
   private summarize(rule: Rule, schema?: Schema): HTMLElement[] {
     const { labels, conditionOperators } = this.settings;
     const schemaItem = fieldSchemaItem(schema, fieldKey(rule.key));
+
+    if (!rule.key) {
+      const placeholder = schema ? labels.fieldPlaceholder : labels.fieldNamePlaceholder;
+      return [createText(this.className("summaryMuted"), placeholder)];
+    }
+
     const parts = this.fieldName(rule.key, schema);
 
     rule.conditions.forEach((condition, index) => {
@@ -702,47 +664,32 @@ export default class Conditions {
     }
   }
 
-  private createFieldPicker(
+  private createFieldControl(
+    key: string,
     schema: Schema | undefined,
-    onDone: (key: string) => void,
+    onChange: (key: string) => void,
   ): HTMLSelectElement | HTMLInputElement {
     const { labels } = this.settings;
-    let done = false;
 
-    const finish = (key: string) => {
-      if (done) return;
+    if (schema) {
+      const select = createSelect(
+        this.className("fieldSelect"),
+        fieldList(schema).map((field) => [field.key, field.label]),
+        onChange,
+        { selected: key, placeholder: labels.fieldPlaceholder },
+      );
+      select.setAttribute("aria-label", labels.fieldLabel);
 
-      done = true;
-      onDone(key.trim());
-    };
+      return select;
+    }
 
-    const picker = schema
-      ? createSelect(
-          this.className("fieldSelect"),
-          fieldList(schema).map(({ key, label }) => [key, label]),
-          finish,
-          { placeholder: labels.fieldPlaceholder },
-        )
-      : create("input", this.className("fieldInput"));
+    const input = create("input", this.className("fieldInput"));
+    input.value = key;
+    input.placeholder = labels.fieldNamePlaceholder;
+    input.setAttribute("aria-label", labels.fieldLabel);
+    input.addEventListener("input", () => onChange(input.value.trim()));
 
-    if (picker instanceof HTMLInputElement) picker.placeholder = labels.fieldNamePlaceholder;
-    picker.setAttribute("aria-label", labels.fieldLabel);
-
-    const typedKey = () => (picker instanceof HTMLInputElement ? picker.value : "");
-
-    const element: HTMLElement = picker;
-
-    element.addEventListener("blur", () => finish(typedKey()));
-    element.addEventListener("keydown", (event) => {
-      if (event.key !== "Escape" && event.key !== "Enter") return;
-      if (event.key === "Enter" && picker instanceof HTMLSelectElement) return;
-
-      event.preventDefault();
-      event.stopPropagation();
-      finish(event.key === "Enter" ? typedKey() : "");
-    });
-
-    return picker;
+    return input;
   }
 
   private focusFirstValue(conditionsElement: HTMLElement) {
@@ -776,12 +723,32 @@ export default class Conditions {
     this.focusRule = rule;
   }
 
-  private newRule(key: string, schema?: Schema): Rule {
-    return {
-      type: "rule",
-      key,
-      conditions: [this.newCondition(fieldSchemaItem(schema, fieldKey(key)))],
-    };
+  private newRule(): Rule {
+    return { type: "rule", key: "", conditions: [this.newCondition()] };
+  }
+
+  private fitConditions(
+    conditions: Condition[],
+    previous?: SchemaItem,
+    next?: SchemaItem,
+  ): Condition[] {
+    const fits = (condition: Condition) =>
+      !next || fieldOperatorValid(condition.operator, next.type);
+    const used = conditions.filter(fits).map((condition) => condition.operator);
+
+    return conditions.map((condition) => {
+      if (!fits(condition)) {
+        const replacement = this.newCondition(next, used);
+        used.push(replacement.operator);
+        return replacement;
+      }
+
+      if (valueKind(condition.operator, previous) !== valueKind(condition.operator, next)) {
+        return { ...condition, value: "" };
+      }
+
+      return condition;
+    });
   }
 
   private newCondition(schema?: SchemaItem, usedOperators: ConditionOperator[] = []): Condition {

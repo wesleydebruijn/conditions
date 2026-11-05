@@ -230,19 +230,6 @@ html.dark {
   box-shadow: 0 0 0 4px hsl(var(--ring) / 0.1);
 }
 
-.conditions-rule-field {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  min-height: 36px;
-  font-weight: 600;
-}
-
-.conditions-rule-field .conditions-summary-path {
-  font-weight: 400;
-}
-
 .conditions-field-conditions {
   display: flex;
   flex-direction: column;
@@ -259,25 +246,48 @@ html.dark {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: 4px;
   padding-top: 4px;
 }
 
-.conditions-rule-editor-footer > .conditions-btn-remove {
-  margin-left: auto;
+.conditions-rule-editor-footer > .conditions-btn-add-condition {
+  margin-right: auto;
 }
 
 .conditions-rule-where {
-  margin: 6px 0 2px 20px;
-  padding-left: 12px;
-  border-left: 2px dotted hsl(var(--border));
+  margin: 0 0 2px 24px;
+  padding: 8px 0 4px 16px;
+  border-left: 2px solid hsl(var(--muted-foreground) / 0.3);
+  border-bottom-left-radius: 12px;
 }
 
-.conditions-rule-where-label {
-  display: block;
-  margin: 2px 0 8px;
-  color: hsl(var(--muted-foreground));
-  font-size: 13px;
+.conditions-wrapper .conditions-rule-where-label {
+  position: relative;
+  height: 26px;
+  margin: 0 0 8px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: hsl(var(--muted));
+  color: hsl(var(--foreground));
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.conditions-wrapper .conditions-rule-where-label:hover {
+  background: hsl(var(--destructive) / 0.1);
+  color: hsl(var(--destructive));
+  box-shadow: 0 0 0 2px hsl(var(--destructive) / 0.5);
+}
+
+.conditions-wrapper .conditions-rule-where-label::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -16px;
+  width: 10px;
+  border-top: 2px solid hsl(var(--muted-foreground) / 0.3);
 }
 
 .conditions-rule-where > .conditions-group.is-nested {
@@ -500,6 +510,6 @@ html.dark {
   }
 
   .conditions-rule-where {
-    margin-left: 12px;
+    margin-left: 20px;
   }
 }

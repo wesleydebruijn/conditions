@@ -89,7 +89,6 @@ export type Settings = {
     rulePill: string;
     ruleEditor: string;
     ruleEditorFooter: string;
-    ruleField: string;
     ruleWhere: string;
     ruleWhereLabel: string;
 
@@ -126,6 +125,7 @@ export type Settings = {
     andTitle: string;
     orTitle: string;
     where: string;
+    whereTitle: string;
     empty: string;
     addRule: string;
     addGroup: string;
