@@ -82,6 +82,7 @@ const DEFAULT_SETTINGS: Settings = {
     isRoot: "is-root",
     isNested: "is-nested",
     isOpen: "is-open",
+    isReadOnly: "is-read-only",
 
     buttonAddRule: "conditions-btn-add-rule",
     buttonAddGroup: "conditions-btn-add-group",
@@ -190,7 +191,14 @@ export default class Conditions {
     this.input.conditions = null;
   }
 
+  public setReadOnly(readOnly: boolean) {
+    this.settings.readOnly = readOnly;
+    this.rerender();
+  }
+
   private render() {
+    this.wrapperElement.classList.toggle(this.className("isReadOnly"), this.readOnly);
+
     append(
       this.wrapperElement,
       this.renderGroup(this.root, { schema: this.settings.schema, isRoot: true }),
@@ -225,7 +233,10 @@ export default class Conditions {
     const operatorBtn = create("button", this.className("groupOperator"));
     operatorBtn.type = "button";
     operatorBtn.textContent = labels[group.operator];
-    operatorBtn.title = group.operator === "and" ? labels.andTitle : labels.orTitle;
+    operatorBtn.disabled = this.readOnly;
+    if (!this.readOnly) {
+      operatorBtn.title = group.operator === "and" ? labels.andTitle : labels.orTitle;
+    }
     operatorBtn.addEventListener("click", () => {
       group.operator = group.operator === "and" ? "or" : "and";
       update();
@@ -273,7 +284,8 @@ export default class Conditions {
     append(rail, operatorBtn);
     append(body, rail, children);
     append(actions, addRuleBtn, addGroupBtn);
-    append(element, body, actions);
+    append(element, body);
+    if (!this.readOnly) append(element, actions);
 
     if (context.onRemove) {
       append(
@@ -376,7 +388,8 @@ export default class Conditions {
       const whereBtn = create("button", this.className("ruleWhereLabel"));
       whereBtn.type = "button";
       whereBtn.textContent = labels.where;
-      whereBtn.title = labels.whereTitle;
+      whereBtn.disabled = this.readOnly;
+      if (!this.readOnly) whereBtn.title = labels.whereTitle;
       whereBtn.addEventListener("click", () => {
         rule.where = undefined;
         this.onChange();
@@ -422,17 +435,19 @@ export default class Conditions {
       addCondition,
     );
 
-    const addWhereBtn = createButton(
+    const addWhere = () => {
+      const first = this.newRule();
+      rule.where = { type: "group", operator: "and", children: [first] };
+      this.edit(first);
+      renderWhere();
+      refresh();
+    };
+
+    const addWhereBtn = createIconButton(
       this.className("buttonAddWhere"),
       "filter",
       labels.addWhere,
-      () => {
-        const first = this.newRule();
-        rule.where = { type: "group", operator: "and", children: [first] };
-        this.edit(first);
-        renderWhere();
-        refresh();
-      },
+      addWhere,
     );
 
     const doneBtn = createButton(this.className("buttonDone"), "check", labels.done, () => {
@@ -450,7 +465,8 @@ export default class Conditions {
     });
 
     pill.type = "button";
-    pill.title = labels.edit;
+    pill.disabled = this.readOnly;
+    if (!this.readOnly) pill.title = labels.edit;
     pill.addEventListener("click", open);
     this.renderSummary(pill, rule, schema);
 
@@ -458,17 +474,21 @@ export default class Conditions {
     renderWhere();
     refresh();
 
-    append(
-      row,
-      pill,
-      createIconButton(
-        this.className("buttonRemove"),
-        "close",
-        labels.removeRule,
-        context.onRemove,
-      ),
-    );
-    append(footer, addFirstConditionBtn, addWhereBtn, doneBtn);
+    append(row, pill);
+
+    if (!this.readOnly) {
+      append(
+        row,
+        addWhereBtn,
+        createIconButton(
+          this.className("buttonRemove"),
+          "close",
+          labels.removeRule,
+          context.onRemove,
+        ),
+      );
+    }
+    append(footer, addFirstConditionBtn, doneBtn);
     append(editor, fieldControl, conditionsElement, footer);
     append(element, row, editor, whereElement);
 
@@ -771,12 +791,20 @@ export default class Conditions {
     if (!event.isTrusted) return; // ignore programmatic events
 
     this.root = deserialize(this.input.value);
+    this.rerender();
+  }
+
+  private rerender() {
     this.openRule = undefined;
     this.closeOpenRule = undefined;
     this.wrapperElement.remove();
     this.wrapperElement = create("div", this.className("wrapper"));
 
     this.render();
+  }
+
+  private get readOnly() {
+    return !!this.settings.readOnly;
   }
 
   private className(className: keyof Settings["classNames"]) {

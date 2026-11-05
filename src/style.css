@@ -143,14 +143,30 @@ html.dark {
 }
 
 .conditions-group-actions {
+  position: relative;
   display: flex;
-  flex-wrap: wrap;
+  align-self: flex-start;
+  align-items: center;
   gap: 4px;
-  padding-left: 48px;
+  min-height: 40px;
+  margin-left: 56px;
+  padding: 3px;
+  border: 1.5px dashed hsl(var(--border));
+  border-radius: 999px;
+  transition: border-color 0.15s ease;
+}
+
+.conditions-group-actions:hover {
+  border-color: hsl(var(--ring) / 0.4);
+}
+
+.conditions-group-actions > button {
+  border-radius: 999px;
 }
 
 .conditions-group-actions > .conditions-btn-remove {
-  margin-left: auto;
+  position: absolute;
+  left: calc(100% + 8px);
   opacity: 0;
 }
 
@@ -220,20 +236,33 @@ html.dark {
 }
 
 .conditions-rule-editor {
-  display: grid;
-  grid-template-columns: minmax(140px, 1fr) minmax(0, 2fr);
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
   gap: 8px;
-  padding: 12px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 3px;
   border: 1px solid hsl(var(--ring) / 0.6);
-  border-radius: 16px;
+  border-radius: 20px;
   background: hsl(var(--card));
-  box-shadow: 0 0 0 4px hsl(var(--ring) / 0.1);
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.12);
+}
+
+.conditions-wrapper .conditions-rule-editor :is(input, select) {
+  height: 32px;
+  border-radius: 16px;
+}
+
+.conditions-rule-editor > :is(.conditions-field-select, .conditions-field-input) {
+  flex: 0 1 180px;
+  min-width: 110px;
 }
 
 .conditions-field-conditions {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
 }
 
@@ -242,17 +271,16 @@ html.dark {
 }
 
 .conditions-rule-editor-footer {
-  grid-column: 1 / -1;
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-end;
   gap: 4px;
-  padding-top: 4px;
+  flex: none;
+  margin-left: auto;
 }
 
-.conditions-rule-editor-footer > .conditions-btn-add-condition {
-  margin-right: auto;
+.conditions-wrapper .conditions-rule-editor-footer > button {
+  height: 32px;
+  border-radius: 16px;
 }
 
 .conditions-rule-where {
@@ -298,10 +326,24 @@ html.dark {
 /* Condition row inside the editor: [comparison] [value] [+] [×] */
 
 .conditions-condition-section {
-  display: grid;
-  grid-template-columns: minmax(130px, 1fr) minmax(0, 1fr) 30px 30px;
-  gap: 8px;
+  display: flex;
+  gap: 6px;
   align-items: center;
+}
+
+.conditions-condition-section > .conditions-condition-operator-select {
+  flex: 0 1 150px;
+  min-width: 100px;
+}
+
+.conditions-condition-section > .conditions-condition-value {
+  flex: 1 1 220px;
+  min-width: 100px;
+  max-width: 220px;
+}
+
+.conditions-condition-section > button {
+  flex: none;
 }
 
 .conditions-condition-value {
@@ -398,6 +440,13 @@ html.dark {
   font-weight: 500;
 }
 
+/* Read only: same look, nothing reacts */
+
+.conditions-wrapper.is-read-only button:disabled {
+  cursor: default;
+  pointer-events: none;
+}
+
 /* Buttons */
 
 .conditions-wrapper button {
@@ -434,28 +483,23 @@ html.dark {
   flex-shrink: 0;
 }
 
-.conditions-wrapper :is(.conditions-btn-add-rule, .conditions-btn-add-group) {
+.conditions-wrapper
+  :is(
+    .conditions-btn-add-rule,
+    .conditions-btn-add-group,
+    .conditions-rule-row > .conditions-btn-add-where
+  ) {
   color: hsl(var(--ring));
 }
 
-.conditions-wrapper :is(.conditions-btn-add-rule, .conditions-btn-add-group):hover {
+.conditions-wrapper
+  :is(
+    .conditions-btn-add-rule,
+    .conditions-btn-add-group,
+    .conditions-rule-row > .conditions-btn-add-where
+  ):hover {
   background: hsl(var(--ring) / 0.1);
   color: hsl(var(--ring));
-}
-
-.conditions-group.is-root > .conditions-group-actions {
-  gap: 10px;
-  padding-top: 10px;
-}
-
-.conditions-group.is-root > .conditions-group-actions > button {
-  height: 40px;
-  padding: 0 18px;
-  background: hsl(var(--foreground) / 0.05);
-}
-
-.conditions-group.is-root > .conditions-group-actions > button:hover {
-  background: hsl(var(--ring) / 0.12);
 }
 
 .conditions-wrapper .conditions-btn-done {
@@ -475,6 +519,7 @@ html.dark {
 }
 
 .conditions-wrapper .conditions-btn-remove[aria-label],
+.conditions-wrapper .conditions-rule-row > .conditions-btn-add-where,
 .conditions-wrapper .conditions-condition-section .conditions-btn-add-condition {
   width: 30px;
   height: 30px;
@@ -489,7 +534,7 @@ html.dark {
   }
 
   .conditions-group-actions {
-    padding-left: 36px;
+    margin-left: 44px;
   }
 
   .conditions-group-actions > .conditions-btn-remove > span {
@@ -502,11 +547,25 @@ html.dark {
   }
 
   .conditions-rule-editor {
-    grid-template-columns: 1fr;
+    width: 100%;
+    flex-wrap: wrap;
   }
 
-  .conditions-condition-section {
-    grid-template-columns: 1fr 1fr 30px 30px;
+  .conditions-rule-editor > :is(.conditions-field-select, .conditions-field-input),
+  .conditions-field-conditions,
+  .conditions-rule-editor-footer {
+    flex: 1 1 100%;
+  }
+
+  .conditions-rule-editor-footer {
+    justify-content: flex-end;
+  }
+
+  .conditions-condition-section
+    > :is(.conditions-condition-operator-select, .conditions-condition-value) {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: none;
   }
 
   .conditions-rule-where {

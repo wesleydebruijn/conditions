@@ -111,6 +111,7 @@ export type Settings = {
     isRoot: string;
     isNested: string;
     isOpen: string;
+    isReadOnly: string;
 
     buttonAddRule: string;
     buttonAddGroup: string;
@@ -152,6 +153,7 @@ export type Settings = {
   };
   conditionOperators: Partial<Record<ConditionOperator, string>>;
   schema?: Schema;
+  readOnly?: boolean;
 };
 
 export type Options = Partial<Omit<Settings, "classNames" | "labels">> & {

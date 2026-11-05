@@ -134,6 +134,49 @@ describe("Conditions", () => {
     });
   });
 
+  describe("read only", () => {
+    const condition = {
+      or: [{ a: { eq: 1 } }, { items_count: { gte: 1, where: { type: { eq: "x" } } } }],
+    };
+    const controls = () =>
+      $$<HTMLButtonElement>(
+        ".conditions-group-actions, .conditions-rule-row > .conditions-btn-remove, .conditions-btn-add-where",
+      );
+
+    it("shows the filters without any way to change them", () => {
+      load(condition, { schema, readOnly: true });
+
+      expect(pills()).toHaveLength(3);
+      expect(controls()).toEqual([]);
+      expect($(".conditions-wrapper").classList.contains("is-read-only")).toBe(true);
+
+      for (const button of $$<HTMLButtonElement>(
+        ".conditions-rule-pill, .conditions-group-operator, .conditions-rule-where-label",
+      )) {
+        expect(button.disabled).toBe(true);
+      }
+
+      $(".conditions-rule-pill").click();
+      $(".conditions-rule-where-label").click();
+      expect(openEditors()).toHaveLength(0);
+      expect(json()).toEqual(condition);
+    });
+
+    it("toggles read only at runtime, closing any open editor", () => {
+      const conditions = load(condition, { schema });
+      $(".conditions-rule-pill").click();
+
+      conditions.setReadOnly(true);
+      expect(openEditors()).toHaveLength(0);
+      expect(controls()).toEqual([]);
+
+      conditions.setReadOnly(false);
+      expect(controls().length).toBeGreaterThan(0);
+      expect($(".conditions-wrapper").classList.contains("is-read-only")).toBe(false);
+      expect(json()).toEqual(condition);
+    });
+  });
+
   describe("groups", () => {
     it("explains that an empty group matches everything", () => {
       new Conditions(input);
@@ -500,11 +543,25 @@ describe("Conditions", () => {
       expect(options).not.toContain("starts_with");
     });
 
-    it("offers item filters only for object fields", () => {
+    it("does not offer item filters inside the editor", () => {
+      load({ items_count: { gte: 1 } }, { schema });
+      $(".conditions-rule-pill").click();
+      expect($(".conditions-rule-editor .conditions-btn-add-where")).toBeNull();
+    });
+
+    it("adds item filters from the pill row without opening the editor first", () => {
       load({ name: { eq: "x" }, items_count: { gte: 1 } }, { schema });
-      const [nameWhere, itemsWhere] = $$(".conditions-btn-add-where");
+      const [nameWhere, itemsWhere] = $$(".conditions-rule-row > .conditions-btn-add-where");
       expect(isShown(nameWhere)).toBe(false);
-      expect(isShown(itemsWhere)).toBe(true);
+      expect(itemsWhere.textContent).toBe("");
+      expect(itemsWhere.getAttribute("aria-label")).toBe("Only items where…");
+      expect($("svg", itemsWhere)).not.toBeNull();
+
+      itemsWhere.click();
+      const where = $$(".conditions-rule-where")[1];
+      expect(isShown(itemsWhere)).toBe(false);
+      expect(openEditors()).toEqual([$(".conditions-rule-editor", where)]);
+      expect((picker() as HTMLSelectElement).options).toHaveLength(3);
     });
 
     it("adds item filters with the nested schema's fields", () => {

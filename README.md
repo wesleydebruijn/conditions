@@ -161,12 +161,14 @@ const conditions = new Conditions(input, settings);
 - **input** — `HTMLInputElement`, `HTMLTextAreaElement`, or CSS selector
 - **settings** — Optional:
   - `schema` — available fields (see [Schema](#schema))
+  - `readOnly` — show the conditions without any way to change them; default `false`
   - `labels` — UI text, e.g. `{ addRule: 'Filter toevoegen', addGroup: 'Groep toevoegen' }`; merged with the defaults
   - `classNames` — CSS class overrides; merged with the defaults
   - `conditionOperators` — operators to offer and their labels, e.g. `{ eq: 'is', gte: 'is at least' }`; replaces the defaults
 
 Methods:
 
+- `setReadOnly(readOnly)` — Switch between viewing and editing; closes any open editor
 - `destroy()` — Remove the UI and event listeners
 
 ### Evaluator
