@@ -89,6 +89,7 @@ export type Settings = {
     rulePill: string;
     ruleEditor: string;
     ruleEditorFooter: string;
+    ruleField: string;
     ruleWhere: string;
     ruleWhereLabel: string;
 

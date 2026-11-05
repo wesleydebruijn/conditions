@@ -230,6 +230,19 @@ html.dark {
   box-shadow: 0 0 0 4px hsl(var(--ring) / 0.1);
 }
 
+.conditions-rule-field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  font-weight: 600;
+}
+
+.conditions-rule-field .conditions-summary-path {
+  font-weight: 400;
+}
+
 .conditions-field-conditions {
   display: flex;
   flex-direction: column;

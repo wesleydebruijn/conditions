@@ -23,6 +23,19 @@ describe("Conditions", () => {
     element.dispatchEvent(new Event(element.tagName === "SELECT" ? "change" : "input"));
   };
 
+  const press = (target: HTMLElement, key: string) =>
+    target.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
+
+  const picker = () =>
+    $<HTMLSelectElement | HTMLInputElement>(".conditions-field-select, .conditions-field-input");
+
+  const pick = (button: HTMLElement, key: string) => {
+    button.click();
+    const field = picker();
+    change(field, key);
+    if (field.tagName === "INPUT") press(field, "Enter");
+  };
+
   const load = (condition: unknown, options = {}) => {
     input.value = JSON.stringify(condition);
     return new Conditions(input, options);
@@ -155,15 +168,29 @@ describe("Conditions", () => {
       expect(pills()).toEqual(["a is 1", "b is 2", "c is 3", "d is 4"]);
     });
 
-    it("adds an inner group with the opposite operator and an open filter", () => {
-      load({ a: { eq: 1 } });
+    it("adds an empty inner group with the opposite operator without picking a field", async () => {
+      load({ a: { eq: 1 } }, { schema });
       $(".conditions-btn-add-group").click();
 
       const inner = $(".conditions-group.is-nested");
+      expect(picker()).toBeNull();
       expect(inner.dataset.operator).toBe("or");
-      expect(openEditors()).toHaveLength(1);
+      expect(openEditors()).toHaveLength(0);
+      expect($(".conditions-group-empty", inner)).not.toBeNull();
       expect($(".conditions-btn-add-group", inner).textContent).toBe("Add inner group");
-      expect(json()).toEqual({ and: [{ a: { eq: 1 } }, { "": { eq: "" } }] });
+      expect(json()).toEqual({ a: { eq: 1 } });
+
+      await Promise.resolve();
+      expect(document.activeElement).toBe($(".conditions-btn-add-rule", inner));
+    });
+
+    it("adds filters to an empty inner group", () => {
+      load({ a: { eq: 1 } });
+      $(".conditions-btn-add-group").click();
+      pick($(".conditions-group.is-nested .conditions-btn-add-rule"), "b");
+
+      expect(openEditors()).toHaveLength(1);
+      expect(json()).toEqual({ and: [{ a: { eq: 1 } }, { b: { eq: "" } }] });
     });
 
     it("only nested groups can be removed", () => {
@@ -222,14 +249,67 @@ describe("Conditions", () => {
       expect(pills()).toEqual(["Age is between 18 and 65", "Name is one of a, b", "x is …"]);
     });
 
-    it("adds a filter in edit mode and focuses its field", async () => {
+    it("asks for the field in the new filter's place before adding it", async () => {
       load({ a: { eq: 1 } });
       $(".conditions-btn-add-rule").click();
-      expect(json()).toEqual({ a: { eq: 1 }, "": { eq: "" } });
+
+      const draft = $$(".conditions-group-children > .conditions-rule").at(-1) as HTMLElement;
+      expect($(".conditions-rule-editor > .conditions-field-input", draft)).toBe(picker());
+      expect((picker() as HTMLInputElement).placeholder).toBe("Field name");
+      expect($<HTMLSelectElement>(".conditions-condition-operator-select", draft).disabled).toBe(
+        true,
+      );
+      expect($<HTMLInputElement>(".conditions-condition-value-input", draft).disabled).toBe(true);
+      expect(json()).toEqual({ a: { eq: 1 } });
+
+      await Promise.resolve();
+      expect(document.activeElement).toBe(picker());
+    });
+
+    it("hides the empty message while picking the first field", () => {
+      new Conditions(input);
+      const empty = $(".conditions-group-empty");
+      $(".conditions-btn-add-rule").click();
+      expect(isShown(empty)).toBe(false);
+
+      press(picker(), "Escape");
+      expect(isShown(empty)).toBe(true);
+    });
+
+    it("adds the picked field in edit mode and focuses its value", async () => {
+      load({ a: { eq: 1 } });
+      pick($(".conditions-btn-add-rule"), "b");
+
+      expect(picker()).toBeNull();
+      expect(isShown($(".conditions-btn-add-rule"))).toBe(true);
+      expect(json()).toEqual({ a: { eq: 1 }, b: { eq: "" } });
       expect(openEditors()).toHaveLength(1);
 
       await Promise.resolve();
-      expect(document.activeElement).toBe($$(".conditions-field-input")[1]);
+      expect(document.activeElement).toBe($$(".conditions-condition-value-input")[1]);
+    });
+
+    it("adds nothing when picking a field is cancelled", () => {
+      load({ a: { eq: 1 } });
+      const addRule = $(".conditions-btn-add-rule");
+
+      addRule.click();
+      press(picker(), "Escape");
+      expect(picker()).toBeNull();
+      expect(document.activeElement).toBe(addRule);
+
+      addRule.click();
+      picker().dispatchEvent(new Event("blur"));
+      expect(picker()).toBeNull();
+      expect(json()).toEqual({ a: { eq: 1 } });
+    });
+
+    it("adds the typed field when the picker loses focus", () => {
+      new Conditions(input);
+      $(".conditions-btn-add-rule").click();
+      change(picker(), "  name ");
+      picker().dispatchEvent(new Event("blur"));
+      expect(json()).toEqual({ name: { eq: "" } });
     });
 
     it("opens the editor when the pill is clicked, one at a time", () => {
@@ -257,8 +337,6 @@ describe("Conditions", () => {
 
     it("closes the editor with Escape or Enter", () => {
       load({ a: { eq: 1 } });
-      const press = (target: HTMLElement, key: string) =>
-        target.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
 
       $(".conditions-rule-pill").click();
       press($(".conditions-condition-value-input"), "Enter");
@@ -279,17 +357,19 @@ describe("Conditions", () => {
       expect(json()).toEqual({ c: { eq: 3 } });
     });
 
-    it("updates the field name while typing when there is no schema", () => {
-      load({ old: { eq: 1 } });
-      const fieldInput = $<HTMLInputElement>(".conditions-field-input");
-      expect(fieldInput.placeholder).toBe("Field name");
-      change(fieldInput, "new");
-      expect(json()).toEqual({ new: { eq: 1 } });
+    it("shows the field as fixed text in the editor", () => {
+      load({ items_price_sum: { gt: 10 } }, { schema });
+      $(".conditions-rule-pill").click();
+
+      const field = $(".conditions-rule-editor .conditions-rule-field");
+      expect(field.textContent).toBe("ItemsPrice (sum)");
+      expect($("input, select", field)).toBeNull();
     });
 
     it("labels controls for assistive technology", () => {
       load({ a: { eq: 1 } });
-      expect($(".conditions-field-input").getAttribute("aria-label")).toBe("Field");
+      $(".conditions-btn-add-rule").click();
+      expect(picker().getAttribute("aria-label")).toBe("Field");
       expect($(".conditions-condition-operator-select").getAttribute("aria-label")).toBe(
         "Comparison",
       );
@@ -381,23 +461,39 @@ describe("Conditions", () => {
   });
 
   describe("schema", () => {
-    it("disables the comparison until a field is chosen", () => {
+    it("offers the schema's fields when adding a filter", () => {
       new Conditions(input, { schema });
       $(".conditions-btn-add-rule").click();
-      const operator = () => $<HTMLSelectElement>(".conditions-condition-operator-select");
-      expect(operator().disabled).toBe(true);
-      expect($<HTMLSelectElement>(".conditions-field-select").options[0].textContent).toBe(
-        "Choose a field…",
-      );
 
-      change($<HTMLSelectElement>(".conditions-field-select"), "name");
-      expect(operator().disabled).toBe(false);
+      const options = Array.from((picker() as HTMLSelectElement).options).map(
+        (option) => option.textContent,
+      );
+      expect(options).toEqual([
+        "Choose a field…",
+        "Name",
+        "Age",
+        "Active",
+        "Tags",
+        "Items (count)",
+        "Items → Price (sum)",
+      ]);
     });
 
-    it("resets conditions to the type's default when the field type changes", () => {
-      load({ name: { eq: "x" } }, { schema });
-      change($<HTMLSelectElement>(".conditions-field-select"), "tags");
-      expect(json()).toEqual({ tags: { contains: "" } });
+    it("renders the comparison and value inputs for the picked field's type", () => {
+      new Conditions(input, { schema });
+      const operator = () => $$<HTMLSelectElement>(".conditions-condition-operator-select").at(-1);
+      const value = () => $$<HTMLElement>(".conditions-condition-value-input").at(-1);
+
+      pick($(".conditions-btn-add-rule"), "age");
+      expect(operator()?.value).toBe("eq");
+      expect((value() as HTMLInputElement).type).toBe("number");
+
+      pick($(".conditions-btn-add-rule"), "active");
+      expect(value()?.tagName).toBe("SELECT");
+
+      pick($(".conditions-btn-add-rule"), "tags");
+      expect(operator()?.value).toBe("contains");
+      expect(json()).toEqual({ age: { eq: "" }, active: { eq: "" }, tags: { contains: "" } });
     });
 
     it("only offers operators that fit the field type", () => {
@@ -418,16 +514,17 @@ describe("Conditions", () => {
 
     it("adds item filters with the nested schema's fields", () => {
       load({ items_count: { gte: 1 } }, { schema });
+      $(".conditions-rule-pill").click();
       $(".conditions-btn-add-where").click();
 
-      const where = $(".conditions-rule-where");
-      expect($(".conditions-rule-where-label", where).textContent).toBe("Only items where");
-      const options = Array.from(
-        $<HTMLSelectElement>(".conditions-field-select", where).options,
-      ).map((option) => option.value);
+      const options = Array.from((picker() as HTMLSelectElement).options).map(
+        (option) => option.value,
+      );
       expect(options).toEqual(["", "type", "price"]);
 
-      change($<HTMLSelectElement>(".conditions-field-select", where), "type");
+      change(picker(), "type");
+      const where = $(".conditions-rule-where");
+      expect($(".conditions-rule-where-label", where).textContent).toBe("Only items where");
       change($<HTMLInputElement>(".conditions-condition-value-input", where), "product");
       expect(json()).toEqual({ items_count: { gte: 1, where: { type: { eq: "product" } } } });
       expect(isShown($(".conditions-btn-add-where"))).toBe(false);
@@ -440,10 +537,17 @@ describe("Conditions", () => {
       expect(isShown($(".conditions-rule-where"))).toBe(false);
     });
 
-    it("clears item filters when the field changes", () => {
-      load({ items_count: { gte: 1, where: { type: { eq: "x" } } } }, { schema });
-      change($<HTMLSelectElement>(".conditions-field-select"), "age");
-      expect(input.value).not.toContain("where");
+    it("cancels the item filter picker without closing the editor", () => {
+      load({ items_count: { gte: 1 } }, { schema });
+      $(".conditions-rule-pill").click();
+      $(".conditions-btn-add-where").click();
+
+      press(picker(), "Escape");
+      expect(picker()).toBeNull();
+      expect(isShown($(".conditions-rule-where"))).toBe(false);
+      expect(isShown($(".conditions-btn-add-where"))).toBe(true);
+      expect(openEditors()).toHaveLength(1);
+      expect(json()).toEqual({ items_count: { gte: 1 } });
     });
 
     it("keeps several item filters on the same field", () => {
