@@ -261,6 +261,21 @@ describe("fieldList", () => {
       { key: "orders_price_sum", label: "Orders → Price (sum)" },
     ]);
   });
+
+  it("uses the given aggregate labels", () => {
+    const schema: Schema = {
+      orders: {
+        label: "Orders",
+        type: "object[]",
+        schema: { price: { label: "Price", type: "number" } },
+      },
+    };
+
+    expect(fieldList(schema, { count: "aantal", sum: "totaal" })).toEqual([
+      { key: "orders_count", label: "Orders (aantal)" },
+      { key: "orders_price_sum", label: "Orders → Price (totaal)" },
+    ]);
+  });
 });
 
 describe("fieldIsNumeric", () => {

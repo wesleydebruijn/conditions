@@ -1,14 +1,4 @@
-import { deserialize, serialize } from "./serializer";
-import {
-  defaultOperator,
-  fieldIsNumeric,
-  fieldKey,
-  fieldList,
-  fieldOperatorValid,
-  fieldSchemaItem,
-  fieldType,
-  valueKind,
-} from "./schema";
+import { aiRequest, parseAiResponse } from "./ai";
 import {
   append,
   className,
@@ -20,8 +10,20 @@ import {
   find,
   visible,
 } from "./dom";
+import {
+  defaultOperator,
+  fieldIsNumeric,
+  fieldKey,
+  fieldList,
+  fieldOperatorValid,
+  fieldSchemaItem,
+  fieldType,
+  valueKind,
+} from "./schema";
+import { deserialize, serialize, serializeGroup } from "./serializer";
 
 import type {
+  AiHandler,
   Condition,
   ConditionOperator,
   Group,
@@ -90,6 +92,11 @@ const DEFAULT_SETTINGS: Settings = {
     buttonAddWhere: "conditions-btn-add-where",
     buttonDone: "conditions-btn-done",
     buttonRemove: "conditions-btn-remove",
+
+    ai: "conditions-ai",
+    aiInput: "conditions-ai-input",
+    aiError: "conditions-ai-error",
+    buttonAi: "conditions-btn-ai",
   },
   labels: {
     and: "AND",
@@ -121,6 +128,12 @@ const DEFAULT_SETTINGS: Settings = {
     conditionSeparator: "and",
     yes: "Yes",
     no: "No",
+    count: "count",
+    sum: "sum",
+    aiPlaceholder: "Describe the filters you want, or how to change them…",
+    aiSubmit: "Generate",
+    aiLoading: "Generating…",
+    aiError: "Couldn't update the filters.",
   },
   conditionOperators: {
     eq: "is",
@@ -165,6 +178,7 @@ export default class Conditions {
 
   private input: HTMLInputElement | HTMLTextAreaElement;
   private wrapperElement: HTMLElement;
+  private aiElement?: HTMLElement;
 
   constructor(input: HTMLInputElement | HTMLTextAreaElement | string, options: Options = {}) {
     this.settings = {
@@ -180,6 +194,7 @@ export default class Conditions {
     this.input.conditions = this;
     this.root = deserialize(this.input.value);
     this.wrapperElement = create("div", this.className("wrapper"));
+    if (this.settings.ai) this.aiElement = this.renderAi(this.settings.ai);
 
     this.render();
   }
@@ -197,14 +212,73 @@ export default class Conditions {
   }
 
   private render() {
+    const group = this.renderGroup(this.root, { schema: this.settings.schema, isRoot: true });
+    const ai = this.aiElement && !this.readOnly ? [this.aiElement] : [];
+
     this.wrapperElement.classList.toggle(this.className("isReadOnly"), this.readOnly);
-
-    append(
-      this.wrapperElement,
-      this.renderGroup(this.root, { schema: this.settings.schema, isRoot: true }),
-    );
-
+    this.wrapperElement.replaceChildren(...ai, group);
     this.input.after(this.wrapperElement);
+  }
+
+  private renderAi(ai: AiHandler): HTMLElement {
+    const { labels } = this.settings;
+    const element = create("div", this.className("ai"));
+    const input = create("input", this.className("aiInput"));
+    const error = createText(this.className("aiError"), "");
+    const submitBtn = createButton(this.className("buttonAi"), "sparkle", labels.aiSubmit, () =>
+      submit(),
+    );
+    const submitLabel = submitBtn.querySelector("span") as HTMLElement;
+
+    const setBusy = (busy: boolean) => {
+      input.disabled = busy;
+      submitBtn.disabled = busy;
+      submitLabel.textContent = busy ? labels.aiLoading : labels.aiSubmit;
+      element.setAttribute("aria-busy", String(busy));
+    };
+
+    const submit = async () => {
+      const prompt = input.value.trim();
+      if (!prompt || submitBtn.disabled) return;
+
+      visible(error, false);
+      setBusy(true);
+
+      try {
+        const response = await ai(aiRequest(prompt, serializeGroup(this.root), this.settings));
+        this.replaceRoot(parseAiResponse(response));
+        input.value = "";
+      } catch (exception) {
+        const detail = exception instanceof Error ? ` ${exception.message}` : "";
+        error.textContent = `${labels.aiError}${detail}`;
+        visible(error, true);
+      } finally {
+        setBusy(false);
+        input.focus();
+      }
+    };
+
+    input.type = "text";
+    input.placeholder = labels.aiPlaceholder;
+    input.setAttribute("aria-label", labels.aiPlaceholder);
+    input.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter") return;
+
+      event.preventDefault();
+      submit();
+    });
+
+    error.setAttribute("role", "alert");
+    visible(error, false);
+    append(element, input, submitBtn, error);
+
+    return element;
+  }
+
+  private replaceRoot(root: Group) {
+    this.root = root;
+    this.onChange();
+    this.rerender();
   }
 
   private renderGroup(group: Group, context: GroupContext): HTMLElement {
@@ -516,7 +590,9 @@ export default class Conditions {
   }
 
   private fieldName(key: string, schema?: Schema): HTMLElement[] {
-    const label = schema ? fieldList(schema).find((field) => field.key === key)?.label : undefined;
+    const label = schema
+      ? fieldList(schema, this.settings.labels).find((field) => field.key === key)?.label
+      : undefined;
     const path = (label ?? key).split(" → ");
     const name = path.pop() ?? key;
 
@@ -694,7 +770,7 @@ export default class Conditions {
     if (schema) {
       const select = createSelect(
         this.className("fieldSelect"),
-        fieldList(schema).map((field) => [field.key, field.label]),
+        fieldList(schema, labels).map((field) => [field.key, field.label]),
         onChange,
         { selected: key, placeholder: labels.fieldPlaceholder },
       );

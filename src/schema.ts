@@ -2,6 +2,7 @@ import type { ConditionOperator, Schema, SchemaItem, SchemaType, ValueKind } fro
 
 export function fieldList(
   schema: Schema,
+  aggregates: { count: string; sum: string } = { count: "count", sum: "sum" },
   parent?: { key: string; label: string },
 ): { key: string; label: string }[] {
   return Object.entries(schema).flatMap(([childKey, childValue]) => {
@@ -10,7 +11,8 @@ export function fieldList(
 
     if (fieldType(childValue.type) !== "object") return [{ key, label }];
     if (!childValue.schema) return [];
-    if (!fieldIsArray(childValue.type)) return fieldList(childValue.schema, { key, label });
+    if (!fieldIsArray(childValue.type))
+      return fieldList(childValue.schema, aggregates, { key, label });
 
     const numberFields = Object.entries(childValue.schema).filter(
       ([_, value]) => fieldType(value.type) === "number",
@@ -19,11 +21,11 @@ export function fieldList(
     return [
       {
         key: `${key}_count`,
-        label: `${label} (count)`,
+        label: `${label} (${aggregates.count})`,
       },
       ...numberFields.map(([subkey, subvalue]) => ({
         key: `${key}_${subkey}_sum`,
-        label: `${label} → ${subvalue.label} (sum)`,
+        label: `${label} → ${subvalue.label} (${aggregates.sum})`,
       })),
     ];
   });

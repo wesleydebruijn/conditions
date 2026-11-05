@@ -165,11 +165,43 @@ const conditions = new Conditions(input, settings);
   - `labels` — UI text, e.g. `{ addRule: 'Filter toevoegen', addGroup: 'Groep toevoegen' }`; merged with the defaults
   - `classNames` — CSS class overrides; merged with the defaults
   - `conditionOperators` — operators to offer and their labels, e.g. `{ eq: 'is', gte: 'is at least' }`; replaces the defaults
+  - `ai` — async function that turns a natural-language request into a condition; shows a prompt box above the builder (see [AI input](#ai-input))
 
 Methods:
 
 - `setReadOnly(readOnly)` — Switch between viewing and editing; closes any open editor
 - `destroy()` — Remove the UI and event listeners
+
+### AI input
+
+Pass an `ai` handler and the builder shows a prompt box. People describe the filters they want ("smartphones under 500, or anything from KPN"), or how to change the current ones ("also require a 24 month contract"), and the response replaces the filters.
+
+The library makes no network calls itself. Your handler gets a request and returns the new condition, as an object or a JSON string:
+
+```javascript
+new Conditions(input, {
+  schema,
+  ai: async ({ instructions, message }) => {
+    const response = await fetch('/conditions/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ system: instructions, prompt: message }),
+    });
+    return response.json();
+  },
+});
+```
+
+The request contains:
+
+- `instructions` — a system prompt describing the JSON format, the offered operators and the schema's fields
+- `message` — the current condition plus the request, to send as the user message
+- `prompt` — what the person typed
+- `condition` — the current condition as JSON
+
+When the handler throws, or returns something that isn't a condition, the filters stay as they were and an error shows under the prompt. `aiInstructions`, `aiRequest` and `parseAiResponse` are exported from `src/ai` for building requests outside the UI.
+
+The demo calls DeepSeek straight from the browser with an API key you paste in, which keeps the demo free of a backend. In your own app, keep the key on your server and call the model from there.
 
 ### Evaluator
 
@@ -213,6 +245,7 @@ The project includes an interactive demo. Run `npm run dev` and open the app to:
 - Build conditions with the visual editor
 - Edit JSON directly
 - Test against sample records in real time
+- Describe filters in plain language (paste a DeepSeek API key in the header; it stays in your browser)
 
 ## License
 

@@ -526,6 +526,42 @@ html.dark {
   padding: 0;
 }
 
+/* AI prompt */
+
+.conditions-ai {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.conditions-wrapper .conditions-ai-input {
+  height: 40px;
+}
+
+.conditions-wrapper .conditions-btn-ai {
+  height: 40px;
+  padding: 0 16px;
+  background: hsl(var(--ring));
+  color: hsl(0 0% 100%);
+}
+
+.conditions-wrapper .conditions-btn-ai:hover {
+  background: hsl(var(--ring) / 0.9);
+  color: hsl(0 0% 100%);
+}
+
+.conditions-wrapper .conditions-btn-ai:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.conditions-ai-error {
+  grid-column: 1 / -1;
+  color: hsl(var(--destructive));
+  font-size: 13px;
+}
+
 /* Small screens */
 
 @media (max-width: 640px) {

@@ -72,6 +72,15 @@ export type SchemaItem = {
 
 export type ValueKind = "none" | "text" | "number" | "boolean" | "list" | "range";
 
+export type AiRequest = {
+  prompt: string;
+  condition: ConditionHash;
+  instructions: string;
+  message: string;
+};
+
+export type AiHandler = (request: AiRequest) => Promise<ConditionHash | string>;
+
 export type Settings = {
   classNames: {
     wrapper: string;
@@ -119,6 +128,11 @@ export type Settings = {
     buttonAddWhere: string;
     buttonDone: string;
     buttonRemove: string;
+
+    ai: string;
+    aiInput: string;
+    aiError: string;
+    buttonAi: string;
   };
   labels: {
     and: string;
@@ -150,10 +164,17 @@ export type Settings = {
     conditionSeparator: string;
     yes: string;
     no: string;
+    count: string;
+    sum: string;
+    aiPlaceholder: string;
+    aiSubmit: string;
+    aiLoading: string;
+    aiError: string;
   };
   conditionOperators: Partial<Record<ConditionOperator, string>>;
   schema?: Schema;
   readOnly?: boolean;
+  ai?: AiHandler;
 };
 
 export type Options = Partial<Omit<Settings, "classNames" | "labels">> & {

@@ -157,6 +157,27 @@
         height: 20px;
       }
 
+      .api-key {
+        width: 220px;
+        height: 32px;
+        padding: 0 10px;
+        border: 1px solid hsl(var(--input));
+        border-radius: var(--input-radius);
+        background: hsl(var(--background));
+        color: hsl(var(--foreground));
+        font: inherit;
+      }
+      .api-key:focus-visible {
+        outline: none;
+        border-color: hsl(var(--ring));
+        box-shadow: 0 0 0 3px hsl(var(--ring) / 0.18);
+      }
+      @media (max-width: 800px) {
+        .api-key {
+          width: 140px;
+        }
+      }
+
       .theme-toggle {
         display: inline-flex;
         align-items: center;
@@ -334,6 +355,16 @@
           <span class="brand-name">conditions</span>
         </div>
         <div class="header-actions">
+          <input
+            type="password"
+            class="api-key"
+            id="api-key"
+            placeholder="DeepSeek API key"
+            aria-label="DeepSeek API key, used for AI filters and kept in this browser"
+            title="Used for AI filters. Sent only to the DeepSeek API and kept in this browser."
+            autocomplete="off"
+            spellcheck="false"
+          />
           <span class="credit"
             >by
             <a
@@ -442,32 +473,89 @@
       import Evaluator from "/src/evaluator.ts";
 
       const initialConfig = {
+        labels: {
+          and: "EN",
+          or: "OF",
+          andTitle: "Al deze filters moeten kloppen. Klik om naar OF te wisselen.",
+          orTitle:
+            "Minstens één van deze filters moet kloppen. Klik om naar EN te wisselen.",
+          where: "Alleen items waarbij",
+          empty: "Nog geen filters, dus alles komt overeen.",
+          addRule: "Filter toevoegen",
+          addGroup: "Groep toevoegen",
+          addInnerGroup: "Subgroep toevoegen",
+          addCondition: "Voorwaarde toevoegen",
+          addWhere: "Alleen items waarbij…",
+          edit: "Klik om te bewerken",
+          done: "Klaar",
+          remove: "Verwijderen",
+          removeRule: "Filter verwijderen",
+          removeGroup: "Groep verwijderen",
+          choose: "Kies…",
+          fieldPlaceholder: "Kies een veld…",
+          fieldNamePlaceholder: "Veldnaam",
+          fieldLabel: "Veld",
+          operatorLabel: "Vergelijking",
+          valueLabel: "Waarde",
+          valuePlaceholder: "Vul een waarde in",
+          listPlaceholder: "Waarden, gescheiden door komma's",
+          rangeSeparator: "en",
+          conditionSeparator: "en",
+          yes: "Ja",
+          no: "Nee",
+          count: "aantal",
+          sum: "totaal",
+          aiPlaceholder: "Beschrijf de filters die je wilt, of wat je wilt aanpassen…",
+          aiSubmit: "Genereren",
+          aiLoading: "Bezig…",
+          aiError: "De filters konden niet worden bijgewerkt.",
+        },
+        conditionOperators: {
+          eq: "is",
+          ne: "is niet",
+          gt: "is groter dan",
+          gte: "is minstens",
+          lt: "is kleiner dan",
+          lte: "is hoogstens",
+          between: "ligt tussen",
+          in: "is een van",
+          not_in: "is geen van",
+          contains: "bevat",
+          like: "bevat de tekst",
+          starts_with: "begint met",
+          ends_with: "eindigt op",
+          match: "voldoet aan patroon",
+          exists: "is ingevuld",
+          not_exists: "is niet ingevuld",
+          empty: "is leeg",
+          not_empty: "is niet leeg",
+        },
         schema: {
           items: {
-            label: "Items",
+            label: "Artikelen",
             type: "object[]",
             schema: {
               type: { label: "Type", type: "text" },
-              product_category: { label: "Product category", type: "text" },
-              provider: { label: "Provider", type: "text" },
-              contract_term: { label: "Contract term", type: "number" },
-              retention: { label: "Retention", type: "boolean" },
-              price: { label: "Price", type: "number" },
-              value: { label: "Trade-in value", type: "number" },
+              product_category: { label: "Productcategorie", type: "text" },
+              provider: { label: "Aanbieder", type: "text" },
+              contract_term: { label: "Contractduur", type: "number" },
+              retention: { label: "Verlenging", type: "boolean" },
+              price: { label: "Prijs", type: "number" },
+              value: { label: "Inruilwaarde", type: "number" },
               tags: { label: "Tags", type: "text[]" },
               exclusivity_applicable_tags: {
-                label: "Exclusivity tags",
+                label: "Exclusiviteitstags",
                 type: "text[]",
               },
-              quantity_total: { label: "Quantity", type: "number" },
-              quantity_index: { label: "Quantity index", type: "number" },
+              quantity_total: { label: "Aantal", type: "number" },
+              quantity_index: { label: "Volgnummer", type: "number" },
               id: { label: "ID", type: "text" },
-              product_version_id: { label: "Product version ID", type: "text" },
-              unique_id: { label: "Unique ID", type: "text" },
-              key: { label: "Key", type: "text" },
-              unit_keys: { label: "Unit keys", type: "text[]" },
+              product_version_id: { label: "Productversie-ID", type: "text" },
+              unique_id: { label: "Unieke ID", type: "text" },
+              key: { label: "Sleutel", type: "text" },
+              unit_keys: { label: "Eenheidssleutels", type: "text[]" },
               imei: { label: "IMEI", type: "text" },
-              delivery_option_id: { label: "Delivery option ID", type: "text" },
+              delivery_option_id: { label: "Bezorgoptie-ID", type: "text" },
             },
           },
         },
@@ -538,32 +626,7 @@
           },
         ],
       };
-      const initialCondition = {
-        and: [
-          {
-            items_count: {
-              gte: 1,
-              where: {
-                type: { eq: "proposition" },
-                provider: { eq: "KPN" },
-                contract_term: { gte: 24 },
-              },
-            },
-          },
-          {
-            items_count: {
-              gte: 1,
-              where: { product_category: { eq: "smartphone" } },
-            },
-          },
-          {
-            items_value_sum: {
-              gte: 50,
-              where: { type: { eq: "trade_in" } },
-            },
-          },
-        ],
-      };
+      const initialCondition = {};
 
       const recordInput = document.getElementById("record-input");
       const conditionInput = document.getElementById("condition-input");
@@ -571,10 +634,64 @@
       const configInput = document.getElementById("config-input");
       const resultRow = document.getElementById("result-row");
       const readOnlyToggle = document.getElementById("read-only-toggle");
+      const apiKeyInput = document.getElementById("api-key");
 
       readOnlyToggle.addEventListener("change", () => {
         conditionValue.conditions?.setReadOnly(readOnlyToggle.checked);
       });
+
+      async function askDeepSeek({ instructions, message }) {
+        const apiKey = apiKeyInput.value.trim();
+        if (!apiKey) {
+          throw new Error("Add your DeepSeek API key at the top of the page first.");
+        }
+
+        const response = await fetch("https://api.deepseek.com/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: "deepseek-flash",
+            max_tokens: 8000,
+            response_format: { type: "json_object" },
+            messages: [
+              { role: "system", content: instructions },
+              { role: "user", content: message },
+            ],
+          }),
+        });
+
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(body.error?.message ?? `DeepSeek returned ${response.status}.`);
+        }
+
+        const [choice] = body.choices;
+        if (choice.finish_reason === "length") {
+          throw new Error("The response was cut off.");
+        }
+
+        const content = choice.message.content?.trim();
+        if (!content) {
+          throw new Error("DeepSeek returned an empty response. Try again.");
+        }
+
+        return content;
+      }
+
+      function rememberApiKey() {
+        try {
+          apiKeyInput.value = localStorage.getItem("deepseek-api-key") ?? "";
+        } catch {}
+
+        apiKeyInput.addEventListener("change", () => {
+          try {
+            localStorage.setItem("deepseek-api-key", apiKeyInput.value.trim());
+          } catch {}
+        });
+      }
 
       function debounce(fn, ms) {
         let timeoutId;
@@ -598,6 +715,7 @@
         new Conditions(conditionValue, {
           ...config,
           readOnly: readOnlyToggle.checked,
+          ai: askDeepSeek,
         });
       }
 
@@ -648,6 +766,7 @@
         configInput.addEventListener("input", debouncedBuild);
         configInput.addEventListener("change", debouncedBuild);
 
+        rememberApiKey();
         build();
         evaluate();
       }

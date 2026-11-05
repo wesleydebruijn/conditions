@@ -98,6 +98,11 @@ describe("Conditions", () => {
       expect($(".conditions-btn-add-group").textContent).toBe("Add group");
     });
 
+    it("uses the count and sum labels for aggregate fields", () => {
+      load({ items_count: { gte: 1 } }, { schema, labels: { count: "aantal", sum: "totaal" } });
+      expect(pills()).toEqual(["Items (aantal) is at least 1"]);
+    });
+
     it("re-renders on trusted change event", () => {
       let changeListener: ((event: Event) => void) | undefined;
       const origAdd = input.addEventListener.bind(input);
@@ -655,6 +660,143 @@ describe("Conditions", () => {
       change($$<HTMLInputElement>(".conditions-condition-value-input")[0], "2");
       expect(json().and[0].items_count.gte).toBe(2);
       expect(json().and[1]).toEqual(condition.and[1]);
+    });
+  });
+
+  describe("ai", () => {
+    const aiInput = () => $<HTMLInputElement>(".conditions-ai-input");
+    const aiButton = () => $<HTMLButtonElement>(".conditions-btn-ai");
+    const aiError = () => $(".conditions-ai-error");
+    const flush = () => new Promise((resolve) => setTimeout(resolve));
+
+    const ask = (prompt: string) => {
+      change(aiInput(), prompt);
+      press(aiInput(), "Enter");
+    };
+
+    it("renders no prompt without an ai handler", () => {
+      load({});
+      expect($(".conditions-ai")).toBeNull();
+    });
+
+    it("hides the prompt in read-only mode", () => {
+      const conditions = load({}, { ai: jest.fn(), readOnly: true });
+      expect($(".conditions-ai")).toBeNull();
+
+      conditions.setReadOnly(false);
+      expect($(".conditions-ai")).not.toBeNull();
+    });
+
+    it("sends the prompt, current condition and instructions", async () => {
+      const ai = jest.fn().mockResolvedValue({});
+      load({ name: { eq: "John" } }, { schema, ai });
+
+      ask("  also older than 18 ");
+      await flush();
+
+      const [request] = ai.mock.calls[0];
+      expect(request.prompt).toBe("also older than 18");
+      expect(request.condition).toEqual({ name: { eq: "John" } });
+      expect(request.instructions).toContain("- age (number): Age");
+      expect(request.message).toContain("Request: also older than 18");
+    });
+
+    it("replaces the filters with the response", async () => {
+      const ai = jest.fn().mockResolvedValue({ name: { eq: "John" }, age: { gte: 18 } });
+      const onChange = jest.fn();
+      load({ name: { eq: "John" } }, { schema, ai });
+      input.addEventListener("change", onChange);
+
+      ask("also older than 18");
+      await flush();
+
+      expect(json()).toEqual({ name: { eq: "John" }, age: { gte: 18 } });
+      expect(pills()).toEqual(["Name is John", "Age is at least 18"]);
+      expect(onChange).toHaveBeenCalled();
+      expect(aiInput().value).toBe("");
+      expect(isShown(aiError())).toBe(false);
+    });
+
+    it("accepts a JSON string response", async () => {
+      load({}, { ai: async () => '{"or":[{"a":{"eq":1}},{"b":{"eq":2}}]}' });
+
+      change(aiInput(), "a or b");
+      aiButton().click();
+      await flush();
+
+      expect(json()).toEqual({ or: [{ a: { eq: 1 } }, { b: { eq: 2 } }] });
+    });
+
+    it("ignores an empty prompt", () => {
+      const ai = jest.fn();
+      load({}, { ai });
+
+      ask("   ");
+      expect(ai).not.toHaveBeenCalled();
+    });
+
+    it("disables the prompt while waiting", async () => {
+      let resolve: (value: unknown) => void = () => {};
+      load(
+        {},
+        {
+          ai: () =>
+            new Promise((r) => {
+              resolve = r;
+            }),
+        },
+      );
+
+      ask("name is John");
+      expect(aiInput().disabled).toBe(true);
+      expect(aiButton().disabled).toBe(true);
+      expect(aiButton().textContent).toBe("Generating…");
+
+      resolve({ name: { eq: "John" } });
+      await flush();
+
+      expect(aiInput().disabled).toBe(false);
+      expect(aiButton().textContent).toBe("Generate");
+    });
+
+    it("shows an error and keeps the filters and prompt when the handler fails", async () => {
+      load({ name: { eq: "John" } }, { ai: async () => Promise.reject(new Error("Bad key")) });
+
+      ask("older than 18");
+      await flush();
+
+      expect(isShown(aiError())).toBe(true);
+      expect(aiError().textContent).toBe("Couldn't update the filters. Bad key");
+      expect(json()).toEqual({ name: { eq: "John" } });
+      expect(aiInput().value).toBe("older than 18");
+    });
+
+    it("shows an error for a response that is not a condition", async () => {
+      load({ name: { eq: "John" } }, { ai: async () => "42" });
+
+      ask("older than 18");
+      await flush();
+
+      expect(isShown(aiError())).toBe(true);
+      expect(json()).toEqual({ name: { eq: "John" } });
+    });
+
+    it("keeps the prompt when the JSON is edited by hand", () => {
+      let inputListener: ((event: Event) => void) | undefined;
+      const origAdd = input.addEventListener.bind(input);
+      input.addEventListener = ((type: string, listener: EventListener) => {
+        if (type === "input") inputListener = listener;
+        return origAdd(type, listener);
+      }) as typeof input.addEventListener;
+      load({}, { ai: jest.fn() });
+      input.addEventListener = origAdd;
+      change(aiInput(), "draft");
+
+      input.value = JSON.stringify({ name: { eq: "Jane" } });
+      inputListener?.({ isTrusted: true } as unknown as Event);
+
+      expect(pills()).toEqual(["name is Jane"]);
+      expect(aiInput().value).toBe("draft");
     });
   });
 });
