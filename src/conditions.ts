@@ -1,33 +1,36 @@
-import { deserialize, serialize } from "./serializer";
 import {
-  fieldList,
-  fieldKey,
-  fieldOperatorValid,
-  fieldType,
-  operatorHasValue,
-  fieldSchemaItem,
-} from "./schema";
-import {
+  append,
   create,
-  createSelect,
   createButton,
-  createBadge,
+  createIconButton,
+  createSelect,
+  createText,
   find,
   visible,
-  append,
-  prepend,
 } from "./dom";
+import {
+  defaultOperator,
+  fieldIsNumeric,
+  fieldKey,
+  fieldList,
+  fieldOperatorValid,
+  fieldSchemaItem,
+  fieldType,
+  valueKind,
+} from "./schema";
+import { deserialize, serialize } from "./serializer";
 
 import type {
-  Group,
+  Condition,
+  ConditionOperator,
   Field,
   FieldSet,
-  Condition,
+  Group,
   Operator,
-  ConditionOperator,
-  Settings,
+  Options,
   Schema,
   SchemaItem,
+  Settings,
 } from "./types";
 
 declare global {
@@ -40,88 +43,116 @@ declare global {
   }
 }
 
+const DEFAULT_SETTINGS: Settings = {
+  classNames: {
+    wrapper: "conditions-wrapper",
+    groupsContainer: "conditions-groups-container",
+
+    groupSection: "conditions-group-section",
+    groupHeader: "conditions-group-header",
+    groupLabel: "conditions-group-label",
+    groupBody: "conditions-group-body",
+    groupEmpty: "conditions-group-empty",
+    groupFooter: "conditions-group-footer",
+    groupSelect: "conditions-group-operator-select",
+
+    fieldsetSection: "conditions-fieldset-section",
+    fieldsetLabel: "conditions-fieldset-label",
+    fieldsetBody: "conditions-fieldset-body",
+
+    fieldSection: "conditions-field-section",
+    fieldBody: "conditions-field-body",
+    fieldActions: "conditions-field-actions",
+    fieldConditions: "conditions-field-conditions",
+    fieldNestedGroups: "conditions-field-nested-groups",
+    fieldInput: "conditions-field-input",
+    fieldSelect: "conditions-field-select",
+
+    conditionSection: "conditions-condition-section",
+    conditionSelect: "conditions-condition-operator-select",
+    conditionValue: "conditions-condition-value",
+    conditionValueInput: "conditions-condition-value-input",
+    conditionValueSeparator: "conditions-condition-value-separator",
+
+    isBoxed: "is-boxed",
+
+    buttonAddGroup: "conditions-btn-add-group",
+    buttonAddField: "conditions-btn-add-field",
+    buttonJoinField: "conditions-btn-join-field",
+    buttonAddCondition: "conditions-btn-add-condition",
+    buttonAddFilter: "conditions-btn-add-filter",
+    buttonRemove: "conditions-btn-remove",
+  },
+  labels: {
+    match: "Match",
+    where: "Only items where",
+    ofTheFollowing: "of the following",
+    and: "and",
+    or: "or",
+    all: "all",
+    any: "any",
+    allOf: "All of these",
+    empty: "No rules yet, so everything matches.",
+    addGroup: "Add group",
+    addField: "Add rule",
+    joinField: "And",
+    addCondition: "Add condition",
+    addFilter: "Filter items",
+    remove: "Remove",
+    choose: "Choose…",
+    fieldPlaceholder: "Choose a field…",
+    fieldNamePlaceholder: "Field name",
+    fieldLabel: "Field",
+    operatorLabel: "Comparison",
+    valueLabel: "Value",
+    valuePlaceholder: "Enter a value",
+    listPlaceholder: "Values, separated by commas",
+    yes: "Yes",
+    no: "No",
+  },
+  conditionOperators: {
+    eq: "is",
+    ne: "is not",
+    gt: "is greater than",
+    gte: "is at least",
+    lt: "is less than",
+    lte: "is at most",
+    between: "is between",
+    in: "is one of",
+    not_in: "is not one of",
+    contains: "contains",
+    like: "includes",
+    starts_with: "starts with",
+    ends_with: "ends with",
+    match: "matches pattern",
+    exists: "is set",
+    not_exists: "is not set",
+    empty: "is empty",
+    not_empty: "is not empty",
+  },
+};
+
+function removeFrom<T>(array: T[], item: T) {
+  array.splice(array.indexOf(item), 1);
+}
+
+type Renderer<T, S> = (element: HTMLElement, array: T[], item: T, schema?: S) => void;
+
 export default class Conditions {
-  private settings: Settings = {
-    classNames: {
-      wrapper: "conditions-wrapper",
-      groupsContainer: "conditions-groups-container",
-
-      groupSection: "conditions-group-section",
-      groupHeader: "conditions-group-header",
-      groupBody: "conditions-group-body",
-      groupBadge: "conditions-group-badge",
-      groupSelect: "conditions-group-operator-select",
-
-      fieldsetSection: "conditions-fieldset-section",
-      fieldsetHeader: "conditions-fieldset-header",
-      fieldsetBody: "conditions-fieldset-body",
-      fieldsetBadge: "conditions-fieldset-badge",
-
-      fieldSection: "conditions-field-section",
-      fieldHeader: "conditions-field-header",
-      fieldBody: "conditions-field-body",
-      fieldBadge: "conditions-field-badge",
-      fieldConditions: "conditions-field-conditions",
-      fieldNestedGroups: "conditions-field-nested-groups",
-      fieldInput: "conditions-field-input",
-      fieldSelect: "conditions-field-select",
-
-      conditionSection: "conditions-condition-section",
-      conditionInputs: "conditions-condition-inputs",
-      conditionSelect: "conditions-condition-operator-select",
-      conditionValueInput: "conditions-condition-value-input",
-
-      isCollapsed: "is-collapsed",
-
-      buttonAddGroup: "conditions-btn-add-group",
-      buttonAddFieldSet: "conditions-btn-add-fieldset",
-      buttonAddField: "conditions-btn-add-field",
-      buttonAddCondition: "conditions-btn-add-condition",
-      buttonAddFilter: "conditions-btn-add-filter",
-      buttonRemove: "conditions-btn-remove",
-    },
-    items: {
-      group: "Group",
-      field: "Field",
-      fieldset: "Fieldset",
-      condition: "Condition",
-      nestedGroup: "Filter",
-    },
-    operators: {
-      and: "and",
-      or: "or",
-    },
-    conditionOperators: {
-      eq: "equal to",
-      ne: "not equal to",
-      gt: "greater than",
-      gte: "greater than or equal to",
-      lt: "less than",
-      lte: "less than or equal to",
-      in: "in",
-      not_in: "not in",
-      between: "between",
-      like: "like",
-      exists: "exists",
-      not_exists: "not exists",
-      starts_with: "starts with",
-      ends_with: "ends with",
-      contains: "contains",
-      match: "match",
-      empty: "empty",
-      not_empty: "not empty",
-    },
-  };
+  private settings: Settings;
   private groups: Group[] = [];
+  private focusField?: Field;
 
   private input: HTMLInputElement | HTMLTextAreaElement;
   private wrapperElement: HTMLElement;
 
-  constructor(
-    input: HTMLInputElement | HTMLTextAreaElement | string,
-    settings: Partial<Settings> = {},
-  ) {
-    this.settings = { ...this.settings, ...settings };
+  constructor(input: HTMLInputElement | HTMLTextAreaElement | string, options: Options = {}) {
+    this.settings = {
+      ...DEFAULT_SETTINGS,
+      ...options,
+      classNames: { ...DEFAULT_SETTINGS.classNames, ...options.classNames },
+      labels: { ...DEFAULT_SETTINGS.labels, ...options.labels },
+    };
 
     this.input = find<HTMLInputElement | HTMLTextAreaElement>(input);
     this.input.addEventListener("change", this.boundOnInputChange);
@@ -142,26 +173,26 @@ export default class Conditions {
 
   private render() {
     const container = create("div", this.className("groupsContainer"));
+    const schema = this.settings.schema;
 
-    const addBtn = createButton(this.className("buttonAddGroup"), "plus", () => {
-      const newGroup: Group = {
-        operator: "and",
-        fieldSets: [{ fields: [{ key: "", conditions: [] }] }],
-      };
-      this.addItem(
-        container,
-        this.groups,
-        newGroup,
-        this.settings.schema,
-        this.renderGroup.bind(this),
-      );
-    });
+    this.setConnector(this.wrapperElement, "--conditions-and", this.settings.labels.and);
 
     for (const group of this.groups) {
-      this.renderGroup(container, this.groups, group, this.settings.schema);
+      this.renderGroup(container, this.groups, group, schema);
     }
 
-    append(this.wrapperElement, container, addBtn);
+    const addGroupBtn = createButton(
+      this.className("buttonAddGroup"),
+      "plus",
+      this.settings.labels.addGroup,
+      () => {
+        const group = this.newGroup();
+        this.focusField = group.fieldSets[0].fields[0];
+        this.addItem(container, this.groups, group, schema, this.renderGroup.bind(this));
+      },
+    );
+
+    append(this.wrapperElement, container, addGroupBtn);
 
     this.input.after(this.wrapperElement);
   }
@@ -171,282 +202,476 @@ export default class Conditions {
     groups: Group[],
     group: Group,
     schema?: Schema,
-    nested?: boolean,
+    nested = false,
   ) {
+    const { labels } = this.settings;
     const groupSection = create("div", this.className("groupSection"));
     const groupHeader = create("div", this.className("groupHeader"));
     const groupBody = create("div", this.className("groupBody"));
+    const groupFooter = create("div", this.className("groupFooter"));
 
-    // badge
-    const groupBadge = createBadge(
-      this.className("groupBadge"),
-      nested ? this.settings.items.nestedGroup : this.settings.items.group,
-      () => groupSection.classList.toggle(this.className("isCollapsed")),
-    );
+    this.normalizeFieldSets(group);
 
-    // operator select
-    const groupOperatorSelect = createSelect(
+    const renderBody = () => {
+      groupBody.replaceChildren();
+      this.setConnector(groupSection, "--conditions-connector", labels[group.operator]);
+
+      for (const fieldset of group.fieldSets) {
+        this.renderFieldSet(groupBody, group, fieldset, schema, renderBody);
+      }
+    };
+
+    const operatorSelect = createSelect(
       this.className("groupSelect"),
-      Object.entries(this.settings.operators),
+      [
+        ["and", labels.all],
+        ["or", labels.any],
+      ],
       (value: Operator) => {
-        group.operator = value;
+        this.changeOperator(group, value);
         this.onChange();
+        renderBody();
       },
       { selected: group.operator },
     );
 
-    // remove group button
-    const removeGroupBtn = createButton(this.className("buttonRemove"), "close", () =>
-      this.removeItem(groupSection, groups, group),
+    const addFieldBtn = createButton(
+      this.className("buttonAddField"),
+      "plus",
+      labels.addField,
+      () => {
+        const field = this.newField();
+        const lastFieldSet = group.fieldSets[group.fieldSets.length - 1];
+
+        if (group.operator === "and" && lastFieldSet) {
+          lastFieldSet.fields.push(field);
+        } else {
+          group.fieldSets.push({ fields: [field] });
+        }
+
+        this.focusField = field;
+        this.onChange();
+        renderBody();
+      },
     );
 
-    // field sets
-    for (const fieldset of group.fieldSets) {
-      this.renderFieldSet(groupBody, group.fieldSets, fieldset, schema);
-    }
+    const removeGroupBtn = createIconButton(
+      this.className("buttonRemove"),
+      "close",
+      labels.remove,
+      () => this.removeItem(groupSection, groups, group),
+    );
 
-    // add field set button
-    const addFieldSetBtn = createButton(this.className("buttonAddFieldSet"), "plus", () => {
-      const newFieldSet: FieldSet = { fields: [{ key: "", conditions: [] }] };
-      this.addItem(groupBody, group.fieldSets, newFieldSet, schema, this.renderFieldSet.bind(this));
-    });
+    renderBody();
 
-    append(groupHeader, groupBadge, groupOperatorSelect, addFieldSetBtn, removeGroupBtn);
-    append(groupSection, groupHeader, groupBody);
-    nested ? prepend(element, groupSection) : append(element, groupSection);
-  }
-
-  private renderNestedGroups(element: HTMLElement, groups: Group[], group: Group, schema?: Schema) {
-    this.renderGroup(element, groups, group, schema, true);
+    append(
+      groupHeader,
+      createText(this.className("groupLabel"), nested ? labels.where : labels.match),
+      operatorSelect,
+      createText(this.className("groupLabel"), labels.ofTheFollowing),
+      removeGroupBtn,
+    );
+    append(groupFooter, addFieldBtn);
+    append(
+      groupSection,
+      groupHeader,
+      groupBody,
+      createText(this.className("groupEmpty"), labels.empty),
+      groupFooter,
+    );
+    append(element, groupSection);
   }
 
   private renderFieldSet(
     element: HTMLElement,
-    fieldSets: FieldSet[],
+    group: Group,
     fieldset: FieldSet,
-    schema?: Schema,
+    schema: Schema | undefined,
+    renderGroupBody: () => void,
   ) {
+    const isAlternative = group.operator === "or";
+    const isBoxed = isAlternative && fieldset.fields.length > 1;
     const fieldSetSection = create("div", this.className("fieldsetSection"));
-    const fieldSetHeader = create("div", this.className("fieldsetHeader"));
     const fieldSetBody = create("div", this.className("fieldsetBody"));
 
-    // badge
-    const fieldSetBadge = createBadge(
-      this.className("fieldsetBadge"),
-      this.settings.items.fieldset,
-      () => fieldSetSection.classList.toggle(this.className("isCollapsed")),
-    );
+    const update = () => {
+      this.onChange();
+      renderGroupBody();
+    };
 
-    // fields
-    for (const field of fieldset.fields) {
-      this.renderField(fieldSetBody, fieldset.fields, field, schema);
-    }
+    const join = () => {
+      const field = this.newField();
+      fieldset.fields.push(field);
+      this.focusField = field;
+      update();
+    };
 
-    // remove field set button
-    const removeFieldSetBtn = createButton(this.className("buttonRemove"), "close", () =>
-      this.removeItem(fieldSetSection, fieldSets, fieldset),
-    );
+    const remove = (field: Field) => {
+      removeFrom(fieldset.fields, field);
+      if (fieldset.fields.length === 0) removeFrom(group.fieldSets, fieldset);
+      update();
+    };
 
-    const addFieldBtn = createButton(this.className("buttonAddField"), "plus", () => {
-      const newField: Field = { key: "", conditions: [] };
-      this.addItem(fieldSetBody, fieldset.fields, newField, schema, this.renderField.bind(this));
+    fieldset.fields.forEach((field, index) => {
+      this.renderField(fieldSetBody, field, schema, {
+        canJoin: isAlternative && index === fieldset.fields.length - 1,
+        join,
+        remove: () => remove(field),
+      });
     });
 
-    append(fieldSetHeader, fieldSetBadge, addFieldBtn, removeFieldSetBtn);
-    append(fieldSetSection, fieldSetHeader, fieldSetBody);
-    prepend(element, fieldSetSection);
+    if (isBoxed) {
+      fieldSetSection.classList.add(this.className("isBoxed"));
+      append(
+        fieldSetSection,
+        createText(this.className("fieldsetLabel"), this.settings.labels.allOf),
+      );
+    }
+
+    append(fieldSetSection, fieldSetBody);
+    append(element, fieldSetSection);
   }
 
-  private renderField(element: HTMLElement, fields: Field[], field: Field, schema?: Schema) {
-    let fieldInput: HTMLInputElement | HTMLSelectElement;
-
-    const fieldElement = create("div", this.className("fieldSection"));
-    const fieldHeader = create("div", this.className("fieldHeader"));
+  private renderField(
+    element: HTMLElement,
+    field: Field,
+    schema: Schema | undefined,
+    context: { canJoin: boolean; join: () => void; remove: () => void },
+  ) {
+    const { labels } = this.settings;
+    const fieldSection = create("div", this.className("fieldSection"));
     const fieldBody = create("div", this.className("fieldBody"));
     const conditionsElement = create("div", this.className("fieldConditions"));
+    const actionsElement = create("div", this.className("fieldActions"));
     const nestedGroupsElement = create("div", this.className("fieldNestedGroups"));
 
-    const addNestedGroupBtn = createButton(this.className("buttonAddFilter"), "filter", () => {
-      const currentField = fieldKey(fieldInput.getAttribute("data-field"));
-      const currentSchema = fieldSchemaItem(schema, currentField)?.schema;
+    const schemaItem = () => fieldSchemaItem(schema, fieldKey(field.key));
 
-      if (!field.where) field.where = [];
+    const refresh = () => {
+      const canFilter = !schema || fieldType(schemaItem()?.type) === "object";
+      const hasConditions = field.conditions.length > 0;
+      const awaitingField = !!schema && !schemaItem();
 
-      const newGroup: Group = {
-        operator: "and",
-        fieldSets: [{ fields: [{ key: "", conditions: [] }] }],
-      };
-      this.addItem(
-        nestedGroupsElement,
-        field.where,
-        newGroup,
-        currentSchema,
-        this.renderNestedGroups.bind(this),
-      );
-    });
+      visible(joinFieldBtn, context.canJoin);
+      visible(addNestedGroupBtn, canFilter);
+      visible(addFirstConditionBtn, !hasConditions);
+      visible(removeFieldBtn, !hasConditions);
+      visible(actionsElement, context.canJoin || canFilter || !hasConditions);
 
-    const currentField = fieldKey(field.key);
-    const currentSchema = fieldSchemaItem(schema, currentField);
+      for (const control of conditionsElement.querySelectorAll("input, select")) {
+        (control as HTMLInputElement | HTMLSelectElement).disabled = awaitingField;
+      }
+    };
 
-    // badge
-    const fieldBadge = createBadge(this.className("fieldBadge"), this.settings.items.field, () =>
-      fieldElement.classList.toggle(this.className("isCollapsed")),
-    );
+    const onConditionRemoved = () => {
+      if (field.conditions.length === 0 && !field.where?.length) {
+        context.remove();
+      } else {
+        refresh();
+      }
+    };
 
-    // input
-    if (!schema) {
-      fieldInput = create("input", this.className("fieldInput"));
-      fieldInput.value = field.key;
+    const renderNestedGroup: Renderer<Group, Schema> = (el, groups, group, nestedSchema) =>
+      this.renderGroup(el, groups, group, nestedSchema, true);
 
-      fieldInput.addEventListener("change", (event) => {
-        event.preventDefault();
-        field.key = fieldInput.value;
-        this.onChange();
+    const renderCondition: Renderer<Condition, SchemaItem> = (el, conditions, condition, item) =>
+      this.renderCondition(el, conditions, condition, item, {
+        add: addCondition,
+        remove: onConditionRemoved,
       });
-    } else {
-      fieldInput = createSelect(
-        this.className("fieldSelect"),
-        fieldList(schema).map(({ key, label }) => [key, label]),
-        (value: string) => {
-          const prevField = fieldKey(fieldInput.getAttribute("data-field"));
-          const nextField = fieldKey(value);
 
-          const prevType = fieldType(fieldInput.getAttribute("data-type"));
-          const nextType = fieldType(fieldSchemaItem(schema, nextField)?.type);
+    const addCondition = () => {
+      const usedOperators = field.conditions.map((condition) => condition.operator);
+      const condition = this.newCondition(schemaItem(), usedOperators);
 
-          field.key = value;
+      this.addItem(conditionsElement, field.conditions, condition, schemaItem(), renderCondition);
+      refresh();
+      conditionsElement.lastElementChild?.querySelector("select")?.focus();
+    };
 
-          // clear conditions when type changes
-          if (prevType !== nextType) {
-            fieldInput.setAttribute("data-type", nextType);
-            field.conditions = [];
-            conditionsElement.innerHTML = "";
-          }
+    const renderConditions = () => {
+      conditionsElement.replaceChildren();
 
-          // clear nested groups when field changes
-          if (prevField !== nextField) {
-            fieldInput.setAttribute("data-field", value);
-            field.where = [];
-            nestedGroupsElement.innerHTML = "";
-          }
+      for (const condition of field.conditions) {
+        renderCondition(conditionsElement, field.conditions, condition, schemaItem());
+      }
+    };
 
-          this.onChange();
+    const fieldInput = schema
+      ? createSelect(
+          this.className("fieldSelect"),
+          fieldList(schema).map(({ key, label }) => [key, label]),
+          (value: string) => {
+            const previousKey = fieldKey(field.key);
+            const previousType = schemaItem()?.type;
 
-          visible(
-            addNestedGroupBtn,
-            fieldType(fieldSchemaItem(schema, nextField)?.type) === "object",
-          );
-        },
-        { selected: field.key, allowEmpty: true },
-      );
+            field.key = value;
 
-      fieldInput.setAttribute("data-field", currentField);
-      if (currentSchema) fieldInput.setAttribute("data-type", currentSchema.type);
-    }
+            if (schemaItem()?.type !== previousType) {
+              field.conditions = [this.newCondition(schemaItem())];
+              renderConditions();
+            }
 
-    // remove field button
-    const removeFieldBtn = createButton(this.className("buttonRemove"), "close", () =>
-      this.removeItem(fieldElement, fields, field),
+            if (fieldKey(value) !== previousKey) {
+              field.where = [];
+              nestedGroupsElement.replaceChildren();
+            }
+
+            this.onChange();
+            refresh();
+          },
+          { selected: field.key, placeholder: labels.fieldPlaceholder },
+        )
+      : this.createFieldInput(field);
+
+    fieldInput.setAttribute("aria-label", labels.fieldLabel);
+
+    const joinFieldBtn = createButton(
+      this.className("buttonJoinField"),
+      "plus",
+      labels.joinField,
+      context.join,
     );
 
-    // conditions
-    for (const condition of field.conditions) {
-      this.renderCondition(
-        conditionsElement,
-        field.conditions,
-        condition,
-        fieldSchemaItem(schema, fieldKey(field.key)),
-      );
-    }
-
-    // add condition button
-    const addConditionBtn = createButton(this.className("buttonAddCondition"), "plus", () => {
-      const currentField = fieldKey(fieldInput.getAttribute("data-field"));
-      const currentSchema = fieldSchemaItem(schema, currentField);
-
-      const newCondition: Condition = { operator: "eq", value: "" };
-      this.addItem(
-        conditionsElement,
-        field.conditions,
-        newCondition,
-        currentSchema,
-        this.renderCondition.bind(this),
-      );
-    });
-
-    if (field.where) {
-      for (const group of field.where) {
-        this.renderNestedGroups(
+    const addNestedGroupBtn = createButton(
+      this.className("buttonAddFilter"),
+      "filter",
+      labels.addFilter,
+      () => {
+        const group = this.newGroup();
+        field.where ??= [];
+        this.focusField = group.fieldSets[0].fields[0];
+        this.addItem(
           nestedGroupsElement,
           field.where,
           group,
-          fieldSchemaItem(schema, currentField)?.schema,
+          schemaItem()?.schema,
+          renderNestedGroup,
         );
-      }
+      },
+    );
+
+    const addFirstConditionBtn = createButton(
+      this.className("buttonAddCondition"),
+      "plus",
+      labels.addCondition,
+      addCondition,
+    );
+
+    const removeFieldBtn = createIconButton(
+      this.className("buttonRemove"),
+      "close",
+      labels.remove,
+      context.remove,
+    );
+
+    renderConditions();
+
+    for (const group of field.where ?? []) {
+      renderNestedGroup(nestedGroupsElement, field.where ?? [], group, schemaItem()?.schema);
     }
 
-    // show/hide add nested group button
-    visible(addNestedGroupBtn, !schema || fieldType(currentSchema?.type) === "object");
+    refresh();
 
-    append(fieldHeader, fieldBadge, fieldInput, addConditionBtn, addNestedGroupBtn, removeFieldBtn);
-    append(fieldBody, conditionsElement, nestedGroupsElement);
-    append(fieldElement, fieldHeader, fieldBody);
-    prepend(element, fieldElement);
+    append(actionsElement, addFirstConditionBtn, joinFieldBtn, addNestedGroupBtn, removeFieldBtn);
+    append(fieldBody, conditionsElement, actionsElement);
+    append(fieldSection, fieldInput, fieldBody, nestedGroupsElement);
+    append(element, fieldSection);
+
+    if (this.focusField === field) {
+      this.focusField = undefined;
+      queueMicrotask(() => fieldInput.focus());
+    }
   }
 
   private renderCondition(
     element: HTMLElement,
     conditions: Condition[],
     condition: Condition,
-    schema?: SchemaItem,
+    schema: SchemaItem | undefined,
+    context: { add: () => void; remove: () => void },
   ) {
     const conditionElement = create("div", this.className("conditionSection"));
-    const conditionInputs = create("div", this.className("conditionInputs"));
-    const valueInput = create("input", this.className("conditionValueInput"));
+    const valueElement = create("div", this.className("conditionValue"));
 
-    // operator select
-    const filteredOptions = Object.entries(this.settings.conditionOperators).filter(
-      ([key, _label]) => !schema || fieldOperatorValid(key as ConditionOperator, schema.type),
+    const operators = Object.entries(this.settings.conditionOperators).filter(
+      ([operator]) => !schema || fieldOperatorValid(operator as ConditionOperator, schema.type),
     );
 
     const operatorSelect = createSelect(
       this.className("conditionSelect"),
-      filteredOptions,
+      operators,
       (value: ConditionOperator) => {
+        const previousKind = valueKind(condition.operator, schema);
+
         condition.operator = value;
-        visible(valueInput, operatorHasValue(condition.operator));
+
+        if (valueKind(value, schema) !== previousKind) {
+          condition.value = "";
+          this.renderValue(valueElement, condition, schema);
+        }
 
         this.onChange();
       },
-      { selected: condition.operator, allowEmpty: true },
+      { selected: condition.operator, placeholder: this.settings.labels.choose },
+    );
+    operatorSelect.setAttribute("aria-label", this.settings.labels.operatorLabel);
+
+    const removeConditionBtn = createIconButton(
+      this.className("buttonRemove"),
+      "close",
+      this.settings.labels.remove,
+      () => {
+        this.removeItem(conditionElement, conditions, condition);
+        context.remove();
+      },
     );
 
-    // value input
-    valueInput.value = condition.value;
-    valueInput.addEventListener("change", () => {
-      condition.value = valueInput.value;
-      this.onChange();
-    });
-    visible(valueInput, operatorHasValue(condition.operator));
-
-    // remove button
-    const removeConditionBtn = createButton(this.className("buttonRemove"), "close", () =>
-      this.removeItem(conditionElement, conditions, condition),
+    const addConditionBtn = createIconButton(
+      this.className("buttonAddCondition"),
+      "plus",
+      this.settings.labels.addCondition,
+      context.add,
     );
 
-    append(conditionInputs, operatorSelect, valueInput);
-    append(conditionElement, conditionInputs, removeConditionBtn);
-    prepend(element, conditionElement);
+    this.renderValue(valueElement, condition, schema);
+
+    append(conditionElement, operatorSelect, valueElement, addConditionBtn, removeConditionBtn);
+    append(element, conditionElement);
   }
 
-  private addItem<T, M>(
+  private renderValue(element: HTMLElement, condition: Condition, schema?: SchemaItem) {
+    const { labels } = this.settings;
+    const kind = valueKind(condition.operator, schema);
+    const inputType = fieldIsNumeric(schema?.type) ? "number" : "text";
+
+    const update = (value: string) => {
+      condition.value = value;
+      this.onChange();
+    };
+
+    element.replaceChildren();
+
+    if (kind === "boolean") {
+      const select = createSelect(
+        this.className("conditionValueInput"),
+        [
+          ["true", labels.yes],
+          ["false", labels.no],
+        ],
+        update,
+        { selected: condition.value, placeholder: labels.choose },
+      );
+      select.setAttribute("aria-label", labels.valueLabel);
+      append(element, select);
+    } else if (kind === "range") {
+      const [from = "", to = ""] = condition.value.split(",");
+      const updateRange = () => update(`${fromInput.value},${toInput.value}`);
+      const fromInput = this.createValueInput(
+        inputType,
+        from,
+        labels.valuePlaceholder,
+        updateRange,
+      );
+      const toInput = this.createValueInput(inputType, to, labels.valuePlaceholder, updateRange);
+
+      append(
+        element,
+        fromInput,
+        createText(this.className("conditionValueSeparator"), labels.and),
+        toInput,
+      );
+    } else if (kind === "list") {
+      append(
+        element,
+        this.createValueInput("text", condition.value, labels.listPlaceholder, update),
+      );
+    } else if (kind === "text" || kind === "number") {
+      append(
+        element,
+        this.createValueInput(inputType, condition.value, labels.valuePlaceholder, update),
+      );
+    }
+  }
+
+  private createFieldInput(field: Field): HTMLInputElement {
+    const input = create("input", this.className("fieldInput"));
+    input.value = field.key;
+    input.placeholder = this.settings.labels.fieldNamePlaceholder;
+    input.addEventListener("input", () => {
+      field.key = input.value;
+      this.onChange();
+    });
+
+    return input;
+  }
+
+  private createValueInput(
+    type: string,
+    value: string,
+    placeholder: string,
+    onInput: (value: string) => void,
+  ): HTMLInputElement {
+    const input = create("input", this.className("conditionValueInput"));
+    input.type = type;
+    input.value = value;
+    input.placeholder = placeholder;
+    input.setAttribute("aria-label", this.settings.labels.valueLabel);
+    input.addEventListener("input", () => onInput(input.value));
+
+    return input;
+  }
+
+  private newGroup(): Group {
+    return { operator: "and", fieldSets: [this.newFieldSet()] };
+  }
+
+  private newFieldSet(): FieldSet {
+    return { fields: [this.newField()] };
+  }
+
+  private newField(): Field {
+    return { key: "", conditions: [this.newCondition()] };
+  }
+
+  private newCondition(schema?: SchemaItem, usedOperators: ConditionOperator[] = []): Condition {
+    const operators = Object.keys(this.settings.conditionOperators) as ConditionOperator[];
+    const unused = operators.filter((operator) => !usedOperators.includes(operator));
+
+    return { operator: defaultOperator(unused.length > 0 ? unused : operators, schema), value: "" };
+  }
+
+  private normalizeFieldSets(group: Group) {
+    const fieldSets = group.fieldSets.filter((fieldset) => fieldset.fields.length > 0);
+    const fields = fieldSets.flatMap((fieldset) => fieldset.fields);
+
+    group.fieldSets = group.operator === "and" && fieldSets.length > 1 ? [{ fields }] : fieldSets;
+  }
+
+  private changeOperator(group: Group, operator: Operator) {
+    const fields = group.fieldSets.flatMap((fieldset) => fieldset.fields);
+
+    if (operator === "or" && group.fieldSets.length === 1) {
+      group.fieldSets = fields.map((field) => ({ fields: [field] }));
+    } else if (operator === "and") {
+      group.fieldSets = fields.length > 0 ? [{ fields }] : [];
+    }
+
+    group.operator = operator;
+  }
+
+  private setConnector(element: HTMLElement, property: string, label: string) {
+    element.style.setProperty(property, JSON.stringify(label));
+  }
+
+  private addItem<T, S>(
     element: HTMLElement,
     array: T[],
     item: T,
-    schema: M | undefined,
-    renderItem: (element: HTMLElement, array: T[], item: T, schema?: M) => void,
+    schema: S | undefined,
+    renderItem: Renderer<T, S>,
   ) {
-    array.unshift(item);
+    array.push(item);
 
     this.onChange();
 
@@ -454,8 +679,7 @@ export default class Conditions {
   }
 
   private removeItem<T>(element: HTMLElement, array: T[], item: T) {
-    const index = array.indexOf(item);
-    array.splice(index, 1);
+    removeFrom(array, item);
 
     this.onChange();
 

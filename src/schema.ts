@@ -1,4 +1,4 @@
-import type { Schema, SchemaType, ConditionOperator, SchemaItem } from "./types";
+import type { ConditionOperator, Schema, SchemaItem, SchemaType, ValueKind } from "./types";
 
 export function fieldList(
   schema: Schema,
@@ -37,7 +37,7 @@ export function fieldSchemaItem(
 
   const [key, ...rest] = string.split(".");
 
-  if (rest.length === 0 || !schema[key].schema) return schema[key];
+  if (rest.length === 0 || !schema[key]?.schema) return schema[key];
 
   return fieldSchemaItem(schema[key].schema, rest.join("."));
 }
@@ -56,6 +56,32 @@ export function fieldIsArray(type: string): boolean {
 
 export function operatorHasValue(operator: ConditionOperator): boolean {
   return !["exists", "not_exists", "null", "empty", "not_empty"].includes(operator);
+}
+
+export function fieldIsNumeric(type: string | undefined): boolean {
+  if (!type) return false;
+
+  return fieldType(type) === "number" || (fieldType(type) === "object" && fieldIsArray(type));
+}
+
+export function valueKind(operator: ConditionOperator, schema?: SchemaItem): ValueKind {
+  if (!operatorHasValue(operator)) return "none";
+  if (operator === "between") return "range";
+  if (operator === "in" || operator === "not_in") return "list";
+  if (schema?.type === "boolean") return "boolean";
+  if (fieldIsNumeric(schema?.type)) return "number";
+
+  return "text";
+}
+
+export function defaultOperator(
+  operators: ConditionOperator[],
+  schema?: SchemaItem,
+): ConditionOperator {
+  return (
+    operators.find((operator) => !schema || fieldOperatorValid(operator, schema.type)) ??
+    operators[0]
+  );
 }
 
 export function fieldOperatorValid(operator: ConditionOperator, type: SchemaType): boolean {

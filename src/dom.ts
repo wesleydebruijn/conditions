@@ -1,11 +1,9 @@
 const ICONS = {
-  collapse:
-    '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>',
-  plus: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+  plus: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
   close:
-    '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+    '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
   filter:
-    '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="7" x2="20" y2="7"/><circle cx="7" cy="7" r="1.5"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="17" cy="12" r="1.5"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="12" cy="17" r="1.5"/></svg>',
+    '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="17" x2="14" y2="17"/></svg>',
 };
 
 export function className(element: HTMLElement | null, className: string): void {
@@ -56,25 +54,33 @@ export function append(element: HTMLElement, ...children: HTMLElement[]): void {
   for (const child of children) element.appendChild(child);
 }
 
-export function prepend(element: HTMLElement, ...children: HTMLElement[]): void {
-  element.prepend(...children);
+export function createText(className: string, text: string): HTMLElement {
+  const element = create("span", className);
+  element.textContent = text;
+
+  return element;
 }
 
 export function createSelect<T>(
   className: string,
   options: string[][],
   callback: (value: T) => void,
-  settings?: { selected?: T; allowEmpty?: boolean },
+  settings?: { selected?: T; placeholder?: string },
 ): HTMLSelectElement {
   const element = create("select", className);
 
-  const allOptions = settings?.allowEmpty ? [["", " -- select an option --"], ...options] : options;
-  element.innerHTML = allOptions
-    .map(
-      ([key, value]) =>
-        `<option value="${key}"${settings?.selected === key ? " selected" : ""}>${value}</option>`,
-    )
-    .join("");
+  if (settings?.placeholder !== undefined) {
+    const placeholder = new Option(settings.placeholder, "");
+    placeholder.disabled = true;
+    placeholder.hidden = true;
+    element.add(placeholder);
+  }
+
+  for (const [value, label] of options) element.add(new Option(label, value));
+
+  element.value = String(settings?.selected ?? "");
+  if (element.selectedIndex === -1) element.selectedIndex = 0;
+
   element.addEventListener("change", () => {
     callback(element.value as T);
   });
@@ -85,10 +91,12 @@ export function createSelect<T>(
 export function createButton(
   className: string,
   icon: keyof typeof ICONS,
+  label: string,
   callback: () => void,
 ): HTMLButtonElement {
   const element = create("button", className);
-  element.appendChild(createIcon(icon));
+  element.type = "button";
+  append(element, createIcon(icon), createText("", label));
   element.addEventListener("click", (event) => {
     event.preventDefault();
     callback();
@@ -97,11 +105,19 @@ export function createButton(
   return element;
 }
 
-export function createBadge(className: string, text: string, callback: () => void): HTMLElement {
-  const element = create("span", className);
-  element.appendChild(createIcon("collapse"));
-  element.appendChild(document.createTextNode(text));
-  element.addEventListener("click", () => {
+export function createIconButton(
+  className: string,
+  icon: keyof typeof ICONS,
+  label: string,
+  callback: () => void,
+): HTMLButtonElement {
+  const element = create("button", className);
+  element.type = "button";
+  element.title = label;
+  element.setAttribute("aria-label", label);
+  element.appendChild(createIcon(icon));
+  element.addEventListener("click", (event) => {
+    event.preventDefault();
     callback();
   });
 

@@ -1,13 +1,16 @@
 import {
-  fieldList,
-  fieldSchemaItem,
-  fieldKey,
-  fieldType,
+  defaultOperator,
   fieldIsArray,
-  operatorHasValue,
+  fieldIsNumeric,
+  fieldKey,
+  fieldList,
   fieldOperatorValid,
+  fieldSchemaItem,
+  fieldType,
+  operatorHasValue,
+  valueKind,
 } from "../src/schema";
-import type { Schema } from "../src/types";
+import type { ConditionOperator, Schema } from "../src/types";
 
 describe("fieldKey", () => {
   it("returns empty string for null/undefined", () => {
@@ -257,5 +260,51 @@ describe("fieldList", () => {
       { key: "orders_count", label: "Orders (count)" },
       { key: "orders_price_sum", label: "Orders → Price (sum)" },
     ]);
+  });
+});
+
+describe("fieldIsNumeric", () => {
+  it("is true for numbers and aggregated object arrays", () => {
+    expect(fieldIsNumeric("number")).toBe(true);
+    expect(fieldIsNumeric("number[]")).toBe(true);
+    expect(fieldIsNumeric("object[]")).toBe(true);
+  });
+
+  it("is false for other types", () => {
+    expect(fieldIsNumeric("text")).toBe(false);
+    expect(fieldIsNumeric("object")).toBe(false);
+    expect(fieldIsNumeric(undefined)).toBe(false);
+  });
+});
+
+describe("valueKind", () => {
+  it("returns none for operators without a value", () => {
+    expect(valueKind("exists")).toBe("none");
+    expect(valueKind("not_empty")).toBe("none");
+  });
+
+  it("returns range for between and list for in/not_in", () => {
+    expect(valueKind("between")).toBe("range");
+    expect(valueKind("in")).toBe("list");
+    expect(valueKind("not_in")).toBe("list");
+  });
+
+  it("derives the kind from the schema type", () => {
+    expect(valueKind("eq", { label: "A", type: "boolean" })).toBe("boolean");
+    expect(valueKind("eq", { label: "A", type: "number" })).toBe("number");
+    expect(valueKind("eq", { label: "A", type: "text" })).toBe("text");
+    expect(valueKind("eq")).toBe("text");
+  });
+});
+
+describe("defaultOperator", () => {
+  const operators: ConditionOperator[] = ["eq", "gt", "contains"];
+
+  it("returns the first operator without a schema", () => {
+    expect(defaultOperator(operators)).toBe("eq");
+  });
+
+  it("returns the first operator valid for the schema type", () => {
+    expect(defaultOperator(operators, { label: "Tags", type: "text[]" })).toBe("contains");
   });
 });

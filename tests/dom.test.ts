@@ -3,16 +3,16 @@
  */
 
 import {
-  className,
-  visible,
-  find,
-  create,
-  createIcon,
   append,
-  prepend,
-  createSelect,
+  className,
+  create,
   createButton,
-  createBadge,
+  createIcon,
+  createIconButton,
+  createSelect,
+  createText,
+  find,
+  visible,
 } from "../src/dom";
 
 describe("dom", () => {
@@ -108,12 +108,6 @@ describe("dom", () => {
   });
 
   describe("createIcon", () => {
-    it("creates collapse icon", () => {
-      const el = createIcon("collapse");
-      expect(el.tagName).toBe("svg");
-      expect(el.innerHTML).toContain("polyline");
-    });
-
     it("creates plus icon", () => {
       const el = createIcon("plus");
       expect(el.tagName).toBe("svg");
@@ -151,18 +145,12 @@ describe("dom", () => {
     });
   });
 
-  describe("prepend", () => {
-    it("prepends multiple children to element", () => {
-      const parent = document.createElement("div");
-      const existing = document.createElement("span");
-      parent.appendChild(existing);
-      const a = document.createElement("span");
-      const b = document.createElement("span");
-      prepend(parent, a, b);
-      expect(parent.children.length).toBe(3);
-      expect(parent.children[0]).toBe(a);
-      expect(parent.children[1]).toBe(b);
-      expect(parent.children[2]).toBe(existing);
+  describe("createText", () => {
+    it("creates span with class and text", () => {
+      const el = createText("label", "Match");
+      expect(el.tagName).toBe("SPAN");
+      expect(el.classList.contains("label")).toBe(true);
+      expect(el.textContent).toBe("Match");
     });
   });
 
@@ -191,45 +179,61 @@ describe("dom", () => {
       expect(el.value).toBe("b");
     });
 
-    it("adds empty option when allowEmpty is true", () => {
-      const el = createSelect("sel", [["a", "A"]], () => {}, { allowEmpty: true });
+    it("adds a hidden placeholder option that is selected when nothing is", () => {
+      const el = createSelect("sel", [["a", "A"]], () => {}, { placeholder: "Choose…" });
       expect(el.options.length).toBe(2);
       expect(el.options[0].value).toBe("");
-      expect(el.options[0].textContent).toContain("select an option");
-      expect(el.options[1].value).toBe("a");
+      expect(el.options[0].textContent).toBe("Choose…");
+      expect(el.options[0].hidden).toBe(true);
+      expect(el.value).toBe("");
     });
 
-    it("uses allowEmpty with selected", () => {
-      const el = createSelect("sel", [["x", "X"]], () => {}, { allowEmpty: true, selected: "x" });
+    it("selects the matching option over the placeholder", () => {
+      const el = createSelect("sel", [["x", "X"]], () => {}, {
+        placeholder: "Choose…",
+        selected: "x",
+      });
       expect(el.value).toBe("x");
+    });
+
+    it("falls back to the placeholder when selected value is unknown", () => {
+      const el = createSelect("sel", [["x", "X"]], () => {}, {
+        placeholder: "Choose…",
+        selected: "y",
+      });
+      expect(el.value).toBe("");
+    });
+
+    it("escapes option labels", () => {
+      const el = createSelect("sel", [["a", "<b>bold</b>"]], () => {});
+      expect(el.options[0].textContent).toBe("<b>bold</b>");
+      expect(el.querySelector("b")).toBeNull();
     });
   });
 
   describe("createButton", () => {
-    it("creates button with icon and invokes callback on click", () => {
+    it("creates button with icon and label and invokes callback on click", () => {
       const callback = jest.fn();
-      const el = createButton("btn", "plus", callback);
+      const el = createButton("btn", "plus", "Add rule", callback);
       expect(el.tagName).toBe("BUTTON");
-      expect(el.children.length).toBe(1);
+      expect(el.type).toBe("button");
+      expect(el.querySelector("svg")).not.toBeNull();
+      expect(el.textContent).toBe("Add rule");
       const ev = new MouseEvent("click", { bubbles: true });
       const preventDefault = jest.spyOn(ev, "preventDefault");
       el.dispatchEvent(ev);
       expect(preventDefault).toHaveBeenCalled();
       expect(callback).toHaveBeenCalled();
     });
-
-    it("works with different icons", () => {
-      const el = createButton("btn", "close", () => {});
-      expect(el.children.length).toBe(1);
-    });
   });
 
-  describe("createBadge", () => {
-    it("creates badge with text and invokes callback on click", () => {
+  describe("createIconButton", () => {
+    it("creates icon-only button with accessible label", () => {
       const callback = jest.fn();
-      const el = createBadge("badge", "Label", callback);
-      expect(el.tagName).toBe("SPAN");
-      expect(el.textContent).toContain("Label");
+      const el = createIconButton("btn", "close", "Remove", callback);
+      expect(el.children.length).toBe(1);
+      expect(el.getAttribute("aria-label")).toBe("Remove");
+      expect(el.title).toBe("Remove");
       el.click();
       expect(callback).toHaveBeenCalled();
     });

@@ -9,7 +9,7 @@ Conditions lets you define filter rules in a structured JSON format, build them 
 ### Key features
 
 - **JSON format** — Conditions are plain JSON, making them easy to store, transmit, and reimplement in other languages
-- **Visual builder** — Interactive UI to create groups, fields, and conditions with AND/OR logic
+- **Visual builder** — Plain-language UI ("Match all of the following…") that non-technical users can edit
 - **Evaluator** — Match records against conditions in memory, or translate to SQL/API filters
 - **Schema support** — Optional schema for typed fields, nested objects, and automatic operator validation
 - **Zero dependencies** — No runtime dependencies
@@ -159,7 +159,11 @@ const conditions = new Conditions(input, settings);
 ```
 
 - **input** — `HTMLInputElement`, `HTMLTextAreaElement`, or CSS selector
-- **settings** — Optional: `schema`, `classNames`, `items`, `operators`, `conditionOperators`
+- **settings** — Optional:
+  - `schema` — available fields (see [Schema](#schema))
+  - `labels` — UI text, e.g. `{ match: 'Zoek', addField: 'Regel toevoegen' }`; merged with the defaults
+  - `classNames` — CSS class overrides; merged with the defaults
+  - `conditionOperators` — operators to offer and their labels, e.g. `{ eq: 'is', gte: 'is at least' }`; replaces the defaults
 
 Methods:
 

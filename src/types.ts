@@ -70,6 +70,8 @@ export type SchemaItem = {
   schema?: Schema;
 };
 
+export type ValueKind = "none" | "text" | "number" | "boolean" | "list" | "range";
+
 export type Settings = {
   classNames: {
     wrapper: string;
@@ -77,46 +79,71 @@ export type Settings = {
 
     groupSection: string;
     groupHeader: string;
+    groupLabel: string;
     groupBody: string;
-    groupBadge: string;
+    groupEmpty: string;
+    groupFooter: string;
     groupSelect: string;
 
     fieldsetSection: string;
-    fieldsetHeader: string;
+    fieldsetLabel: string;
     fieldsetBody: string;
-    fieldsetBadge: string;
 
     fieldSection: string;
-    fieldHeader: string;
     fieldBody: string;
-    fieldBadge: string;
+    fieldActions: string;
     fieldConditions: string;
     fieldNestedGroups: string;
     fieldInput: string;
     fieldSelect: string;
 
     conditionSection: string;
-    conditionInputs: string;
     conditionSelect: string;
+    conditionValue: string;
     conditionValueInput: string;
+    conditionValueSeparator: string;
 
-    isCollapsed: string;
+    isBoxed: string;
 
     buttonAddGroup: string;
-    buttonAddFieldSet: string;
     buttonAddField: string;
+    buttonJoinField: string;
     buttonAddCondition: string;
     buttonAddFilter: string;
     buttonRemove: string;
   };
-  items: {
-    group: string;
-    field: string;
-    fieldset: string;
-    condition: string;
-    nestedGroup: string;
+  labels: {
+    match: string;
+    where: string;
+    ofTheFollowing: string;
+    and: string;
+    or: string;
+    all: string;
+    any: string;
+    allOf: string;
+    empty: string;
+    addGroup: string;
+    addField: string;
+    joinField: string;
+    addCondition: string;
+    addFilter: string;
+    remove: string;
+    choose: string;
+    fieldPlaceholder: string;
+    fieldNamePlaceholder: string;
+    fieldLabel: string;
+    operatorLabel: string;
+    valueLabel: string;
+    valuePlaceholder: string;
+    listPlaceholder: string;
+    yes: string;
+    no: string;
   };
-  operators: Record<Operator, string>;
   conditionOperators: Partial<Record<ConditionOperator, string>>;
   schema?: Schema;
+};
+
+export type Options = Partial<Omit<Settings, "classNames" | "labels">> & {
+  classNames?: Partial<Settings["classNames"]>;
+  labels?: Partial<Settings["labels"]>;
 };

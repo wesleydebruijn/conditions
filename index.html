@@ -340,35 +340,123 @@
 
     const initialConfig = {
       schema: {
-        name: { label: 'Name', type: 'text' },
-        age: { label: 'Age', type: 'number' },
-        jobs: { 
-          label: 'Jobs', 
+        items: {
+          label: 'Items',
           type: 'object[]',
           schema: {
-            title: { label: 'Title', type: 'text' },
-            level: { label: 'Level', type: 'text' },
+            type: { label: 'Type', type: 'text' },
+            product_category: { label: 'Product category', type: 'text' },
+            provider: { label: 'Provider', type: 'text' },
+            contract_term: { label: 'Contract term', type: 'number' },
+            retention: { label: 'Retention', type: 'boolean' },
+            price: { label: 'Price', type: 'number' },
+            value: { label: 'Trade-in value', type: 'number' },
+            tags: { label: 'Tags', type: 'text[]' },
+            exclusivity_applicable_tags: { label: 'Exclusivity tags', type: 'text[]' },
+            quantity_total: { label: 'Quantity', type: 'number' },
+            quantity_index: { label: 'Quantity index', type: 'number' },
+            id: { label: 'ID', type: 'text' },
+            product_version_id: { label: 'Product version ID', type: 'text' },
+            unique_id: { label: 'Unique ID', type: 'text' },
+            key: { label: 'Key', type: 'text' },
+            unit_keys: { label: 'Unit keys', type: 'text[]' },
+            imei: { label: 'IMEI', type: 'text' },
+            delivery_option_id: { label: 'Delivery option ID', type: 'text' },
           },
         },
-      }
+      },
     };
     const initialRecord = {
-      name: 'John Doe',
-      age: 30,
-      jobs: [
-        { title: 'Developer', level: 'Senior' },
-        { title: 'Designer', level: 'Junior' },
+      items: [
+        {
+          id: 4,
+          type: 'proposition',
+          product_category: 'sim-only',
+          product_version_id: null,
+          unique_id: 'proposition:1-2|3-4|pv-5',
+          key: '1-2|3-4|pv-5',
+          unit_keys: ['1-2', '3-4', 'pv-5'],
+          provider: 'KPN',
+          contract_term: 24,
+          retention: true,
+          price: 0.0,
+          tags: [],
+          exclusivity_applicable_tags: [],
+          quantity_total: 1,
+          quantity_index: 1,
+        },
+        {
+          id: 1,
+          type: 'product',
+          product_category: 'smartphone',
+          product_version_id: 666,
+          unique_id: 'product:666',
+          price: 0.0,
+          tags: ['version-tag', 'product-tag'],
+          exclusivity_applicable_tags: [],
+          quantity_total: 1,
+          quantity_index: 1,
+        },
+        {
+          id: 6,
+          type: 'outlet_product',
+          product_category: 'smartphone',
+          product_version_id: 666,
+          unique_id: 'outlet_product:123456789012345',
+          price: 0.0,
+          tags: ['version-tag', 'product-tag'],
+          imei: 123456789012345,
+          exclusivity_applicable_tags: [],
+          quantity_total: 1,
+          quantity_index: 1,
+        },
+        {
+          id: 5,
+          type: 'trade_in',
+          unique_id: 'trade_in:5',
+          value: 100,
+          price: 0.0,
+          exclusivity_applicable_tags: [],
+          quantity_total: 1,
+          quantity_index: 1,
+        },
+        {
+          id: 3,
+          type: 'delivery_option',
+          delivery_option_id: 888,
+          unique_id: 'delivery_option:888',
+          price: 0.0,
+          exclusivity_applicable_tags: [],
+          quantity_total: 1,
+          quantity_index: 1,
+        },
       ],
     };
     const initialCondition = {
-      name: { match: 'John' },
-      age: { gte: 18, lte: 90 },
-      jobs_count: { 
-        gte: 1,
-        where: {
-          title: { eq: 'Developer' },
+      and: [
+        {
+          items_count: {
+            gte: 1,
+            where: {
+              type: { eq: 'proposition' },
+              provider: { eq: 'KPN' },
+              contract_term: { gte: 24 },
+            },
+          },
         },
-      },
+        {
+          items_count: {
+            gte: 1,
+            where: { product_category: { eq: 'smartphone' } },
+          },
+        },
+        {
+          items_value_sum: {
+            gte: 50,
+            where: { type: { eq: 'trade_in' } },
+          },
+        },
+      ],
     };
 
     const recordInput = document.getElementById('record-input');

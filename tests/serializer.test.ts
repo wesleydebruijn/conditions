@@ -1,13 +1,13 @@
 import {
   deserialize,
+  deserializeGroup,
   isNumber,
   serialize,
-  serializeValue,
   serializeField,
   serializeGroup,
-  deserializeGroup,
+  serializeValue,
 } from "../src/serializer";
-import type { Group, Field } from "../src/types";
+import type { Field, Group } from "../src/types";
 
 describe("isNumber", () => {
   it("returns true for numeric strings", () => {
@@ -267,6 +267,11 @@ describe("serializeValue", () => {
     ]);
   });
 
+  it("trims whitespace around list values", () => {
+    expect(serializeValue("in", "red, green , blue")).toEqual(["red", "green", "blue"]);
+    expect(serializeValue("between", "18, 65")).toEqual([18, 65]);
+  });
+
   it("serializes boolean values correctly", () => {
     expect(serializeValue("eq", "true")).toBe(true);
     expect(serializeValue("eq", "false")).toBe(false);
@@ -362,6 +367,88 @@ describe("serializeGroup", () => {
     const expected = { and: [{ fieldKey: { eq: "value" } }, { fieldKey2: { eq: "value2" } }] };
     expect(serializeGroup(group)).toEqual(expected);
   });
+
+  it("merges conditions of rules that use the same field", () => {
+    const group: Group = {
+      operator: "and",
+      fieldSets: [
+        {
+          fields: [
+            { key: "age", conditions: [{ operator: "gte", value: "18" }] },
+            { key: "name", conditions: [{ operator: "eq", value: "x" }] },
+            { key: "age", conditions: [{ operator: "lte", value: "65" }] },
+          ],
+        },
+      ],
+    };
+
+    expect(serializeGroup(group)).toEqual({ age: { gte: 18, lte: 65 }, name: { eq: "x" } });
+  });
+
+  const countWhere = (type: string): Field => ({
+    key: "items_count",
+    conditions: [{ operator: "gte", value: "1" }],
+    where: [
+      {
+        operator: "and",
+        fieldSets: [{ fields: [{ key: "type", conditions: [{ operator: "eq", value: type }] }] }],
+      },
+    ],
+  });
+
+  it("keeps same-field rules with item filters apart", () => {
+    const group: Group = {
+      operator: "and",
+      fieldSets: [{ fields: [countWhere("proposition"), countWhere("product")] }],
+    };
+
+    expect(serializeGroup(group)).toEqual({
+      and: [
+        { items_count: { gte: 1, where: { type: { eq: "proposition" } } } },
+        { items_count: { gte: 1, where: { type: { eq: "product" } } } },
+      ],
+    });
+  });
+
+  it("keeps same-field rules with the same operator apart", () => {
+    const group: Group = {
+      operator: "and",
+      fieldSets: [
+        {
+          fields: [
+            { key: "tags", conditions: [{ operator: "contains", value: "a" }] },
+            { key: "tags", conditions: [{ operator: "contains", value: "b" }] },
+          ],
+        },
+      ],
+    };
+
+    expect(serializeGroup(group)).toEqual({
+      and: [{ tags: { contains: "a" } }, { tags: { contains: "b" } }],
+    });
+  });
+
+  it("nests split rule sets inside an 'or'", () => {
+    const group: Group = {
+      operator: "or",
+      fieldSets: [
+        { fields: [countWhere("proposition"), countWhere("product")] },
+        { fields: [{ key: "a", conditions: [{ operator: "eq", value: "1" }] }] },
+      ],
+    };
+
+    expect(serializeGroup(group)).toEqual({
+      or: [
+        {
+          and: [
+            { items_count: { gte: 1, where: { type: { eq: "proposition" } } } },
+            { items_count: { gte: 1, where: { type: { eq: "product" } } } },
+          ],
+        },
+        { a: { eq: 1 } },
+      ],
+    });
+  });
 });
 
 describe("deserializeGroup", () => {
@@ -403,6 +490,22 @@ describe("deserializeGroup", () => {
     expect(result.fieldSets).toHaveLength(2);
   });
 
+  it("deserializes shorthand values as equality conditions", () => {
+    const json = { status: "paid", age: 30, active: true };
+
+    const [status, age, active] = deserializeGroup(json).fieldSets[0].fields;
+    expect(status.conditions).toEqual([{ operator: "eq", value: "paid" }]);
+    expect(age.conditions).toEqual([{ operator: "eq", value: "30" }]);
+    expect(active.conditions).toEqual([{ operator: "eq", value: "true" }]);
+  });
+
+  it("deserializes shorthand arrays as 'in' conditions", () => {
+    const json = { role: ["admin", "editor"] };
+
+    const [role] = deserializeGroup(json).fieldSets[0].fields;
+    expect(role.conditions).toEqual([{ operator: "in", value: "admin,editor" }]);
+  });
+
   it("deserializes simple object as 'and' group", () => {
     const json = { fieldKey: { eq: "value" } };
 
@@ -417,5 +520,29 @@ describe("deserializeGroup", () => {
     const result = deserializeGroup(json);
     expect(result.operator).toBe("and");
     expect(result.fieldSets).toHaveLength(1);
+  });
+
+  it("deserializes an 'and' inside an 'or' as one rule set", () => {
+    const json = { or: [{ and: [{ a: { eq: 1 } }, { a: { eq: 2 } }] }, { b: { eq: 3 } }] };
+
+    const [combined, single] = deserializeGroup(json).fieldSets;
+    expect(combined.fields.map((field) => field.key)).toEqual(["a", "a"]);
+    expect(single.fields.map((field) => field.key)).toEqual(["b"]);
+  });
+
+  it("round-trips split rule sets", () => {
+    const json = {
+      or: [
+        {
+          and: [
+            { items_count: { gte: 1, where: { type: { eq: "proposition" } } } },
+            { items_count: { gte: 1, where: { type: { eq: "product" } } } },
+          ],
+        },
+        { a: { eq: 1 } },
+      ],
+    };
+
+    expect(JSON.parse(serialize(deserialize(JSON.stringify(json))))).toEqual(json);
   });
 });
