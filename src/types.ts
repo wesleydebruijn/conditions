@@ -68,6 +68,7 @@ export type SchemaItem = {
   label: string;
   type: SchemaType;
   schema?: Schema;
+  group?: string | string[];
 };
 
 export type ValueKind = "none" | "text" | "number" | "boolean" | "list" | "range";

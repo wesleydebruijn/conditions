@@ -49,6 +49,15 @@ export function create<K extends keyof HTMLElementTagNameMap>(
   return element;
 }
 
+export function createInput(baseClassName: string): HTMLInputElement {
+  const input = create("input", baseClassName);
+  input.autocomplete = "off";
+  input.dataset.lpignore = "true";
+  input.dataset["1pIgnore"] = "true";
+
+  return input;
+}
+
 export function createIcon(icon: keyof typeof ICONS): HTMLElement {
   const temp = document.createElement("span");
   temp.innerHTML = ICONS[icon];
@@ -67,9 +76,18 @@ export function createText(className: string, text: string): HTMLElement {
   return element;
 }
 
+export type SelectOption = [value: string, label: string, groups?: string[]];
+
+function createOptgroup(label: string): HTMLOptGroupElement {
+  const optgroup = create("optgroup");
+  optgroup.label = label;
+
+  return optgroup;
+}
+
 export function createSelect<T>(
   className: string,
-  options: string[][],
+  options: SelectOption[],
   callback: (value: T) => void,
   settings?: { selected?: T; placeholder?: string },
 ): HTMLSelectElement {
@@ -82,7 +100,22 @@ export function createSelect<T>(
     element.add(placeholder);
   }
 
-  for (const [value, label] of options) element.add(new Option(label, value));
+  const optgroups = new Map<string, HTMLOptGroupElement>();
+
+  for (const [value, label, groups] of options) {
+    if (!groups?.length) {
+      element.add(new Option(label, value));
+      continue;
+    }
+
+    for (const group of groups) {
+      const optgroup = optgroups.get(group) ?? createOptgroup(group);
+      optgroups.set(group, optgroup);
+      optgroup.append(new Option(label, value));
+    }
+  }
+
+  element.append(...optgroups.values());
 
   element.value = String(settings?.selected ?? "");
   if (element.selectedIndex === -1) element.selectedIndex = 0;

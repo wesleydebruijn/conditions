@@ -9,6 +9,7 @@ import {
   createButton,
   createIcon,
   createIconButton,
+  createInput,
   createSelect,
   createText,
   find,
@@ -16,6 +17,21 @@ import {
 } from "../src/dom";
 
 describe("dom", () => {
+  describe("createInput", () => {
+    it("creates an input with the given class", () => {
+      const input = createInput("foo");
+      expect(input.tagName).toBe("INPUT");
+      expect(input.classList.contains("foo")).toBe(true);
+    });
+
+    it("opts out of autofill and password manager icons", () => {
+      const input = createInput("foo");
+      expect(input.autocomplete).toBe("off");
+      expect(input.dataset.lpignore).toBe("true");
+      expect(input.dataset["1pIgnore"]).toBe("true");
+    });
+  });
+
   describe("className", () => {
     it("adds single class to element", () => {
       const el = document.createElement("div");
@@ -155,6 +171,31 @@ describe("dom", () => {
   });
 
   describe("createSelect", () => {
+    it("puts grouped options in optgroups after the ungrouped ones", () => {
+      const el = createSelect(
+        "sel",
+        [
+          ["a", "A", ["Group 1"]],
+          ["b", "B"],
+          ["c", "C", ["Group 1", "Group 2"]],
+        ],
+        () => {},
+        { selected: "c" },
+      );
+
+      expect(Array.from(el.children, (child) => child.tagName)).toEqual([
+        "OPTION",
+        "OPTGROUP",
+        "OPTGROUP",
+      ]);
+      const [group1, group2] = Array.from(el.querySelectorAll("optgroup"));
+      expect(group1.label).toBe("Group 1");
+      expect(Array.from(group1.children, (option) => option.textContent)).toEqual(["A", "C"]);
+      expect(group2.label).toBe("Group 2");
+      expect(Array.from(group2.children, (option) => option.textContent)).toEqual(["C"]);
+      expect(el.value).toBe("c");
+    });
+
     it("creates select with options and invokes callback on change", () => {
       const callback = jest.fn();
       const el = createSelect("sel", [["a", "Option A"]], callback);

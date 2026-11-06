@@ -157,6 +157,13 @@
         height: 20px;
       }
 
+      .api-key-field {
+        position: relative;
+        display: inline-flex;
+      }
+      .api-key-field > :not(.api-key) {
+        position: absolute !important;
+      }
       .api-key {
         width: 220px;
         height: 32px;
@@ -355,16 +362,20 @@
           <span class="brand-name">conditions</span>
         </div>
         <div class="header-actions">
-          <input
-            type="password"
-            class="api-key"
-            id="api-key"
-            placeholder="DeepSeek API key"
-            aria-label="DeepSeek API key, used for AI filters and kept in this browser"
-            title="Used for AI filters. Sent only to the DeepSeek API and kept in this browser."
-            autocomplete="off"
-            spellcheck="false"
-          />
+          <span class="api-key-field">
+            <input
+              type="password"
+              class="api-key"
+              id="api-key"
+              placeholder="DeepSeek API key"
+              aria-label="DeepSeek API key, used for AI filters and kept in this browser"
+              title="Used for AI filters. Sent only to the DeepSeek API and kept in this browser."
+              autocomplete="off"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              spellcheck="false"
+            />
+          </span>
           <span class="credit"
             >by
             <a
@@ -476,7 +487,8 @@
         labels: {
           and: "EN",
           or: "OF",
-          andTitle: "Al deze filters moeten kloppen. Klik om naar OF te wisselen.",
+          andTitle:
+            "Al deze filters moeten kloppen. Klik om naar OF te wisselen.",
           orTitle:
             "Minstens één van deze filters moet kloppen. Klik om naar EN te wisselen.",
           where: "Alleen items waarbij",
@@ -505,7 +517,8 @@
           no: "Nee",
           count: "aantal",
           sum: "totaal",
-          aiPlaceholder: "Beschrijf de filters die je wilt, of wat je wilt aanpassen…",
+          aiPlaceholder:
+            "Beschrijf de filters die je wilt, of wat je wilt aanpassen…",
           aiSubmit: "Genereren",
           aiLoading: "Bezig…",
           aiError: "De filters konden niet worden bijgewerkt.",
@@ -535,27 +548,20 @@
             label: "Artikelen",
             type: "object[]",
             schema: {
-              type: { label: "Type", type: "text" },
-              product_category: { label: "Productcategorie", type: "text" },
-              provider: { label: "Aanbieder", type: "text" },
-              contract_term: { label: "Contractduur", type: "number" },
-              retention: { label: "Verlenging", type: "boolean" },
-              price: { label: "Prijs", type: "number" },
-              value: { label: "Inruilwaarde", type: "number" },
-              tags: { label: "Tags", type: "text[]" },
-              exclusivity_applicable_tags: {
-                label: "Exclusiviteitstags",
-                type: "text[]",
-              },
-              quantity_total: { label: "Aantal", type: "number" },
-              quantity_index: { label: "Volgnummer", type: "number" },
-              id: { label: "ID", type: "text" },
-              product_version_id: { label: "Productversie-ID", type: "text" },
-              unique_id: { label: "Unieke ID", type: "text" },
-              key: { label: "Sleutel", type: "text" },
-              unit_keys: { label: "Eenheidssleutels", type: "text[]" },
-              imei: { label: "IMEI", type: "text" },
-              delivery_option_id: { label: "Bezorgoptie-ID", type: "text" },
+              type: { label: "Type", type: "text", group: "Algemeen" },
+              id: { label: "ID", type: "text", group: "Algemeen" },
+              unique_id: { label: "Unieke ID", type: "text", group: "Algemeen" },
+              price: { label: "Prijs", type: "number", group: "Algemeen" },
+              quantity_total: { label: "Bestelaantal", type: "number", group: "Algemeen" },
+              quantity_index: { label: "Bestelaantal-index", type: "number", group: "Algemeen" },
+              provider: { label: "Provider", type: "text", group: "Propositie" },
+              contract_term: { label: "Contractduur", type: "number", group: "Propositie" },
+              retention: { label: "Verlenging", type: "boolean", group: "Propositie" },
+              key: { label: "Propositiesleutel", type: "text", group: "Propositie" },
+              unit_keys: { label: "Propositieunitsleutels", type: "text[]", group: "Propositie" },
+              product_category: { label: "Productcategorie", type: "text", group: "Product" },
+              product_version_id: { label: "Productversie-ID", type: "text", group: "Product" },
+              tags: { label: "Tags", type: "text[]", group: "Product" },
             },
           },
         },
@@ -575,7 +581,6 @@
             retention: true,
             price: 0.0,
             tags: [],
-            exclusivity_applicable_tags: [],
             quantity_total: 1,
             quantity_index: 1,
           },
@@ -587,7 +592,6 @@
             unique_id: "product:666",
             price: 0.0,
             tags: ["version-tag", "product-tag"],
-            exclusivity_applicable_tags: [],
             quantity_total: 1,
             quantity_index: 1,
           },
@@ -599,8 +603,6 @@
             unique_id: "outlet_product:123456789012345",
             price: 0.0,
             tags: ["version-tag", "product-tag"],
-            imei: 123456789012345,
-            exclusivity_applicable_tags: [],
             quantity_total: 1,
             quantity_index: 1,
           },
@@ -608,19 +610,15 @@
             id: 5,
             type: "trade_in",
             unique_id: "trade_in:5",
-            value: 100,
             price: 0.0,
-            exclusivity_applicable_tags: [],
             quantity_total: 1,
             quantity_index: 1,
           },
           {
             id: 3,
             type: "delivery_option",
-            delivery_option_id: 888,
             unique_id: "delivery_option:888",
             price: 0.0,
-            exclusivity_applicable_tags: [],
             quantity_total: 1,
             quantity_index: 1,
           },
@@ -643,29 +641,36 @@
       async function askDeepSeek({ instructions, message }) {
         const apiKey = apiKeyInput.value.trim();
         if (!apiKey) {
-          throw new Error("Add your DeepSeek API key at the top of the page first.");
+          throw new Error(
+            "Add your DeepSeek API key at the top of the page first.",
+          );
         }
 
-        const response = await fetch("https://api.deepseek.com/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
+        const response = await fetch(
+          "https://api.deepseek.com/chat/completions",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+              model: "deepseek-flash",
+              max_tokens: 8000,
+              response_format: { type: "json_object" },
+              messages: [
+                { role: "system", content: instructions },
+                { role: "user", content: message },
+              ],
+            }),
           },
-          body: JSON.stringify({
-            model: "deepseek-flash",
-            max_tokens: 8000,
-            response_format: { type: "json_object" },
-            messages: [
-              { role: "system", content: instructions },
-              { role: "user", content: message },
-            ],
-          }),
-        });
+        );
 
         const body = await response.json().catch(() => ({}));
         if (!response.ok) {
-          throw new Error(body.error?.message ?? `DeepSeek returned ${response.status}.`);
+          throw new Error(
+            body.error?.message ?? `DeepSeek returned ${response.status}.`,
+          );
         }
 
         const [choice] = body.choices;

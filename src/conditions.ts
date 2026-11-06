@@ -5,6 +5,7 @@ import {
   create,
   createButton,
   createIconButton,
+  createInput,
   createSelect,
   createText,
   find,
@@ -216,14 +217,14 @@ export default class Conditions {
     const ai = this.aiElement && !this.readOnly ? [this.aiElement] : [];
 
     this.wrapperElement.classList.toggle(this.className("isReadOnly"), this.readOnly);
-    this.wrapperElement.replaceChildren(...ai, group);
+    this.wrapperElement.replaceChildren(group, ...ai);
     this.input.after(this.wrapperElement);
   }
 
   private renderAi(ai: AiHandler): HTMLElement {
     const { labels } = this.settings;
     const element = create("div", this.className("ai"));
-    const input = create("input", this.className("aiInput"));
+    const input = createInput(this.className("aiInput"));
     const error = createText(this.className("aiError"), "");
     const submitBtn = createButton(this.className("buttonAi"), "sparkle", labels.aiSubmit, () =>
       submit(),
@@ -770,7 +771,7 @@ export default class Conditions {
     if (schema) {
       const select = createSelect(
         this.className("fieldSelect"),
-        fieldList(schema, labels).map((field) => [field.key, field.label]),
+        fieldList(schema, labels).map((field) => [field.key, field.label, field.groups]),
         onChange,
         { selected: key, placeholder: labels.fieldPlaceholder },
       );
@@ -779,7 +780,7 @@ export default class Conditions {
       return select;
     }
 
-    const input = create("input", this.className("fieldInput"));
+    const input = createInput(this.className("fieldInput"));
     input.value = key;
     input.placeholder = labels.fieldNamePlaceholder;
     input.setAttribute("aria-label", labels.fieldLabel);
@@ -802,7 +803,7 @@ export default class Conditions {
     placeholder: string,
     onInput: (value: string) => void,
   ): HTMLInputElement {
-    const input = create("input", this.className("conditionValueInput"));
+    const input = createInput(this.className("conditionValueInput"));
     input.type = type;
     input.value = value;
     input.placeholder = placeholder;

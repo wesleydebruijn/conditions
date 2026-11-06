@@ -210,6 +210,47 @@ describe("fieldSchemaItem", () => {
 });
 
 describe("fieldList", () => {
+  it("includes the groups of grouped fields", () => {
+    const schema: Schema = {
+      id: { label: "ID", type: "text" },
+      provider: { label: "Provider", type: "text", group: "Proposition" },
+      version: { label: "Version", type: "text", group: ["Proposition", "Product"] },
+    };
+
+    expect(fieldList(schema)).toEqual([
+      { key: "id", label: "ID" },
+      { key: "provider", label: "Provider", groups: ["Proposition"] },
+      { key: "version", label: "Version", groups: ["Proposition", "Product"] },
+    ]);
+  });
+
+  it("inherits the group of a parent object", () => {
+    const schema: Schema = {
+      address: {
+        label: "Address",
+        type: "object",
+        group: "Contact",
+        schema: {
+          city: { label: "City", type: "text" },
+          zip: { label: "Zip", type: "text", group: "Postal" },
+        },
+      },
+      orders: {
+        label: "Orders",
+        type: "object[]",
+        group: "Sales",
+        schema: { total: { label: "Total", type: "number" } },
+      },
+    };
+
+    expect(fieldList(schema)).toEqual([
+      { key: "address.city", label: "Address → City", groups: ["Contact"] },
+      { key: "address.zip", label: "Address → Zip", groups: ["Postal"] },
+      { key: "orders_count", label: "Orders (count)", groups: ["Sales"] },
+      { key: "orders_total_sum", label: "Orders → Total (sum)", groups: ["Sales"] },
+    ]);
+  });
+
   it("returns flat list of non-object fields", () => {
     const schema: Schema = {
       name: { label: "Name", type: "text" },

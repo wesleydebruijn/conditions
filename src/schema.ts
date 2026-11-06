@@ -1,34 +1,47 @@
 import type { ConditionOperator, Schema, SchemaItem, SchemaType, ValueKind } from "./types";
 
+type Field = { key: string; label: string; groups?: string[] };
+
 export function fieldList(
   schema: Schema,
   aggregates: { count: string; sum: string } = { count: "count", sum: "sum" },
-  parent?: { key: string; label: string },
-): { key: string; label: string }[] {
+  parent?: Field,
+): Field[] {
   return Object.entries(schema).flatMap(([childKey, childValue]) => {
     const key = parent ? `${parent.key}.${childKey}` : childKey;
     const label = parent ? `${parent.label} → ${childValue.label}` : childValue.label;
+    const groups = fieldGroups(childValue) ?? parent?.groups;
 
-    if (fieldType(childValue.type) !== "object") return [{ key, label }];
+    if (fieldType(childValue.type) !== "object") return [field(key, label, groups)];
     if (!childValue.schema) return [];
     if (!fieldIsArray(childValue.type))
-      return fieldList(childValue.schema, aggregates, { key, label });
+      return fieldList(childValue.schema, aggregates, field(key, label, groups));
 
     const numberFields = Object.entries(childValue.schema).filter(
       ([_, value]) => fieldType(value.type) === "number",
     );
 
     return [
-      {
-        key: `${key}_count`,
-        label: `${label} (${aggregates.count})`,
-      },
-      ...numberFields.map(([subkey, subvalue]) => ({
-        key: `${key}_${subkey}_sum`,
-        label: `${label} → ${subvalue.label} (${aggregates.sum})`,
-      })),
+      field(`${key}_count`, `${label} (${aggregates.count})`, groups),
+      ...numberFields.map(([subkey, subvalue]) =>
+        field(
+          `${key}_${subkey}_sum`,
+          `${label} → ${subvalue.label} (${aggregates.sum})`,
+          fieldGroups(subvalue) ?? groups,
+        ),
+      ),
     ];
   });
+}
+
+function field(key: string, label: string, groups?: string[]): Field {
+  return groups ? { key, label, groups } : { key, label };
+}
+
+function fieldGroups(item: SchemaItem): string[] | undefined {
+  if (item.group === undefined) return;
+
+  return Array.isArray(item.group) ? item.group : [item.group];
 }
 
 export function fieldSchemaItem(

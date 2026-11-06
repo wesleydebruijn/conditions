@@ -150,6 +150,15 @@ const schema = {
 
 Schema types: `text`, `number`, `boolean`, `object`, `text[]`, `number[]`, `boolean[]`, `object[]`.
 
+Give fields a `group` to show them under a heading in the field select. A field can be in several groups, and fields inside an object inherit its group:
+
+```javascript
+const schema = {
+  provider: { label: 'Provider', type: 'text', group: 'Proposition' },
+  version: { label: 'Version', type: 'text', group: ['Proposition', 'Product'] },
+};
+```
+
 ## API
 
 ### Conditions

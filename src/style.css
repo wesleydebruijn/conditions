@@ -528,11 +528,17 @@ html.dark {
 
 /* AI prompt */
 
+.conditions-wrapper:has(> .conditions-ai) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
+  gap: 20px;
+  align-items: start;
+}
+
 .conditions-ai {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
-  margin-bottom: 20px;
 }
 
 .conditions-wrapper .conditions-ai-input {
@@ -565,6 +571,14 @@ html.dark {
 /* Small screens */
 
 @media (max-width: 640px) {
+  .conditions-wrapper:has(> .conditions-ai) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .conditions-wrapper > .conditions-ai {
+    order: -1;
+  }
+
   .conditions-group-body {
     grid-template-columns: 44px minmax(0, 1fr);
   }
