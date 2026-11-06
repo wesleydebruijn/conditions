@@ -1,5 +1,6 @@
 import { AiChat } from "./chat";
 import {
+  type SelectOption,
   append,
   className,
   create,
@@ -21,12 +22,13 @@ import {
   fieldType,
   valueKind,
 } from "./schema";
-import { deserialize, serialize } from "./serializer";
+import { deserialize, serialize, serializeValue } from "./serializer";
 
 import type {
   AiHandler,
   Condition,
   ConditionOperator,
+  Distinct,
   Group,
   Options,
   Rule,
@@ -65,6 +67,11 @@ const DEFAULT_SETTINGS: Settings = {
     ruleEditorFooter: "conditions-rule-editor-footer",
     ruleWhere: "conditions-rule-where",
     ruleWhereLabel: "conditions-rule-where-label",
+    ruleDistinct: "conditions-rule-distinct",
+    ruleDistinctLabel: "conditions-rule-distinct-label",
+    distinctEntry: "conditions-distinct-entry",
+    distinctField: "conditions-distinct-field",
+    distinctValues: "conditions-distinct-values",
 
     summaryPath: "conditions-summary-path",
     summaryField: "conditions-summary-field",
@@ -91,6 +98,8 @@ const DEFAULT_SETTINGS: Settings = {
     buttonAddGroup: "conditions-btn-add-group",
     buttonAddCondition: "conditions-btn-add-condition",
     buttonAddWhere: "conditions-btn-add-where",
+    buttonAddDistinct: "conditions-btn-add-distinct",
+    buttonAddDistinctField: "conditions-btn-add-distinct-field",
     buttonDone: "conditions-btn-done",
     buttonRemove: "conditions-btn-remove",
 
@@ -134,6 +143,12 @@ const DEFAULT_SETTINGS: Settings = {
     valuePlaceholder: "Enter a value",
     listPlaceholder: "Values, separated by commas",
     rangeSeparator: "and",
+    modSeparator: "leaves remainder",
+    distinct: "of unique",
+    distinctLabel: "Unique values of",
+    addDistinct: "Count unique values",
+    addDistinctField: "Add field",
+    distinctValuesPlaceholder: "Any value, or only: a, b",
     conditionSeparator: "and",
     yes: "Yes",
     no: "No",
@@ -159,7 +174,7 @@ const DEFAULT_SETTINGS: Settings = {
     in: "is one of",
     not_in: "is not one of",
     contains: "contains",
-    like: "includes",
+    intersects: "has any of",
     starts_with: "starts with",
     ends_with: "ends with",
     match: "matches pattern",
@@ -167,6 +182,7 @@ const DEFAULT_SETTINGS: Settings = {
     not_exists: "is not set",
     empty: "is empty",
     not_empty: "is not empty",
+    mod: "divided by",
   },
 };
 
@@ -353,8 +369,10 @@ export default class Conditions {
     const conditionsElement = create("div", this.className("fieldConditions"));
     const footer = create("div", this.className("ruleEditorFooter"));
     const whereElement = create("div", this.className("ruleWhere"));
+    const distinctElement = create("div", this.className("ruleDistinct"));
 
     const schemaItem = () => fieldSchemaItem(schema, fieldKey(rule.key));
+    const isCount = () => rule.key.endsWith(":count");
 
     const setOpen = (open: boolean) => {
       element.classList.toggle(this.className("isOpen"), open);
@@ -385,6 +403,7 @@ export default class Conditions {
       const canFilterItems = !schema || fieldType(schemaItem()?.type) === "object";
 
       visible(addWhereBtn, !awaitingField && canFilterItems && !rule.where);
+      visible(addDistinctBtn, !awaitingField && isCount() && !rule.distinct);
       visible(addFirstConditionBtn, rule.conditions.length === 0);
 
       for (const control of conditionsElement.querySelectorAll<HTMLInputElement>("input, select")) {
@@ -445,6 +464,12 @@ export default class Conditions {
       );
     };
 
+    const renderDistinct = () =>
+      this.renderDistinct(distinctElement, rule, schemaItem()?.schema, () => {
+        renderDistinct();
+        refresh();
+      });
+
     const changeField = (key: string) => {
       const previousKey = rule.key;
       const previousSchema = schemaItem();
@@ -463,6 +488,11 @@ export default class Conditions {
         }
       }
 
+      if (rule.distinct && (!isCount() || fieldKey(key) !== fieldKey(previousKey))) {
+        rule.distinct = undefined;
+        renderDistinct();
+      }
+
       this.onChange();
       refresh();
     };
@@ -474,6 +504,18 @@ export default class Conditions {
       "plus",
       labels.addCondition,
       addCondition,
+    );
+
+    const addDistinctBtn = createButton(
+      this.className("buttonAddDistinct"),
+      "plus",
+      labels.addDistinct,
+      () => {
+        rule.distinct = {};
+        renderDistinct();
+        refresh();
+        distinctElement.querySelector<HTMLElement>("select, input")?.focus();
+      },
     );
 
     const addWhere = () => {
@@ -513,6 +555,7 @@ export default class Conditions {
 
     renderConditions();
     renderWhere();
+    renderDistinct();
     refresh();
 
     append(row, pill);
@@ -529,8 +572,8 @@ export default class Conditions {
         ),
       );
     }
-    append(footer, addFirstConditionBtn, doneBtn);
-    append(editor, fieldControl, conditionsElement, footer);
+    append(footer, addFirstConditionBtn, addDistinctBtn, doneBtn);
+    append(editor, fieldControl, conditionsElement, distinctElement, footer);
     append(element, row, editor, whereElement);
 
     if (this.openRule === rule) {
@@ -580,6 +623,16 @@ export default class Conditions {
 
     const parts = this.fieldName(rule.key, schema);
 
+    if (rule.distinct && Object.keys(rule.distinct).length > 0) {
+      parts.push(
+        createText(this.className("summaryMuted"), labels.distinct),
+        createText(
+          this.className("summaryValue"),
+          this.summarizeDistinct(rule.distinct, schemaItem),
+        ),
+      );
+    }
+
     rule.conditions.forEach((condition, index) => {
       if (index > 0) {
         parts.push(createText(this.className("summaryMuted"), labels.conditionSeparator));
@@ -595,6 +648,15 @@ export default class Conditions {
     return parts;
   }
 
+  private summarizeDistinct(distinct: Distinct, schemaItem?: SchemaItem): string {
+    return Object.entries(distinct)
+      .map(([field, values]) => {
+        const label = schemaItem?.schema?.[field]?.label ?? field;
+        return values === true ? label : `${label} (${values.join(", ")})`;
+      })
+      .join(", ");
+  }
+
   private summarizeValue(value: string, kind: ValueKind): HTMLElement {
     const { labels } = this.settings;
     const items = value.split(",").map((item) => item.trim());
@@ -608,9 +670,11 @@ export default class Conditions {
         ? ({ true: labels.yes, false: labels.no }[value] ?? value)
         : kind === "range"
           ? items.join(` ${labels.rangeSeparator} `)
-          : kind === "list"
-            ? items.filter(Boolean).join(", ")
-            : value;
+          : kind === "mod"
+            ? items.join(` ${labels.modSeparator} `)
+            : kind === "list"
+              ? items.filter(Boolean).join(", ")
+              : value;
 
     return createText(this.className("summaryValue"), text);
   }
@@ -697,21 +761,18 @@ export default class Conditions {
       );
       select.setAttribute("aria-label", labels.valueLabel);
       append(element, select);
-    } else if (kind === "range") {
+    } else if (kind === "range" || kind === "mod") {
       const [from = "", to = ""] = condition.value.split(",");
-      const updateRange = () => update(`${fromInput.value},${toInput.value}`);
-      const fromInput = this.createValueInput(
-        inputType,
-        from,
-        labels.valuePlaceholder,
-        updateRange,
-      );
-      const toInput = this.createValueInput(inputType, to, labels.valuePlaceholder, updateRange);
+      const type = kind === "mod" ? "number" : inputType;
+      const separator = kind === "mod" ? labels.modSeparator : labels.rangeSeparator;
+      const updatePair = () => update(`${fromInput.value},${toInput.value}`);
+      const fromInput = this.createValueInput(type, from, labels.valuePlaceholder, updatePair);
+      const toInput = this.createValueInput(type, to, labels.valuePlaceholder, updatePair);
 
       append(
         element,
         fromInput,
-        createText(this.className("conditionValueSeparator"), labels.rangeSeparator),
+        createText(this.className("conditionValueSeparator"), separator),
         toInput,
       );
     } else if (kind === "list") {
@@ -725,6 +786,124 @@ export default class Conditions {
         this.createValueInput(inputType, condition.value, labels.valuePlaceholder, update),
       );
     }
+  }
+
+  private renderDistinct(
+    element: HTMLElement,
+    rule: Rule,
+    schema: Schema | undefined,
+    onRemoveAll: () => void,
+  ) {
+    const { labels } = this.settings;
+    const rows = create("div");
+
+    element.replaceChildren();
+    visible(element, !!rule.distinct);
+    if (!rule.distinct) return;
+
+    const entries = Object.entries(rule.distinct).map(([field, values]) => ({
+      field,
+      values: values === true ? "" : values.join(", "),
+    }));
+    if (entries.length === 0) entries.push({ field: "", values: "" });
+
+    const save = () => {
+      rule.distinct = Object.fromEntries(
+        entries
+          .filter((entry) => entry.field)
+          .map((entry) => [entry.field, distinctValues(entry.values)]),
+      );
+      this.onChange();
+    };
+
+    const renderEntry = (entry: { field: string; values: string }) => {
+      const row = create("div", this.className("distinctEntry"));
+      const fieldControl = this.createDistinctField(entry.field, schema, (field) => {
+        entry.field = field;
+        save();
+      });
+      const valuesInput = this.createValueInput(
+        "text",
+        entry.values,
+        labels.distinctValuesPlaceholder,
+        (values) => {
+          entry.values = values;
+          save();
+        },
+      );
+      const removeBtn = createIconButton(
+        this.className("buttonRemove"),
+        "close",
+        labels.remove,
+        () => {
+          removeFrom(entries, entry);
+
+          if (entries.length > 0) {
+            save();
+            row.remove();
+            return;
+          }
+
+          rule.distinct = undefined;
+          this.onChange();
+          onRemoveAll();
+        },
+      );
+
+      valuesInput.className = this.className("distinctValues");
+      append(row, fieldControl, valuesInput, removeBtn);
+      rows.append(row);
+    };
+
+    const addFieldBtn = createIconButton(
+      this.className("buttonAddDistinctField"),
+      "plus",
+      labels.addDistinctField,
+      () => {
+        const entry = { field: "", values: "" };
+        entries.push(entry);
+        renderEntry(entry);
+        rows.lastElementChild?.querySelector<HTMLElement>("select, input")?.focus();
+      },
+    );
+
+    for (const entry of entries) renderEntry(entry);
+
+    append(
+      element,
+      createText(this.className("ruleDistinctLabel"), labels.distinctLabel),
+      rows,
+      addFieldBtn,
+    );
+  }
+
+  private createDistinctField(
+    field: string,
+    schema: Schema | undefined,
+    onChange: (field: string) => void,
+  ): HTMLSelectElement | HTMLInputElement {
+    const { labels } = this.settings;
+
+    if (schema) {
+      const options = Object.entries(schema)
+        .filter(([_, item]) => fieldType(item.type) !== "object")
+        .map(([key, item]): SelectOption => [key, item.label]);
+      const select = createSelect(this.className("distinctField"), options, onChange, {
+        selected: field,
+        placeholder: labels.fieldPlaceholder,
+      });
+      select.setAttribute("aria-label", labels.fieldLabel);
+
+      return select;
+    }
+
+    const input = createInput(this.className("distinctField"));
+    input.value = field;
+    input.placeholder = labels.fieldNamePlaceholder;
+    input.setAttribute("aria-label", labels.fieldLabel);
+    input.addEventListener("input", () => onChange(input.value.trim()));
+
+    return input;
   }
 
   private createFieldControl(
@@ -855,4 +1034,10 @@ export default class Conditions {
   private className(className: keyof Settings["classNames"]) {
     return this.settings.classNames[className];
   }
+}
+
+function distinctValues(values: string): Distinct[string] {
+  if (!values.trim()) return true;
+
+  return serializeValue("in", values) as Array<string | number>;
 }

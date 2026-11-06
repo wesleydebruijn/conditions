@@ -44,7 +44,6 @@ describe("serializeValue", () => {
   it("serializes non-value operators correctly", () => {
     expect(serializeValue("exists", "")).toBe(true);
     expect(serializeValue("not_exists", "")).toBe(true);
-    expect(serializeValue("null", "")).toBe(true);
     expect(serializeValue("empty", "")).toBe(true);
     expect(serializeValue("not_empty", "")).toBe(true);
   });
@@ -112,10 +111,25 @@ describe("serializeRule", () => {
 
   it("serializes item filters as where", () => {
     const value = serializeRule(
-      rule("items_count", [{ operator: "gte", value: "1" }], group("or", rule("a", eq("1")))),
+      rule("items:count", [{ operator: "gte", value: "1" }], group("or", rule("a", eq("1")))),
     );
 
     expect(value).toEqual({ gte: 1, where: { a: { eq: 1 } } });
+  });
+
+  it("serializes distinct", () => {
+    const value = serializeRule({
+      ...rule("items:count", [{ operator: "gte", value: "2" }]),
+      distinct: { provider: true, tags: ["a", "b"] },
+    });
+
+    expect(value).toEqual({ gte: 2, distinct: { provider: true, tags: ["a", "b"] } });
+  });
+
+  it("serializes mod as two numbers and intersects as a list", () => {
+    expect(serializeValue("mod", "3, 1")).toEqual([3, 1]);
+    expect(serializeValue("intersects", "a, b")).toEqual(["a", "b"]);
+    expect(serializeValue("intersects", "1,2")).toEqual([1, 2]);
   });
 
   it("leaves out an empty where", () => {
@@ -168,7 +182,7 @@ describe("serializeGroup", () => {
     const tree = group("or", rule("a", eq("1")), rule("", eq("")), group("and", rule("", eq(""))));
 
     expect(serializeGroup(tree)).toEqual({ a: { eq: 1 } });
-    expect(serializeRule(rule("items_count", eq("1"), group("and", rule(""))))).toEqual({
+    expect(serializeRule(rule("items:count", eq("1"), group("and", rule(""))))).toEqual({
       eq: 1,
     });
   });
@@ -186,12 +200,12 @@ describe("serializeGroup", () => {
 
   it("keeps same-field rules with item filters apart", () => {
     const countWhere = (type: string) =>
-      rule("items_count", [{ operator: "gte", value: "1" }], group("and", rule("type", eq(type))));
+      rule("items:count", [{ operator: "gte", value: "1" }], group("and", rule("type", eq(type))));
 
     expect(serializeGroup(group("and", countWhere("proposition"), countWhere("product")))).toEqual({
       and: [
-        { items_count: { gte: 1, where: { type: { eq: "proposition" } } } },
-        { items_count: { gte: 1, where: { type: { eq: "product" } } } },
+        { "items:count": { gte: 1, where: { type: { eq: "proposition" } } } },
+        { "items:count": { gte: 1, where: { type: { eq: "product" } } } },
       ],
     });
   });
@@ -210,25 +224,17 @@ describe("serializeGroup", () => {
 });
 
 describe("deserializeConditions", () => {
-  it("maps alias operators to canonical ones", () => {
-    const conditions = deserializeConditions({
-      "=": "value",
-      "!=": "other",
-      nin: [1, 2],
-      startswith: "foo",
-      endswith: "bar",
-      regex: ".*baz.*",
-      null: true,
-    });
+  it("keeps operators as they are, without aliases", () => {
+    expect(deserializeConditions({ "=": "value", nin: [1, 2] })).toEqual([
+      { operator: "=", value: "value" },
+      { operator: "nin", value: "1,2" },
+    ]);
+  });
 
-    expect(conditions).toEqual([
-      { operator: "eq", value: "value" },
-      { operator: "ne", value: "other" },
-      { operator: "not_in", value: "1,2" },
-      { operator: "starts_with", value: "foo" },
-      { operator: "ends_with", value: "bar" },
-      { operator: "match", value: ".*baz.*" },
-      { operator: "not_exists", value: "true" },
+  it("deserializes mod and intersects values as lists", () => {
+    expect(deserializeConditions({ mod: [3, 1], intersects: ["a", "b"] })).toEqual([
+      { operator: "mod", value: "3,1" },
+      { operator: "intersects", value: "a,b" },
     ]);
   });
 
@@ -244,8 +250,8 @@ describe("deserializeConditions", () => {
     ]);
   });
 
-  it("ignores where", () => {
-    expect(deserializeConditions({ gte: 1, where: { a: 1 } })).toEqual([
+  it("ignores where and distinct", () => {
+    expect(deserializeConditions({ gte: 1, where: { a: 1 }, distinct: { a: true } })).toEqual([
       { operator: "gte", value: "1" },
     ]);
   });
@@ -306,13 +312,22 @@ describe("deserializeGroup", () => {
   });
 
   it("deserializes where as a group, as object or list", () => {
-    const [object] = deserializeGroup({ x_count: { gte: 1, where: { a: { eq: 1 } } } }).children;
+    const [object] = deserializeGroup({ "x:count": { gte: 1, where: { a: { eq: 1 } } } }).children;
     const [list] = deserializeGroup({
-      x_count: { where: [{ a: { eq: 1 } }, { b: { eq: 2 } }] },
+      "x:count": { where: [{ a: { eq: 1 } }, { b: { eq: 2 } }] },
     }).children;
 
     expect((object as Rule).where).toEqual(group("and", rule("a", eq("1"))));
     expect((list as Rule).where).toEqual(group("and", rule("a", eq("1")), rule("b", eq("2"))));
+  });
+
+  it("deserializes distinct onto the rule", () => {
+    const [count] = deserializeGroup({ "x:count": { gte: 2, distinct: { a: true } } }).children;
+
+    expect(count).toEqual({
+      ...rule("x:count", [{ operator: "gte", value: "2" }]),
+      distinct: { a: true },
+    });
   });
 });
 
@@ -325,8 +340,8 @@ describe("serialize / deserialize", () => {
     [
       {
         and: [
-          { items_count: { gte: 1, where: { type: { eq: "proposition" } } } },
-          { items_count: { gte: 1, where: { or: [{ a: { eq: 1 } }, { b: { eq: 2 } }] } } },
+          { "items:count": { gte: 1, where: { type: { eq: "proposition" } } } },
+          { "items:count": { gte: 1, where: { or: [{ a: { eq: 1 } }, { b: { eq: 2 } }] } } },
         ],
       },
     ],

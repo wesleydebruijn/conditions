@@ -18,12 +18,17 @@ describe("fieldKey", () => {
     expect(fieldKey(undefined)).toBe("");
   });
 
-  it("removes _count suffix", () => {
-    expect(fieldKey("orders_count")).toBe("orders");
+  it("removes the :count suffix", () => {
+    expect(fieldKey("orders:count")).toBe("orders");
   });
 
-  it("removes _sum suffix with field name", () => {
-    expect(fieldKey("orders_price_sum")).toBe("orders");
+  it("removes the :sum suffix with its field name", () => {
+    expect(fieldKey("orders:price:sum")).toBe("orders");
+  });
+
+  it("keeps underscores", () => {
+    expect(fieldKey("orders_count")).toBe("orders_count");
+    expect(fieldKey("unit_price_sum")).toBe("unit_price_sum");
   });
 
   it("returns key unchanged if no suffix", () => {
@@ -67,7 +72,6 @@ describe("operatorHasValue", () => {
   it("returns false for valueless operators", () => {
     expect(operatorHasValue("exists")).toBe(false);
     expect(operatorHasValue("not_exists")).toBe(false);
-    expect(operatorHasValue("null")).toBe(false);
     expect(operatorHasValue("empty")).toBe(false);
     expect(operatorHasValue("not_empty")).toBe(false);
   });
@@ -76,7 +80,8 @@ describe("operatorHasValue", () => {
     expect(operatorHasValue("eq")).toBe(true);
     expect(operatorHasValue("gt")).toBe(true);
     expect(operatorHasValue("in")).toBe(true);
-    expect(operatorHasValue("like")).toBe(true);
+    expect(operatorHasValue("contains")).toBe(true);
+    expect(operatorHasValue("mod")).toBe(true);
   });
 });
 
@@ -120,52 +125,57 @@ describe("fieldOperatorValid", () => {
       expect(fieldOperatorValid("lt", "number")).toBe(true);
       expect(fieldOperatorValid("lte", "number")).toBe(true);
       expect(fieldOperatorValid("between", "number")).toBe(true);
+      expect(fieldOperatorValid("mod", "number")).toBe(true);
     });
 
     it("returns true for object arrays (aggregations)", () => {
       expect(fieldOperatorValid("gt", "object[]")).toBe(true);
       expect(fieldOperatorValid("between", "object[]")).toBe(true);
+      expect(fieldOperatorValid("mod", "object[]")).toBe(true);
     });
 
     it("returns false for text/boolean types", () => {
       expect(fieldOperatorValid("gt", "text")).toBe(false);
       expect(fieldOperatorValid("lt", "boolean")).toBe(false);
+      expect(fieldOperatorValid("mod", "text")).toBe(false);
     });
   });
 
-  describe("string operators (like/starts_with/ends_with/match)", () => {
+  describe("string operators (contains/starts_with/ends_with/match)", () => {
     it("returns true for text type", () => {
-      expect(fieldOperatorValid("like", "text")).toBe(true);
+      expect(fieldOperatorValid("contains", "text")).toBe(true);
       expect(fieldOperatorValid("starts_with", "text")).toBe(true);
       expect(fieldOperatorValid("ends_with", "text")).toBe(true);
       expect(fieldOperatorValid("match", "text")).toBe(true);
     });
 
     it("returns false for non-text types", () => {
-      expect(fieldOperatorValid("like", "number")).toBe(false);
+      expect(fieldOperatorValid("contains", "number")).toBe(false);
       expect(fieldOperatorValid("starts_with", "boolean")).toBe(false);
     });
 
     it("returns false for text arrays", () => {
-      expect(fieldOperatorValid("like", "text[]")).toBe(false);
+      expect(fieldOperatorValid("starts_with", "text[]")).toBe(false);
       expect(fieldOperatorValid("match", "text[]")).toBe(false);
     });
   });
 
-  describe("array operators (contains/empty/not_empty)", () => {
+  describe("array operators (contains/intersects/empty/not_empty)", () => {
     it("returns true for non-object array types", () => {
       expect(fieldOperatorValid("contains", "text[]")).toBe(true);
+      expect(fieldOperatorValid("intersects", "text[]")).toBe(true);
       expect(fieldOperatorValid("empty", "number[]")).toBe(true);
       expect(fieldOperatorValid("not_empty", "boolean[]")).toBe(true);
     });
 
     it("returns false for object arrays", () => {
       expect(fieldOperatorValid("contains", "object[]")).toBe(false);
+      expect(fieldOperatorValid("intersects", "object[]")).toBe(false);
       expect(fieldOperatorValid("empty", "object[]")).toBe(false);
     });
 
     it("returns false for non-array types", () => {
-      expect(fieldOperatorValid("contains", "text")).toBe(false);
+      expect(fieldOperatorValid("intersects", "text")).toBe(false);
       expect(fieldOperatorValid("empty", "number")).toBe(false);
     });
   });
@@ -246,8 +256,8 @@ describe("fieldList", () => {
     expect(fieldList(schema)).toEqual([
       { key: "address.city", label: "Address → City", groups: ["Contact"] },
       { key: "address.zip", label: "Address → Zip", groups: ["Postal"] },
-      { key: "orders_count", label: "Orders (count)", groups: ["Sales"] },
-      { key: "orders_total_sum", label: "Orders → Total (sum)", groups: ["Sales"] },
+      { key: "orders:count", label: "Orders (count)", groups: ["Sales"] },
+      { key: "orders:total:sum", label: "Orders → Total (sum)", groups: ["Sales"] },
     ]);
   });
 
@@ -298,8 +308,8 @@ describe("fieldList", () => {
     };
 
     expect(fieldList(schema)).toEqual([
-      { key: "orders_count", label: "Orders (count)" },
-      { key: "orders_price_sum", label: "Orders → Price (sum)" },
+      { key: "orders:count", label: "Orders (count)" },
+      { key: "orders:price:sum", label: "Orders → Price (sum)" },
     ]);
   });
 
@@ -316,8 +326,8 @@ describe("fieldList", () => {
     };
 
     expect(fieldList(schema)).toEqual([
-      { key: "orders_count", label: "Orders (count)" },
-      { key: "orders_price_sum", label: "Orders → Price (sum)" },
+      { key: "orders:count", label: "Orders (count)" },
+      { key: "orders:price:sum", label: "Orders → Price (sum)" },
     ]);
   });
 
@@ -331,7 +341,7 @@ describe("fieldList", () => {
       },
     };
 
-    expect(fieldList(schema)).toEqual([{ key: "orders_price_sum", label: "Orders → Price (sum)" }]);
+    expect(fieldList(schema)).toEqual([{ key: "orders:price:sum", label: "Orders → Price (sum)" }]);
   });
 
   it("uses the given aggregate labels", () => {
@@ -344,8 +354,8 @@ describe("fieldList", () => {
     };
 
     expect(fieldList(schema, { count: "aantal", sum: "totaal" })).toEqual([
-      { key: "orders_count", label: "Orders (aantal)" },
-      { key: "orders_price_sum", label: "Orders → Price (totaal)" },
+      { key: "orders:count", label: "Orders (aantal)" },
+      { key: "orders:price:sum", label: "Orders → Price (totaal)" },
     ]);
   });
 });
@@ -374,6 +384,11 @@ describe("valueKind", () => {
     expect(valueKind("between")).toBe("range");
     expect(valueKind("in")).toBe("list");
     expect(valueKind("not_in")).toBe("list");
+    expect(valueKind("intersects")).toBe("list");
+  });
+
+  it("returns mod for mod", () => {
+    expect(valueKind("mod", { label: "A", type: "number" })).toBe("mod");
   });
 
   it("derives the kind from the schema type", () => {

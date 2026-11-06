@@ -34,7 +34,7 @@ describe("ai", () => {
 
       expect(instructions).toContain("- name (text): Name");
       expect(instructions).toContain("  - address.city (text): City");
-      expect(instructions).toContain("Filter with items_count or items_price_sum;");
+      expect(instructions).toContain("Filter with items:count or items:price:sum;");
       expect(instructions).toContain("  - price (number): Price");
     });
 
@@ -44,10 +44,20 @@ describe("ai", () => {
         conditionOperators,
       });
 
-      expect(instructions).toContain("Filter with items_price_sum;");
-      expect(instructions).not.toContain("items_count");
-      expect(instructions).not.toContain("items_term_sum");
+      expect(instructions).toContain("Filter with items:price:sum;");
+      expect(instructions).not.toContain("items:count");
+      expect(instructions).not.toContain("items:term:sum");
       expect(instructions).toContain("  - term (number): Term");
+    });
+
+    it("explains aggregates, distinct, intersects and mod", () => {
+      const instructions = aiInstructions({ conditionOperators });
+
+      expect(instructions).toContain('"<field>:count" counts the items');
+      expect(instructions).toContain('"<field>:<number field>:sum" sums a number field');
+      expect(instructions).toContain('"distinct"');
+      expect(instructions).toContain('"intersects" takes an array');
+      expect(instructions).toContain('"mod" takes [divisor, remainder]');
     });
 
     it("allows any field without a schema", () => {

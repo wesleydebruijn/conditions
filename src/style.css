@@ -270,6 +270,38 @@ html.dark {
   display: none;
 }
 
+.conditions-rule-distinct {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.conditions-rule-distinct > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.conditions-rule-distinct-label {
+  padding: 4px 4px 0;
+  color: hsl(var(--muted-foreground));
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.conditions-distinct-entry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.conditions-distinct-entry > :is(.conditions-distinct-field, .conditions-distinct-values) {
+  flex: 0 1 180px;
+  min-width: 100px;
+}
+
 .conditions-rule-editor-footer {
   display: flex;
   align-items: center;
@@ -680,6 +712,7 @@ html.dark {
 
   .conditions-rule-editor > :is(.conditions-field-select, .conditions-field-input),
   .conditions-field-conditions,
+  .conditions-rule-distinct,
   .conditions-rule-editor-footer {
     flex: 1 1 100%;
   }

@@ -17,13 +17,13 @@ export function fieldList(
     if (!fieldIsArray(childValue.type))
       return fieldList(childValue.schema, aggregates, field(key, label, groups));
 
-    const count = childValue.count === false ? [] : [`${key}_count`];
+    const count = childValue.count === false ? [] : [`${key}:count`];
 
     return [
       ...count.map((countKey) => field(countKey, `${label} (${aggregates.count})`, groups)),
       ...summableFields(childValue.schema).map(([subkey, subvalue]) =>
         field(
-          `${key}_${subkey}_sum`,
+          `${key}:${subkey}:sum`,
           `${label} → ${subvalue.label} (${aggregates.sum})`,
           fieldGroups(subvalue) ?? groups,
         ),
@@ -62,7 +62,7 @@ export function fieldSchemaItem(
 }
 
 export function fieldKey(key: string | null | undefined): string {
-  return key ? key.replace(/_.+_sum$/, "").replace(/_count$/, "") : "";
+  return key ? key.replace(/:[^:]+:sum$/, "").replace(/:count$/, "") : "";
 }
 
 export function fieldType(type: string | null | undefined): string {
@@ -74,7 +74,7 @@ export function fieldIsArray(type: string): boolean {
 }
 
 export function operatorHasValue(operator: ConditionOperator): boolean {
-  return !["exists", "not_exists", "null", "empty", "not_empty"].includes(operator);
+  return !["exists", "not_exists", "empty", "not_empty"].includes(operator);
 }
 
 export function fieldIsNumeric(type: string | undefined): boolean {
@@ -86,7 +86,8 @@ export function fieldIsNumeric(type: string | undefined): boolean {
 export function valueKind(operator: ConditionOperator, schema?: SchemaItem): ValueKind {
   if (!operatorHasValue(operator)) return "none";
   if (operator === "between") return "range";
-  if (operator === "in" || operator === "not_in") return "list";
+  if (operator === "in" || operator === "not_in" || operator === "intersects") return "list";
+  if (operator === "mod") return "mod";
   if (schema?.type === "boolean") return "boolean";
   if (fieldIsNumeric(schema?.type)) return "number";
 
@@ -118,13 +119,15 @@ export function fieldOperatorValid(operator: ConditionOperator, type: SchemaType
     case "lt":
     case "lte":
     case "between":
+    case "mod":
       return fieldType(type) === "number" || (fieldType(type) === "object" && fieldIsArray(type));
-    case "like":
     case "starts_with":
     case "ends_with":
     case "match":
       return fieldType(type) === "text" && !fieldIsArray(type);
     case "contains":
+      return type === "text" || (fieldIsArray(type) && fieldType(type) !== "object");
+    case "intersects":
     case "empty":
     case "not_empty":
       return fieldIsArray(type) && fieldType(type) !== "object";

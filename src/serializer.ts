@@ -8,20 +8,6 @@ import type {
   Rule,
 } from "./types";
 
-const ALIAS_CONDITIONS: Record<string, ConditionOperator> = {
-  "=": "eq",
-  "!=": "ne",
-  ">": "gt",
-  ">=": "gte",
-  "<": "lt",
-  "<=": "lte",
-  nin: "not_in",
-  startswith: "starts_with",
-  endswith: "ends_with",
-  regex: "match",
-  null: "not_exists",
-};
-
 export function deserialize(string: string): Group {
   return deserializeGroup(JSON.parse(string));
 }
@@ -38,12 +24,12 @@ export function serializeValue(
   operator: ConditionOperator,
   value: string,
 ): string | number | boolean | number[] | string[] {
-  if (["exists", "not_exists", "null", "empty", "not_empty"].includes(operator)) return true;
+  if (["exists", "not_exists", "empty", "not_empty"].includes(operator)) return true;
 
   const list = value.split(",").map((item) => item.trim());
 
-  if (operator === "between") return list.map(Number);
-  if (operator === "in" || operator === "not_in")
+  if (operator === "between" || operator === "mod") return list.map(Number);
+  if (operator === "in" || operator === "not_in" || operator === "intersects")
     return list.every(isNumber) ? list.map(Number) : list;
   if (value === "true") return true;
   if (value === "false") return false;
@@ -60,6 +46,7 @@ export function serializeRule(rule: Rule): Hash {
   }
 
   if (rule.where && !isEmpty(rule.where)) ruleObj.where = serializeGroup(rule.where);
+  if (rule.distinct && Object.keys(rule.distinct).length > 0) ruleObj.distinct = rule.distinct;
 
   return ruleObj;
 }
@@ -110,7 +97,7 @@ function serializeAndParts(children: ConditionNode[]): Hash[] {
 
 function canMerge(existing: Hash | undefined, next: Hash): boolean {
   if (!existing) return true;
-  if ("where" in existing || "where" in next) return false;
+  if ([existing, next].some((part) => "where" in part || "distinct" in part)) return false;
 
   return Object.keys(next).every((operator) => !(operator in existing));
 }
@@ -121,13 +108,11 @@ export function deserializeConditions(value: unknown): Condition[] {
     return [{ operator: "eq", value: String(value) }];
 
   return Object.entries(value)
-    .filter(([operator, _value]) => operator !== "where")
-    .map(([operator, value]) => {
-      return {
-        operator: ALIAS_CONDITIONS[operator] || (operator as ConditionOperator),
-        value: String(value),
-      };
-    });
+    .filter(([operator]) => operator !== "where" && operator !== "distinct")
+    .map(([operator, value]) => ({
+      operator: operator as ConditionOperator,
+      value: String(value),
+    }));
 }
 
 export function deserializeGroup(json: unknown): Group {
@@ -164,6 +149,7 @@ function deserializeRules(record: Hash): Rule[] {
     const rule: Rule = { type: "rule", key, conditions: deserializeConditions(value) };
 
     if (value?.where) rule.where = deserializeGroup(value.where);
+    if (value?.distinct) rule.distinct = value.distinct;
 
     return rule;
   });

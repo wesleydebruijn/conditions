@@ -48,7 +48,11 @@ const evaluator = new Evaluator(condition);
 
 evaluator.match({ name: 'John', age: 30 });  // true
 evaluator.match({ name: 'John', age: 17 });  // false
-evaluator.filter([{ name: 'John' }, { name: 'Jane' }]);  // [{ name: 'John' }]
+evaluator.filter([{ name: 'John', age: 30 }, { name: 'Jane', age: 30 }]);  // [{ name: 'John', age: 30 }]
+evaluator.any([{ name: 'Jane', age: 30 }, { name: 'John', age: 30 }]);  // true
+
+// Or pass the condition per call
+new Evaluator().match({ age: 30 }, { age: { gte: 18 } });  // true
 ```
 
 ## Condition format
@@ -68,10 +72,16 @@ With operators:
 }
 ```
 
-Nested fields use dot notation:
+Nested fields use dot notation. A record key that literally contains the dot wins over the nested lookup:
 
 ```json
 { "address.city": "Amsterdam" }
+```
+
+A list of values means "is one of":
+
+```json
+{ "status": ["active", "pending"] }
 ```
 
 AND/OR logic:
@@ -87,44 +97,63 @@ AND/OR logic:
 
 ### Supported operators
 
-| Operator | Aliases | Example |
-|----------|---------|---------|
-| `eq` | `=` | `{ "age": { "eq": 30 } }` |
-| `ne` | `!=` | `{ "status": { "ne": "archived" } }` |
-| `gt`, `gte`, `lt`, `lte` | `>`, `>=`, `<`, `<=` | `{ "age": { "gte": 18 } }` |
-| `in` | — | `{ "role": { "in": ["admin", "editor"] } }` |
-| `not_in` | `nin` | `{ "status": { "not_in": ["deleted"] } }` |
-| `between` | — | `{ "age": { "between": [18, 65] } }` |
-| `like` | — | `{ "name": { "like": "John" } }` |
-| `exists` | — | `{ "email": { "exists": true } }` |
-| `not_exists` | `null` | `{ "deleted_at": { "not_exists": true } }` |
-| `starts_with` | `startswith` | `{ "name": { "starts_with": "Jo" } }` |
-| `ends_with` | `endswith` | `{ "email": { "ends_with": "@example.com" } }` |
-| `contains` | — | `{ "tags": { "contains": "featured" } }` |
-| `match` | `regex` | `{ "code": { "match": "^[A-Z]{3}" } }` |
-| `empty` | — | `{ "notes": { "empty": true } }` |
-| `not_empty` | — | `{ "tags": { "not_empty": true } }` |
+| Operator | Matches when | Example |
+|----------|--------------|---------|
+| `eq` | the value equals | `{ "age": { "eq": 30 } }` |
+| `ne` | the value differs | `{ "status": { "ne": "archived" } }` |
+| `gt`, `gte`, `lt`, `lte` | the value is greater / at least / less / at most | `{ "age": { "gte": 18 } }` |
+| `between` | the value lies within `[min, max]`, inclusive | `{ "age": { "between": [18, 65] } }` |
+| `in` | the value is one of a list | `{ "role": { "in": ["admin", "editor"] } }` |
+| `not_in` | the value is not one of a list | `{ "status": { "not_in": ["deleted"] } }` |
+| `intersects` | a list shares at least one value with the given list | `{ "tags": { "intersects": ["sale", "new"] } }` |
+| `contains` | the text contains the given text; for lists, one of the items does | `{ "name": { "contains": "oh" } }` |
+| `starts_with` | the text starts with | `{ "name": { "starts_with": "Jo" } }` |
+| `ends_with` | the text ends with | `{ "email": { "ends_with": "@example.com" } }` |
+| `match` | the text matches a regular expression | `{ "code": { "match": "^[A-Z]{3}" } }` |
+| `mod` | dividing by the first number leaves the second as remainder | `{ "quantity": { "mod": [2, 0] } }` |
+| `exists` | the value is set | `{ "email": { "exists": true } }` |
+| `not_exists` | the value is not set | `{ "deleted_at": { "not_exists": true } }` |
+| `empty` | the value is not set, or an empty text, list or object | `{ "notes": { "empty": true } }` |
+| `not_empty` | the value is set and not empty | `{ "tags": { "not_empty": true } }` |
+
+Unknown operators never match. There are no aliases such as `=`, `>`, `nin` or `regex`.
 
 ### Aggregations
 
-For array fields, you can use `_count` and `_sum`:
+Lists of objects are filtered on aggregates: `<field>:count` counts the items and `<field>:<number field>:sum` adds up a number field. Missing values count as 0.
 
 ```json
 {
-  "orders_count": { "gte": 3 },
-  "orders_total_sum": { "gt": 100 }
+  "orders:count": { "gte": 3 },
+  "orders:total:sum": { "gt": 100 }
 }
 ```
 
-`where` filters nested items before counting/summing:
+`where` filters the items before counting or summing:
 
 ```json
 {
-  "orders_count": {
+  "orders:count": {
     "gte": 2,
     "where": { "status": "completed" }
   }
 }
+```
+
+`distinct` counts different values instead of items. `true` counts every different value of a field; a list counts only those values. List fields count each of their values, and with several fields the different values of all of them are added up:
+
+```json
+{
+  "orders:count": {
+    "gte": 2,
+    "where": { "status": "completed" },
+    "distinct": { "product_id": true }
+  }
+}
+```
+
+```json
+{ "orders:count": { "eq": 2, "distinct": { "tags": ["gift", "sale"] } } }
 ```
 
 ## Schema
@@ -159,7 +188,7 @@ const schema = {
 };
 ```
 
-An `object[]` field offers a count of its items and a sum of each of its number fields. Set `count: false` on the list, or `sum: false` on a number field, to leave those out of the field select and the AI instructions:
+An `object[]` field offers a count of its items (`<field>:count`) and a sum of each of its number fields (`<field>:<number field>:sum`). Set `count: false` on the list, or `sum: false` on a number field, to leave those out of the field select and the AI instructions:
 
 ```javascript
 const schema = {

@@ -4,34 +4,24 @@ export type ConditionHash = Hash | Array<Hash>;
 export type Operator = "and" | "or";
 export type ConditionOperator =
   | "eq"
-  | "="
   | "ne"
-  | "!="
   | "gt"
-  | ">"
   | "gte"
-  | ">="
   | "lt"
-  | "<"
   | "lte"
-  | "<="
   | "in"
-  | "nin"
   | "not_in"
   | "between"
-  | "like"
   | "exists"
   | "not_exists"
-  | "null"
-  | "startswith"
   | "starts_with"
-  | "endswith"
   | "ends_with"
   | "contains"
   | "match"
-  | "regex"
   | "empty"
-  | "not_empty";
+  | "not_empty"
+  | "intersects"
+  | "mod";
 
 export type Group = {
   type: "group";
@@ -44,7 +34,10 @@ export type Rule = {
   key: string;
   conditions: Condition[];
   where?: Group;
+  distinct?: Distinct;
 };
+
+export type Distinct = Record<string, true | Array<string | number>>;
 
 export type ConditionNode = Group | Rule;
 
@@ -73,7 +66,7 @@ export type SchemaItem = {
   sum?: boolean;
 };
 
-export type ValueKind = "none" | "text" | "number" | "boolean" | "list" | "range";
+export type ValueKind = "none" | "text" | "number" | "boolean" | "list" | "range" | "mod";
 
 export type AiRequest = {
   prompt: string;
@@ -103,6 +96,11 @@ export type Settings = {
     ruleEditorFooter: string;
     ruleWhere: string;
     ruleWhereLabel: string;
+    ruleDistinct: string;
+    ruleDistinctLabel: string;
+    distinctEntry: string;
+    distinctField: string;
+    distinctValues: string;
 
     summaryPath: string;
     summaryField: string;
@@ -129,6 +127,8 @@ export type Settings = {
     buttonAddGroup: string;
     buttonAddCondition: string;
     buttonAddWhere: string;
+    buttonAddDistinct: string;
+    buttonAddDistinctField: string;
     buttonDone: string;
     buttonRemove: string;
 
@@ -172,6 +172,12 @@ export type Settings = {
     valuePlaceholder: string;
     listPlaceholder: string;
     rangeSeparator: string;
+    modSeparator: string;
+    distinct: string;
+    distinctLabel: string;
+    addDistinct: string;
+    addDistinctField: string;
+    distinctValuesPlaceholder: string;
     conditionSeparator: string;
     yes: string;
     no: string;

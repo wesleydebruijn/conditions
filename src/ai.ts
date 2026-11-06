@@ -10,8 +10,9 @@ Format:
 - Fields side by side in one object must all match: { "name": { "eq": "John" }, "age": { "gte": 18 } }
 - Logic: { "and": [ ... ] } or { "or": [ ... ] }, nested to any depth
 - Nested object fields use dot notation: { "address.city": { "eq": "Amsterdam" } }
-- Lists of objects are filtered by aggregate fields: "<field>_count" counts the items, "<field>_<number field>_sum" sums a number field. Add "where" to count or sum only matching items: { "orders_count": { "gte": 2, "where": { "status": { "eq": "completed" } } } }
-- Values: numbers and booleans are JSON numbers and booleans; "in" and "not_in" take an array; "between" takes [min, max]; "exists", "not_exists", "empty" and "not_empty" take true.`;
+- Lists of objects are filtered by aggregate fields: "<field>:count" counts the items, "<field>:<number field>:sum" sums a number field. Add "where" to count or sum only matching items: { "orders:count": { "gte": 2, "where": { "status": { "eq": "completed" } } } }
+- Add "distinct" to a count to count different values of item fields instead of items: { "orders:count": { "gte": 2, "distinct": { "product": true } } } counts the different products. List values to count only those: { "distinct": { "tags": ["a", "b"] } }
+- Values: numbers and booleans are JSON numbers and booleans; "in" and "not_in" take an array; "intersects" takes an array and matches when a list field has any of its values; "between" takes [min, max]; "mod" takes [divisor, remainder]; "exists", "not_exists", "empty" and "not_empty" take true.`;
 
 const RULES = `Rules:
 - Return the complete condition, not only the part that changed.
@@ -73,13 +74,13 @@ function describeSchema(schema: Schema, prefix = "", indent = ""): string[] {
     if (item.type === "object") return [line, ...children];
 
     const aggregates = [
-      ...(item.count === false ? [] : [`${path}_count`]),
-      ...summableFields(item.schema).map(([key]) => `${path}_${key}_sum`),
+      ...(item.count === false ? [] : [`${path}:count`]),
+      ...summableFields(item.schema).map(([key]) => `${path}:${key}:sum`),
     ];
     if (aggregates.length === 0) return [];
 
     return [
-      `${line}. Filter with ${aggregates.join(" or ")}; its items have these fields for "where":`,
+      `${line}. Filter with ${aggregates.join(" or ")}; its items have these fields for "where" and "distinct":`,
       ...children,
     ];
   });

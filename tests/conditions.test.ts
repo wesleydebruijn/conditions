@@ -99,7 +99,7 @@ describe("Conditions", () => {
     });
 
     it("uses the count and sum labels for aggregate fields", () => {
-      load({ items_count: { gte: 1 } }, { schema, labels: { count: "aantal", sum: "totaal" } });
+      load({ "items:count": { gte: 1 } }, { schema, labels: { count: "aantal", sum: "totaal" } });
       expect(pills()).toEqual(["Items (aantal) is at least 1"]);
     });
 
@@ -141,7 +141,7 @@ describe("Conditions", () => {
 
   describe("read only", () => {
     const condition = {
-      or: [{ a: { eq: 1 } }, { items_count: { gte: 1, where: { type: { eq: "x" } } } }],
+      or: [{ a: { eq: 1 } }, { "items:count": { gte: 1, where: { type: { eq: "x" } } } }],
     };
     const controls = () =>
       $$<HTMLButtonElement>(
@@ -289,7 +289,7 @@ describe("Conditions", () => {
     });
 
     it("shows parent fields as a path", () => {
-      load({ items_price_sum: { gt: 10 } }, { schema });
+      load({ "items:price:sum": { gt: 10 } }, { schema });
       expect($(".conditions-summary-path").textContent).toBe("Items");
       expect(pills()).toEqual(["Items Price (sum) is greater than 10"]);
     });
@@ -391,8 +391,8 @@ describe("Conditions", () => {
       $(".conditions-rule-pill").click();
       expect(picker().value).toBe("age");
 
-      change(picker(), "items_count");
-      expect(json()).toEqual({ items_count: { gte: 18, eq: 20 } });
+      change(picker(), "items:count");
+      expect(json()).toEqual({ "items:count": { gte: 18, eq: 20 } });
 
       change(picker(), "name");
       expect(json()).toEqual({ name: { ne: "", eq: "" } });
@@ -549,13 +549,13 @@ describe("Conditions", () => {
     });
 
     it("does not offer item filters inside the editor", () => {
-      load({ items_count: { gte: 1 } }, { schema });
+      load({ "items:count": { gte: 1 } }, { schema });
       $(".conditions-rule-pill").click();
       expect($(".conditions-rule-editor .conditions-btn-add-where")).toBeNull();
     });
 
     it("adds item filters from the pill row without opening the editor first", () => {
-      load({ name: { eq: "x" }, items_count: { gte: 1 } }, { schema });
+      load({ name: { eq: "x" }, "items:count": { gte: 1 } }, { schema });
       const [nameWhere, itemsWhere] = $$(".conditions-rule-row > .conditions-btn-add-where");
       expect(isShown(nameWhere)).toBe(false);
       expect(itemsWhere.textContent).toBe("");
@@ -570,7 +570,7 @@ describe("Conditions", () => {
     });
 
     it("adds item filters with the nested schema's fields", () => {
-      load({ items_count: { gte: 1 } }, { schema });
+      load({ "items:count": { gte: 1 } }, { schema });
       $(".conditions-rule-pill").click();
       $(".conditions-btn-add-where").click();
 
@@ -583,23 +583,23 @@ describe("Conditions", () => {
       const where = $(".conditions-rule-where");
       expect($(".conditions-rule-where-label", where).textContent).toBe("WHERE");
       change($<HTMLInputElement>(".conditions-condition-value-input", where), "product");
-      expect(json()).toEqual({ items_count: { gte: 1, where: { type: { eq: "product" } } } });
+      expect(json()).toEqual({ "items:count": { gte: 1, where: { type: { eq: "product" } } } });
       expect(isShown($(".conditions-btn-add-where"))).toBe(false);
     });
 
     it("keeps item filters open to new filters once their last filter is removed", () => {
-      load({ items_count: { gte: 1, where: { type: { eq: "x" } } } }, { schema });
+      load({ "items:count": { gte: 1, where: { type: { eq: "x" } } } }, { schema });
       $(".conditions-rule-where .conditions-rule-row > .conditions-btn-remove").click();
 
       const where = $(".conditions-rule-where");
-      expect(json()).toEqual({ items_count: { gte: 1 } });
+      expect(json()).toEqual({ "items:count": { gte: 1 } });
       expect(isShown(where)).toBe(true);
       expect($(".conditions-btn-add-rule", where)).not.toBeNull();
       expect($(".conditions-btn-add-group", where)).not.toBeNull();
     });
 
     it("removes item filters with their WHERE button", () => {
-      load({ items_count: { gte: 1, where: { type: { eq: "x" } } } }, { schema });
+      load({ "items:count": { gte: 1, where: { type: { eq: "x" } } } }, { schema });
       expect(
         $(".conditions-rule-where .conditions-group-actions > .conditions-btn-remove"),
       ).toBeNull();
@@ -609,13 +609,13 @@ describe("Conditions", () => {
       expect(whereBtn.title).toBe("Remove these item filters");
       whereBtn.click();
 
-      expect(json()).toEqual({ items_count: { gte: 1 } });
+      expect(json()).toEqual({ "items:count": { gte: 1 } });
       expect(isShown($(".conditions-rule-where"))).toBe(false);
       expect(isShown($(".conditions-btn-add-where"))).toBe(true);
     });
 
     it("adds a group to empty item filters", () => {
-      load({ items_count: { gte: 1 } }, { schema });
+      load({ "items:count": { gte: 1 } }, { schema });
       $(".conditions-rule-pill").click();
       $(".conditions-btn-add-where").click();
       press(picker(), "Escape");
@@ -627,7 +627,7 @@ describe("Conditions", () => {
     });
 
     it("starts item filters with a new filter and keeps them once it is closed", () => {
-      load({ items_count: { gte: 1 } }, { schema });
+      load({ "items:count": { gte: 1 } }, { schema });
       $(".conditions-rule-pill").click();
       $(".conditions-btn-add-where").click();
 
@@ -639,14 +639,14 @@ describe("Conditions", () => {
       expect(isShown(where)).toBe(true);
       expect($(".conditions-btn-add-rule", where)).not.toBeNull();
       expect($(".conditions-btn-add-group", where)).not.toBeNull();
-      expect(json()).toEqual({ items_count: { gte: 1 } });
+      expect(json()).toEqual({ "items:count": { gte: 1 } });
     });
 
     it("keeps several item filters on the same field", () => {
       const condition = {
         and: [
-          { items_count: { gte: 1, where: { type: { eq: "proposition" } } } },
-          { items_count: { gte: 1, where: { type: { eq: "product" } } } },
+          { "items:count": { gte: 1, where: { type: { eq: "proposition" } } } },
+          { "items:count": { gte: 1, where: { type: { eq: "product" } } } },
         ],
       };
       load(condition, { schema });
@@ -658,8 +658,137 @@ describe("Conditions", () => {
       ]);
 
       change($$<HTMLInputElement>(".conditions-condition-value-input")[0], "2");
-      expect(json().and[0].items_count.gte).toBe(2);
+      expect(json().and[0]["items:count"].gte).toBe(2);
       expect(json().and[1]).toEqual(condition.and[1]);
+    });
+  });
+
+  describe("mod and intersects", () => {
+    const valueInputs = () => $$<HTMLInputElement>(".conditions-condition-value-input");
+
+    it("summarizes and edits mod as a divisor and remainder", () => {
+      load({ age: { mod: [3, 1] } }, { schema });
+      expect(pills()).toEqual(["Age divided by 3 leaves remainder 1"]);
+
+      $(".conditions-rule-pill").click();
+      expect(valueInputs().map((element) => element.value)).toEqual(["3", "1"]);
+      expect(valueInputs().map((element) => element.type)).toEqual(["number", "number"]);
+
+      change(valueInputs()[0], "4");
+      expect(json()).toEqual({ age: { mod: [4, 1] } });
+    });
+
+    it("summarizes and edits intersects as a list", () => {
+      load({ tags: { intersects: ["a", "b"] } }, { schema });
+      expect(pills()).toEqual(["Tags has any of a, b"]);
+
+      $(".conditions-rule-pill").click();
+      change(valueInputs()[0], "a, c");
+      expect(json()).toEqual({ tags: { intersects: ["a", "c"] } });
+    });
+
+    it("offers contains for text and no longer offers like", () => {
+      load({ name: { eq: "x" } }, { schema });
+      const options = Array.from(
+        $<HTMLSelectElement>(".conditions-condition-operator-select").options,
+      ).map((option) => option.value);
+
+      expect(options).toContain("contains");
+      expect(options).not.toContain("like");
+    });
+  });
+
+  describe("distinct", () => {
+    const addDistinct = () => $<HTMLButtonElement>(".conditions-btn-add-distinct");
+    const distinct = () => $(".conditions-rule-distinct");
+    const distinctFields = () => $$<HTMLSelectElement>(".conditions-distinct-field", distinct());
+    const distinctValues = () => $$<HTMLInputElement>(".conditions-distinct-values", distinct());
+
+    it("summarizes counting unique values", () => {
+      load(
+        {
+          or: [
+            { "items:count": { gte: 2, distinct: { type: true } } },
+            { "items:count": { gte: 2, distinct: { type: ["a", "b"], price: true } } },
+          ],
+        },
+        { schema },
+      );
+
+      expect(pills()).toEqual([
+        "Items (count) of unique Type is at least 2",
+        "Items (count) of unique Type (a, b), Price is at least 2",
+      ]);
+    });
+
+    it("adds a field to count unique values of", () => {
+      load({ "items:count": { gte: 2 } }, { schema });
+      $(".conditions-rule-pill").click();
+      expect(isShown(distinct())).toBe(false);
+
+      addDistinct().click();
+      expect(isShown(distinct())).toBe(true);
+      expect(isShown(addDistinct())).toBe(false);
+      expect(Array.from(distinctFields()[0].options, (option) => option.value)).toEqual([
+        "",
+        "type",
+        "price",
+      ]);
+
+      change(distinctFields()[0], "type");
+      expect(json()).toEqual({ "items:count": { gte: 2, distinct: { type: true } } });
+
+      change(distinctValues()[0], "product, proposition");
+      expect(json()).toEqual({
+        "items:count": { gte: 2, distinct: { type: ["product", "proposition"] } },
+      });
+    });
+
+    it("counts unique values of several fields", () => {
+      load({ "items:count": { gte: 2, distinct: { type: true } } }, { schema });
+      $(".conditions-rule-pill").click();
+
+      $<HTMLButtonElement>(".conditions-btn-add-distinct-field").click();
+      change(distinctFields()[1], "price");
+
+      expect(json()).toEqual({ "items:count": { gte: 2, distinct: { type: true, price: true } } });
+    });
+
+    it("stops counting unique values when the last field is removed", () => {
+      load({ "items:count": { gte: 2, distinct: { type: true } } }, { schema });
+      $(".conditions-rule-pill").click();
+
+      $<HTMLButtonElement>(".conditions-rule-distinct .conditions-btn-remove").click();
+
+      expect(json()).toEqual({ "items:count": { gte: 2 } });
+      expect(isShown(distinct())).toBe(false);
+      expect(isShown(addDistinct())).toBe(true);
+    });
+
+    it("keeps distinct when editing the count", () => {
+      load({ "items:count": { gte: 2, distinct: { type: true } } }, { schema });
+      $(".conditions-rule-pill").click();
+
+      change($<HTMLInputElement>(".conditions-condition-value-input"), "3");
+
+      expect(json()).toEqual({ "items:count": { gte: 3, distinct: { type: true } } });
+    });
+
+    it("is only offered for counts", () => {
+      load({ "items:price:sum": { gte: 2 } }, { schema });
+      $(".conditions-rule-pill").click();
+
+      expect(isShown(addDistinct())).toBe(false);
+    });
+
+    it("drops distinct when the field changes to something other than a count", () => {
+      load({ "items:count": { gte: 2, distinct: { type: true } } }, { schema });
+      $(".conditions-rule-pill").click();
+
+      change(picker(), "items:price:sum");
+
+      expect(json()).toEqual({ "items:price:sum": { gte: 2 } });
+      expect(isShown(distinct())).toBe(false);
     });
   });
 
