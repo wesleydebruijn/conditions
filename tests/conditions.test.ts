@@ -721,6 +721,16 @@ describe("Conditions", () => {
       ]);
     });
 
+    it("offers counting unique values as an icon button", () => {
+      load({ "items:count": { gte: 2 } }, { schema });
+      $(".conditions-rule-pill").click();
+
+      expect(addDistinct().textContent).toBe("");
+      expect(addDistinct().getAttribute("aria-label")).toBe("Count unique values");
+      expect(addDistinct().title).toBe("Count unique values");
+      expect($("svg", addDistinct())).not.toBeNull();
+    });
+
     it("adds a field to count unique values of", () => {
       load({ "items:count": { gte: 2 } }, { schema });
       $(".conditions-rule-pill").click();

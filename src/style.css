@@ -270,12 +270,19 @@ html.dark {
   display: none;
 }
 
+.conditions-rule-editor:has(> .conditions-rule-distinct:not([style*="display: none"])) {
+  flex-wrap: wrap;
+}
+
 .conditions-rule-distinct {
+  order: 1;
+  flex: 1 1 100%;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  align-items: flex-end;
   gap: 6px;
   min-width: 0;
+  padding: 6px 4px 2px;
+  border-top: 1px dashed hsl(var(--border));
 }
 
 .conditions-rule-distinct > div {
@@ -285,21 +292,25 @@ html.dark {
 }
 
 .conditions-rule-distinct-label {
-  padding: 4px 4px 0;
+  align-self: flex-start;
+  line-height: 32px;
   color: hsl(var(--muted-foreground));
   font-size: 12px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .conditions-distinct-entry {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
-.conditions-distinct-entry > :is(.conditions-distinct-field, .conditions-distinct-values) {
-  flex: 0 1 180px;
-  min-width: 100px;
+.conditions-wrapper
+  .conditions-distinct-entry
+  > :is(.conditions-distinct-field, .conditions-distinct-values) {
+  width: 130px;
+  min-width: 0;
 }
 
 .conditions-rule-editor-footer {

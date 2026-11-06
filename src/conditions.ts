@@ -506,9 +506,9 @@ export default class Conditions {
       addCondition,
     );
 
-    const addDistinctBtn = createButton(
+    const addDistinctBtn = createIconButton(
       this.className("buttonAddDistinct"),
-      "plus",
+      "hash",
       labels.addDistinct,
       () => {
         rule.distinct = {};
