@@ -17,13 +17,11 @@ export function fieldList(
     if (!fieldIsArray(childValue.type))
       return fieldList(childValue.schema, aggregates, field(key, label, groups));
 
-    const numberFields = Object.entries(childValue.schema).filter(
-      ([_, value]) => fieldType(value.type) === "number",
-    );
+    const count = childValue.count === false ? [] : [`${key}_count`];
 
     return [
-      field(`${key}_count`, `${label} (${aggregates.count})`, groups),
-      ...numberFields.map(([subkey, subvalue]) =>
+      ...count.map((countKey) => field(countKey, `${label} (${aggregates.count})`, groups)),
+      ...summableFields(childValue.schema).map(([subkey, subvalue]) =>
         field(
           `${key}_${subkey}_sum`,
           `${label} → ${subvalue.label} (${aggregates.sum})`,
@@ -32,6 +30,12 @@ export function fieldList(
       ),
     ];
   });
+}
+
+export function summableFields(schema: Schema): [string, SchemaItem][] {
+  return Object.entries(schema).filter(
+    ([_, item]) => fieldType(item.type) === "number" && item.sum !== false,
+  );
 }
 
 function field(key: string, label: string, groups?: string[]): Field {

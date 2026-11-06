@@ -12,7 +12,10 @@ describe("ai", () => {
     items: {
       label: "Items",
       type: "object[]",
-      schema: { price: { label: "Price", type: "number" } },
+      schema: {
+        price: { label: "Price", type: "number" },
+        term: { label: "Term", type: "number", sum: false },
+      },
     },
   };
   const conditionOperators = { eq: "is", gte: "is at least" };
@@ -31,8 +34,20 @@ describe("ai", () => {
 
       expect(instructions).toContain("- name (text): Name");
       expect(instructions).toContain("  - address.city (text): City");
-      expect(instructions).toContain("Filter with items_count or items_<number field>_sum");
+      expect(instructions).toContain("Filter with items_count or items_price_sum;");
       expect(instructions).toContain("  - price (number): Price");
+    });
+
+    it("offers only the aggregates the schema allows", () => {
+      const instructions = aiInstructions({
+        schema: { ...schema, items: { ...schema.items, count: false } },
+        conditionOperators,
+      });
+
+      expect(instructions).toContain("Filter with items_price_sum;");
+      expect(instructions).not.toContain("items_count");
+      expect(instructions).not.toContain("items_term_sum");
+      expect(instructions).toContain("  - term (number): Term");
     });
 
     it("allows any field without a schema", () => {

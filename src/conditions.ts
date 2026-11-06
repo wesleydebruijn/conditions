@@ -1,4 +1,4 @@
-import { aiRequest, parseAiResponse } from "./ai";
+import { AiChat } from "./chat";
 import {
   append,
   className,
@@ -21,7 +21,7 @@ import {
   fieldType,
   valueKind,
 } from "./schema";
-import { deserialize, serialize, serializeGroup } from "./serializer";
+import { deserialize, serialize } from "./serializer";
 
 import type {
   AiHandler,
@@ -97,7 +97,15 @@ const DEFAULT_SETTINGS: Settings = {
     ai: "conditions-ai",
     aiInput: "conditions-ai-input",
     aiError: "conditions-ai-error",
+    aiMessages: "conditions-ai-messages",
+    aiMessage: "conditions-ai-message",
+    aiPrompt: "conditions-ai-prompt",
+    aiReply: "conditions-ai-reply",
+    aiJson: "conditions-ai-json",
+    aiCurrent: "conditions-ai-current",
+    aiForm: "conditions-ai-form",
     buttonAi: "conditions-btn-ai",
+    buttonAiRestore: "conditions-btn-ai-restore",
   },
   labels: {
     and: "AND",
@@ -135,6 +143,10 @@ const DEFAULT_SETTINGS: Settings = {
     aiSubmit: "Generate",
     aiLoading: "Generating…",
     aiError: "Couldn't update the filters.",
+    aiReply: "Updated the filters.",
+    aiJson: "Show JSON",
+    aiCurrent: "Current version",
+    aiRestore: "Restore this version",
   },
   conditionOperators: {
     eq: "is",
@@ -179,7 +191,7 @@ export default class Conditions {
 
   private input: HTMLInputElement | HTMLTextAreaElement;
   private wrapperElement: HTMLElement;
-  private aiElement?: HTMLElement;
+  private aiChat?: AiChat;
 
   constructor(input: HTMLInputElement | HTMLTextAreaElement | string, options: Options = {}) {
     this.settings = {
@@ -195,7 +207,7 @@ export default class Conditions {
     this.input.conditions = this;
     this.root = deserialize(this.input.value);
     this.wrapperElement = create("div", this.className("wrapper"));
-    if (this.settings.ai) this.aiElement = this.renderAi(this.settings.ai);
+    if (this.settings.ai) this.aiChat = this.createAiChat(this.settings.ai);
 
     this.render();
   }
@@ -214,66 +226,20 @@ export default class Conditions {
 
   private render() {
     const group = this.renderGroup(this.root, { schema: this.settings.schema, isRoot: true });
-    const ai = this.aiElement && !this.readOnly ? [this.aiElement] : [];
+    const ai = this.aiChat && !this.readOnly ? [this.aiChat.element] : [];
 
     this.wrapperElement.classList.toggle(this.className("isReadOnly"), this.readOnly);
     this.wrapperElement.replaceChildren(group, ...ai);
     this.input.after(this.wrapperElement);
   }
 
-  private renderAi(ai: AiHandler): HTMLElement {
-    const { labels } = this.settings;
-    const element = create("div", this.className("ai"));
-    const input = createInput(this.className("aiInput"));
-    const error = createText(this.className("aiError"), "");
-    const submitBtn = createButton(this.className("buttonAi"), "sparkle", labels.aiSubmit, () =>
-      submit(),
-    );
-    const submitLabel = submitBtn.querySelector("span") as HTMLElement;
-
-    const setBusy = (busy: boolean) => {
-      input.disabled = busy;
-      submitBtn.disabled = busy;
-      submitLabel.textContent = busy ? labels.aiLoading : labels.aiSubmit;
-      element.setAttribute("aria-busy", String(busy));
-    };
-
-    const submit = async () => {
-      const prompt = input.value.trim();
-      if (!prompt || submitBtn.disabled) return;
-
-      visible(error, false);
-      setBusy(true);
-
-      try {
-        const response = await ai(aiRequest(prompt, serializeGroup(this.root), this.settings));
-        this.replaceRoot(parseAiResponse(response));
-        input.value = "";
-      } catch (exception) {
-        const detail = exception instanceof Error ? ` ${exception.message}` : "";
-        error.textContent = `${labels.aiError}${detail}`;
-        visible(error, true);
-      } finally {
-        setBusy(false);
-        input.focus();
-      }
-    };
-
-    input.type = "text";
-    input.placeholder = labels.aiPlaceholder;
-    input.setAttribute("aria-label", labels.aiPlaceholder);
-    input.addEventListener("keydown", (event) => {
-      if (event.key !== "Enter") return;
-
-      event.preventDefault();
-      submit();
+  private createAiChat(ai: AiHandler): AiChat {
+    return new AiChat({
+      ai,
+      settings: this.settings,
+      root: () => this.root,
+      replaceRoot: (root) => this.replaceRoot(root),
     });
-
-    error.setAttribute("role", "alert");
-    visible(error, false);
-    append(element, input, submitBtn, error);
-
-    return element;
   }
 
   private replaceRoot(root: Group) {
@@ -860,6 +826,7 @@ export default class Conditions {
 
     const event = new Event("change", { bubbles: true });
     this.input.dispatchEvent(event);
+    this.aiChat?.sync();
   }
 
   private boundOnInputChange = (event: Event) => this.onInputChange(event);
@@ -869,6 +836,7 @@ export default class Conditions {
 
     this.root = deserialize(this.input.value);
     this.rerender();
+    this.aiChat?.sync();
   }
 
   private rerender() {

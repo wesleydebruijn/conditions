@@ -303,6 +303,37 @@ describe("fieldList", () => {
     ]);
   });
 
+  it("leaves out sums of number fields with sum: false", () => {
+    const schema: Schema = {
+      orders: {
+        label: "Orders",
+        type: "object[]",
+        schema: {
+          price: { label: "Price", type: "number" },
+          term: { label: "Term", type: "number", sum: false },
+        },
+      },
+    };
+
+    expect(fieldList(schema)).toEqual([
+      { key: "orders_count", label: "Orders (count)" },
+      { key: "orders_price_sum", label: "Orders → Price (sum)" },
+    ]);
+  });
+
+  it("leaves out the count of object arrays with count: false", () => {
+    const schema: Schema = {
+      orders: {
+        label: "Orders",
+        type: "object[]",
+        count: false,
+        schema: { price: { label: "Price", type: "number" } },
+      },
+    };
+
+    expect(fieldList(schema)).toEqual([{ key: "orders_price_sum", label: "Orders → Price (sum)" }]);
+  });
+
   it("uses the given aggregate labels", () => {
     const schema: Schema = {
       orders: {

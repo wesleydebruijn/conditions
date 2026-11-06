@@ -1,3 +1,4 @@
+import { summableFields } from "./schema";
 import { deserializeGroup } from "./serializer";
 import type { AiRequest, ConditionHash, Group, Schema, Settings } from "./types";
 
@@ -71,8 +72,14 @@ function describeSchema(schema: Schema, prefix = "", indent = ""): string[] {
 
     if (item.type === "object") return [line, ...children];
 
+    const aggregates = [
+      ...(item.count === false ? [] : [`${path}_count`]),
+      ...summableFields(item.schema).map(([key]) => `${path}_${key}_sum`),
+    ];
+    if (aggregates.length === 0) return [];
+
     return [
-      `${line}. Filter with ${path}_count or ${path}_<number field>_sum; its items have these fields for "where":`,
+      `${line}. Filter with ${aggregates.join(" or ")}; its items have these fields for "where":`,
       ...children,
     ];
   });

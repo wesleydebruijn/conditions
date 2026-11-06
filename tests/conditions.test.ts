@@ -714,7 +714,81 @@ describe("Conditions", () => {
       expect(pills()).toEqual(["Name is John", "Age is at least 18"]);
       expect(onChange).toHaveBeenCalled();
       expect(aiInput().value).toBe("");
-      expect(isShown(aiError())).toBe(false);
+      expect(aiError()).toBeNull();
+    });
+
+    describe("chat", () => {
+      const prompts = () => $$(".conditions-ai-prompt").map((element) => element.textContent);
+      const replies = () => $$(".conditions-ai-reply");
+      const replyJson = (reply: HTMLElement) =>
+        JSON.parse(reply.querySelector(".conditions-ai-json pre")?.textContent ?? "");
+      const part = (reply: HTMLElement, selector: string) =>
+        reply.querySelector(selector) as HTMLElement;
+      const currentReplies = () =>
+        replies().filter((reply) => isShown(part(reply, ".conditions-ai-current")));
+      const restore = (reply: HTMLElement) =>
+        (part(reply, ".conditions-btn-ai-restore") as HTMLButtonElement).click();
+
+      const responses = [{ name: { eq: "John" } }, { name: { eq: "John" }, age: { gte: 18 } }];
+
+      const chat = async () => {
+        const ai = jest.fn();
+        for (const response of responses) ai.mockResolvedValueOnce(response);
+        load({}, { schema, ai });
+
+        ask("name is John");
+        await flush();
+        ask("also older than 18");
+        await flush();
+      };
+
+      it("shows each prompt with a reply holding the returned JSON", async () => {
+        await chat();
+
+        expect(prompts()).toEqual(["name is John", "also older than 18"]);
+        expect(replies().map(replyJson)).toEqual(responses);
+        expect((part(replies()[0], "details") as HTMLDetailsElement).open).toBe(false);
+      });
+
+      it("marks the reply that matches the filters as current", async () => {
+        await chat();
+
+        expect(currentReplies()).toEqual([replies()[1]]);
+        expect(isShown(part(replies()[1], ".conditions-btn-ai-restore"))).toBe(false);
+      });
+
+      it("restores the filters of an earlier reply", async () => {
+        await chat();
+        const onChange = jest.fn();
+        input.addEventListener("change", onChange);
+
+        restore(replies()[0]);
+
+        expect(json()).toEqual(responses[0]);
+        expect(pills()).toEqual(["Name is John"]);
+        expect(onChange).toHaveBeenCalled();
+        expect(currentReplies()).toEqual([replies()[0]]);
+        expect(prompts()).toHaveLength(2);
+      });
+
+      it("marks no reply as current after editing the filters by hand", async () => {
+        await chat();
+
+        $<HTMLButtonElement>(".conditions-rule-row > .conditions-btn-remove").click();
+
+        expect(currentReplies()).toEqual([]);
+      });
+
+      it("shows errors in the chat", async () => {
+        load({}, { ai: async () => Promise.reject(new Error("Bad key")) });
+
+        ask("older than 18");
+        await flush();
+
+        expect(prompts()).toEqual(["older than 18"]);
+        expect(replies()).toEqual([]);
+        expect(aiError().textContent).toBe("Couldn't update the filters. Bad key");
+      });
     });
 
     it("accepts a JSON string response", async () => {

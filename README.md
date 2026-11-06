@@ -159,6 +159,22 @@ const schema = {
 };
 ```
 
+An `object[]` field offers a count of its items and a sum of each of its number fields. Set `count: false` on the list, or `sum: false` on a number field, to leave those out of the field select and the AI instructions:
+
+```javascript
+const schema = {
+  orders: {
+    label: 'Orders',
+    type: 'object[]',
+    count: false,
+    schema: {
+      total: { label: 'Total', type: 'number' },
+      term: { label: 'Term in months', type: 'number', sum: false },
+    },
+  },
+};
+```
+
 ## API
 
 ### Conditions
@@ -174,7 +190,7 @@ const conditions = new Conditions(input, settings);
   - `labels` — UI text, e.g. `{ addRule: 'Filter toevoegen', addGroup: 'Groep toevoegen' }`; merged with the defaults
   - `classNames` — CSS class overrides; merged with the defaults
   - `conditionOperators` — operators to offer and their labels, e.g. `{ eq: 'is', gte: 'is at least' }`; replaces the defaults
-  - `ai` — async function that turns a natural-language request into a condition; shows a prompt box above the builder (see [AI input](#ai-input))
+  - `ai` — async function that turns a natural-language request into a condition; shows a chat next to the builder (see [AI input](#ai-input))
 
 Methods:
 
@@ -183,7 +199,9 @@ Methods:
 
 ### AI input
 
-Pass an `ai` handler and the builder shows a prompt box. People describe the filters they want ("smartphones under 500, or anything from KPN"), or how to change the current ones ("also require a 24 month contract"), and the response replaces the filters.
+Pass an `ai` handler and the builder shows a chat next to it. People describe the filters they want ("smartphones under 500, or anything from KPN"), or how to change the current ones ("also require a 24 month contract"), and the response replaces the filters.
+
+Each reply in the chat can be expanded to show the JSON it returned, and has a button to restore those filters, so people can go back to an earlier version. The reply that matches the current filters is marked as the current version.
 
 The library makes no network calls itself. Your handler gets a request and returns the new condition, as an object or a JSON string:
 
@@ -208,7 +226,7 @@ The request contains:
 - `prompt` — what the person typed
 - `condition` — the current condition as JSON
 
-When the handler throws, or returns something that isn't a condition, the filters stay as they were and an error shows under the prompt. `aiInstructions`, `aiRequest` and `parseAiResponse` are exported from `src/ai` for building requests outside the UI.
+When the handler throws, or returns something that isn't a condition, the filters stay as they were and the error shows in the chat. `aiInstructions`, `aiRequest` and `parseAiResponse` are exported from `src/ai` for building requests outside the UI.
 
 The demo calls DeepSeek straight from the browser with an API key you paste in, which keeps the demo free of a backend. In your own app, keep the key on your server and call the model from there.
 

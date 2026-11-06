@@ -376,15 +376,6 @@
               spellcheck="false"
             />
           </span>
-          <span class="credit"
-            >by
-            <a
-              href="https://github.com/wesleydebruijn"
-              target="_blank"
-              rel="noopener noreferrer"
-              >wesley de bruijn</a
-            ></span
-          >
           <label class="read-only-toggle">
             <input type="checkbox" id="read-only-toggle" role="switch" />
             Read only
@@ -522,6 +513,10 @@
           aiSubmit: "Genereren",
           aiLoading: "Bezig…",
           aiError: "De filters konden niet worden bijgewerkt.",
+          aiReply: "Filters bijgewerkt.",
+          aiJson: "Bekijk JSON",
+          aiCurrent: "Huidige versie",
+          aiRestore: "Deze versie terugzetten",
         },
         conditionOperators: {
           eq: "is",
@@ -550,17 +545,59 @@
             schema: {
               type: { label: "Type", type: "text", group: "Algemeen" },
               id: { label: "ID", type: "text", group: "Algemeen" },
-              unique_id: { label: "Unieke ID", type: "text", group: "Algemeen" },
+              unique_id: {
+                label: "Unieke ID",
+                type: "text",
+                group: "Algemeen",
+              },
               price: { label: "Prijs", type: "number", group: "Algemeen" },
-              quantity_total: { label: "Bestelaantal", type: "number", group: "Algemeen" },
-              quantity_index: { label: "Bestelaantal-index", type: "number", group: "Algemeen" },
-              provider: { label: "Provider", type: "text", group: "Propositie" },
-              contract_term: { label: "Contractduur", type: "number", group: "Propositie" },
-              retention: { label: "Verlenging", type: "boolean", group: "Propositie" },
-              key: { label: "Propositiesleutel", type: "text", group: "Propositie" },
-              unit_keys: { label: "Propositieunitsleutels", type: "text[]", group: "Propositie" },
-              product_category: { label: "Productcategorie", type: "text", group: "Product" },
-              product_version_id: { label: "Productversie-ID", type: "text", group: "Product" },
+              quantity_total: {
+                label: "Bestelaantal",
+                type: "number",
+                group: "Algemeen",
+              },
+              quantity_index: {
+                label: "Bestelaantal-index",
+                type: "number",
+                group: "Algemeen",
+                sum: false,
+              },
+              provider: {
+                label: "Provider",
+                type: "text",
+                group: "Propositie",
+              },
+              contract_term: {
+                label: "Contractduur",
+                type: "number",
+                group: "Propositie",
+                sum: false,
+              },
+              retention: {
+                label: "Verlenging",
+                type: "boolean",
+                group: "Propositie",
+              },
+              key: {
+                label: "Propositiesleutel",
+                type: "text",
+                group: "Propositie",
+              },
+              unit_keys: {
+                label: "Propositieunitsleutels",
+                type: "text[]",
+                group: "Propositie",
+              },
+              product_category: {
+                label: "Productcategorie",
+                type: "text",
+                group: "Product",
+              },
+              product_version_id: {
+                label: "Productversie-ID",
+                type: "text",
+                group: "Product",
+              },
               tags: { label: "Tags", type: "text[]", group: "Product" },
             },
           },

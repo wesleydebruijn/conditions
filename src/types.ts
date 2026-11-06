@@ -69,6 +69,8 @@ export type SchemaItem = {
   type: SchemaType;
   schema?: Schema;
   group?: string | string[];
+  count?: boolean;
+  sum?: boolean;
 };
 
 export type ValueKind = "none" | "text" | "number" | "boolean" | "list" | "range";
@@ -133,7 +135,15 @@ export type Settings = {
     ai: string;
     aiInput: string;
     aiError: string;
+    aiMessages: string;
+    aiMessage: string;
+    aiPrompt: string;
+    aiReply: string;
+    aiJson: string;
+    aiCurrent: string;
+    aiForm: string;
     buttonAi: string;
+    buttonAiRestore: string;
   };
   labels: {
     and: string;
@@ -171,6 +181,10 @@ export type Settings = {
     aiSubmit: string;
     aiLoading: string;
     aiError: string;
+    aiReply: string;
+    aiJson: string;
+    aiCurrent: string;
+    aiRestore: string;
   };
   conditionOperators: Partial<Record<ConditionOperator, string>>;
   schema?: Schema;

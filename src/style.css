@@ -536,6 +536,82 @@ html.dark {
 }
 
 .conditions-ai {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  background: hsl(var(--card));
+}
+
+.conditions-ai-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.conditions-ai-messages:empty {
+  display: none;
+}
+
+.conditions-ai-message {
+  max-width: 90%;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  overflow-wrap: anywhere;
+}
+
+.conditions-ai-prompt {
+  align-self: flex-end;
+  background: hsl(var(--ring));
+  color: hsl(0 0% 100%);
+}
+
+.conditions-ai-reply {
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  background: hsl(var(--muted));
+}
+
+.conditions-ai-json {
+  width: 100%;
+  font-size: 13px;
+}
+
+.conditions-ai-json summary {
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+}
+
+.conditions-ai-json pre {
+  margin: 6px 0 0;
+  padding: 8px;
+  max-height: 240px;
+  overflow: auto;
+  border-radius: calc(var(--radius) - 2px);
+  background: hsl(var(--background));
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+
+.conditions-ai-current {
+  color: hsl(var(--muted-foreground));
+  font-size: 12px;
+}
+
+.conditions-wrapper .conditions-btn-ai-restore {
+  height: 28px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+.conditions-ai-form {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
@@ -563,7 +639,8 @@ html.dark {
 }
 
 .conditions-ai-error {
-  grid-column: 1 / -1;
+  align-self: flex-start;
+  border: 1px solid hsl(var(--destructive) / 0.4);
   color: hsl(var(--destructive));
   font-size: 13px;
 }
